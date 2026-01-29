@@ -1,58 +1,34 @@
 "use client";
 
-import { doc } from "firebase/firestore";
-import { useFirestore, useFirestoreDocData } from "reactfire";
-import { Card as CardUI } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { motion } from "framer-motion";
+import { useState } from "react";
+import { StampCardFront } from "./StampCardFront";
+import { StampCardBack } from "./StampCardBack";
 
 export function StampCardView({ cardId }: { cardId: string }) {
-  const firestore = useFirestore();
-  const ref = doc(firestore, "cards", cardId);
-  const { status, data } = useFirestoreDocData(ref);
-
-  if (status === "loading") return <p>Cargando…</p>;
-  if (!data) return <p>No encontrada</p>;
-
-  const card = data as any;
+  const [flipped, setFlipped] = useState(false);
 
   return (
-    <CardUI className="max-w-md mx-auto bg-gradient-to-br from-amber-50 to-stone-100 shadow-xl rounded-2xl p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-stone-800">
-          ☕ Tarjeta de Café
-        </h2>
-        <Badge className="bg-amber-700 text-white">
-          {card.rewardName}
-        </Badge>
+    <div className="space-y-4 text-center">
+      {/* Tarjeta */}
+      <div
+        id="stamp-card"
+        className="
+        w-[320px] h-[210px] mx-auto perspective
+        active:scale-[0.98] transition-transform
+        "
+        onClick={() => setFlipped(!flipped)}
+      >
+        <motion.div
+          className="relative w-full h-full"
+          animate={{ rotateY: flipped ? 180 : 0 }}
+          transition={{ duration: 0.6 }}
+          style={{ transformStyle: "preserve-3d" }}
+        >
+          <StampCardFront cardId={cardId} />
+          <StampCardBack cardId={cardId} />
+        </motion.div>
       </div>
-
-      {/* Sellos */}
-      <div className="grid grid-cols-5 gap-3 my-6">
-        {Array.from({ length: card.maxStamps }).map((_, i) => (
-          <div
-            key={i}
-            className={`h-12 w-12 rounded-full flex items-center justify-center text-sm font-bold
-              ${
-                i < card.stamps
-                  ? "bg-amber-700 text-white"
-                  : "border-2 border-dashed border-amber-700 text-amber-700"
-              }`}
-          >
-            ☕
-          </div>
-        ))}
-      </div>
-
-      {/* Footer */}
-      <p className="text-sm text-stone-600 mb-4">
-        Sellos: {card.stamps} / {card.maxStamps}
-      </p>
-
-      <Button className="w-full bg-amber-700 hover:bg-amber-800">
-        + Agregar sello
-      </Button>
-    </CardUI>
+    </div>
   );
 }

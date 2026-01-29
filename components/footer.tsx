@@ -1,23 +1,15 @@
-import { FishIcon } from "lucide-react";
+import { CoffeeIcon, Heart } from "lucide-react";
 
 export const Footer = () => {
   return (
-    <footer>
-      <div className="container flex flex-col items-center justify-between gap-4 py-10 md:h-24 md:flex-row md:py-0">
-        <div className="flex flex-col items-center gap-4 px-8 md:flex-row md:gap-2 md:px-0">
-          <FishIcon />
-          <p className="text-center text-sm leading-loose md:text-left">
-            An{" "}
-            <a
-              href="https://github.com/enesien"
-              target="_blank"
-              className="font-medium underline underline-offset-4"
-            >
-              enesien
-            </a>{" "}
-            project.
-          </p>
-        </div>
+    <footer className="border-t">
+      <div className="flex flex-col items-center justify-center gap-2 py-6">
+        <CoffeeIcon className="h-5 w-5 text-neutral-500" />
+
+        <p className="flex items-center gap-1 text-xs text-neutral-500">
+          La Commune · hecho con amor
+          <Heart className="h-3 w-3 fill-current text-neutral-400" />
+        </p>
       </div>
     </footer>
   );

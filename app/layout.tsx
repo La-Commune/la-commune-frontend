@@ -9,9 +9,9 @@ import { ReactNode } from "react";
 const font = Work_Sans({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Venefish | Vercel Next.JS Firebase Shadcn/ui Tailwind Boilerplate",
+  title: "La commune",
   description:
-    "Venefish is a Vercel Next.JS Firebase Shadcn/ui Tailwind Boilerplate project to help you get started with your next project.",
+    "La commune, tu cafetería de barrio. Junta sellos y canjea tu recompensa en tu próxima visita.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

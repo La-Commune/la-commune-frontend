@@ -1,5 +1,5 @@
 {
-  "name": "venefish",
+  "name": "La commune",
   "description": "Boilerplate & template for Vercel projects using Next.js, Firebase and shadcn/ui.",
   "author": "Enesien Software <contact@enesien.com> (https://enesien.com)",
   "version": "0.1.0",
@@ -26,8 +26,11 @@
     "clsx": "^2.0.0",
     "encoding": "^0.1.13",
     "firebase": "^9.23.0",
+    "framer-motion": "^12.29.2",
+    "html-to-image": "^1.11.13",
     "lucide-react": "^0.284.0",
     "next": "latest",
+    "qrcode.react": "^4.2.0",
     "react": "latest",
     "react-dom": "latest",
     "react-hook-form": "^7.50.1",
