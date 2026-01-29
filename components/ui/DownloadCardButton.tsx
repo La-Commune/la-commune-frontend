@@ -1,3 +1,11 @@
+/**
+ * Copyright (c) 2026 La Commune
+ * All rights reserved.
+ *
+ * This file is proprietary and may not be used, copied, or distributed
+ * without explicit written permission from La Commune.
+ */
+
 "use client";
 
 import { Button } from "@/components/ui/button";

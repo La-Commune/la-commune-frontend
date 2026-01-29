@@ -1,3 +1,10 @@
+/**
+ * Original work licensed under the MIT License by Gavin D. Johnsen.
+ * Modifications Copyright (c) 2026 La Commune.
+ *
+ * The original MIT license applies to the base code.
+ */
+
 import { Badge } from "@/components/ui/badge";
 import { DownloadCardButton } from "@/components/ui/DownloadCardButton";
 import { StampCardView } from "@/components/ui/stamp-card";
