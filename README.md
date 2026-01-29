@@ -1,4 +1,4 @@
-# La commune 
+# La commune ☕
 
 ## License
 
