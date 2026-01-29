@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { StampCardView } from "@/components/ui/stamp-card";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import React from "react";
@@ -15,6 +16,8 @@ export default function Home() {
   return (
     <>
       <div className="grow flex flex-col items-center justify-evenly">
+      <StampCardView cardId="CHZmWzvA2eZDYagSCpYl"></StampCardView>
+
         <section className="space-y-6">
           <div className="container flex flex-col items-center gap-8 text-center">
             <Badge variant="secondary">Now using the app router!</Badge>
