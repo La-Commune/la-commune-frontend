@@ -1,0 +1,19 @@
+PROPRIETARY LICENSE
+
+Copyright (c) 2026 La Commune
+
+All rights reserved.
+
+This software, including but not limited to its source code, structure,
+design, logic, and associated documentation, is the exclusive property
+of La Commune.
+
+No part of this software may be used, copied, modified, merged, published,
+distributed, sublicensed, or sold, in whole or in part, without prior
+written permission from La Commune.
+
+Unauthorized use of this software is strictly prohibited and may result
+in civil and/or criminal liability under applicable laws.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES,
+EXCEPT WHERE REQUIRED BY APPLICABLE LAW.
