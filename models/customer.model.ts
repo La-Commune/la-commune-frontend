@@ -1,20 +1,27 @@
 import { Timestamp } from "firebase/firestore";
 
 export interface Customer {
-  /** Datos básicos */
-  name?: string;                // Puede ser opcional (sin fricción)
-  phone?: string;               // WhatsApp / identificación futura
+  name?: string;
+  phone?: string;
+
+  /** Identidad técnica */
+  deviceIds?: string[]; // para multidevice futuro
 
   /** Estado */
   active: boolean;
+
+  /** Métricas útiles */
+  totalVisits?: number;
+  totalStamps?: number;
 
   /** Trazabilidad */
   createdAt: Timestamp;
   lastVisitAt?: Timestamp;
 
-  /** Notas internas */
-  notes?: string;               // "Le gusta moka", "sin azúcar"
+  /** Marketing (opcional) */
+  consentWhatsApp?: boolean;
 
-  /** Versionado */
+  notes?: string;
+
   schemaVersion: number;
 }
