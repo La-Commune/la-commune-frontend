@@ -1,10 +1,23 @@
-import {
-  doc,
-  runTransaction,
-  Timestamp,
-  collection,
-} from "firebase/firestore";
+import { doc, runTransaction, Timestamp, collection, DocumentReference, addDoc } from "firebase/firestore";
 
+export async function createCard(
+  firestore: any,
+  params: {
+    customerRef: DocumentReference;
+    rewardRef: DocumentReference;
+    maxStamps: number;
+  },
+) {
+  return addDoc(collection(firestore, "cards"), {
+    customerId: params.customerRef,
+    rewardId: params.rewardRef,
+    stamps: 0,
+    maxStamps: params.maxStamps,
+    status: "active",
+    createdAt: Timestamp.now(),
+    schemaVersion: 1,
+  });
+}
 export async function addStamp(firestore: any, cardId: string) {
   const cardRef = doc(firestore, "cards", cardId);
   const eventsRef = collection(firestore, "stampEvents");
