@@ -3,18 +3,25 @@ import { Customer } from "@/models/customer.model";
 
 export async function createCustomer(
   firestore: any,
-  data: Pick<Customer, "name" | "phone">
+  data: {
+    name?: string;
+    phone: string;
+    consentWhatsApp: boolean;
+  },
 ) {
   return addDoc(collection(firestore, "customers"), {
-    ...data,
+    name: data.name ?? null,
+    phone: data.phone,
+    consentWhatsApp: data.consentWhatsApp,
     active: true,
+    totalVisits: 0,
+    totalStamps: 0,
     createdAt: Timestamp.now(),
     schemaVersion: 1,
   });
 }
 
-
-// Uso en componenete 
+// Uso en componenete
 
 // "use client";
 
@@ -27,5 +34,3 @@ export async function createCustomer(
 //   name: "Juan",
 //   phone: "2221234567",
 // });
-
-

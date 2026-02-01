@@ -19,7 +19,7 @@ export const NavBar: FC = () => {
                 </span>
               </div>
             </Link>
-            <div className="hidden md:flex justify-between grow">
+            {/* <div className="hidden md:flex justify-between grow">
               <div>
                 <Link href="#1" className={buttonVariants({ variant: "link" })}>
                   Item 1
@@ -37,7 +37,7 @@ export const NavBar: FC = () => {
             </div>
             <div className="grow md:hidden flex justify-end">
               <NavbarMobile />
-            </div>
+            </div> */}
           </div>
         </nav>
       </div>
