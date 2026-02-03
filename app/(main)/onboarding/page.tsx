@@ -34,8 +34,7 @@ export default function OnboardingPage() {
 
     const cardRef = await createCard(firestore, {
       customerRef,
-      rewardRef,
-      maxStamps: 10,
+      rewardRef
     });
 
     localStorage.setItem("customerId", customerRef.id);

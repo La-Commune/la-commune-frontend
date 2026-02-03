@@ -1,3 +1,4 @@
+import { Card } from "@/models/card.model";
 import { doc, runTransaction, Timestamp, collection, DocumentReference, addDoc, where, query, getDocs } from "firebase/firestore";
 
 export async function createCard(
@@ -5,18 +6,19 @@ export async function createCard(
   params: {
     customerRef: DocumentReference;
     rewardRef: DocumentReference;
-    maxStamps: number;
   },
 ) {
-  return addDoc(collection(firestore, "cards"), {
+  const cardData : Card = {
     customerId: params.customerRef,
     rewardId: params.rewardRef,
     stamps: 0,
-    maxStamps: params.maxStamps,
+    maxStamps: 7,
     status: "active",
     createdAt: Timestamp.now(),
     schemaVersion: 1,
-  });
+    pinHash: process.env.PIN_HASH_SECRET!
+  }
+  return addDoc(collection(firestore, "cards"), cardData);
 }
 export async function addStamp(firestore: any, cardId: string) {
   const cardRef = doc(firestore, "cards", cardId);

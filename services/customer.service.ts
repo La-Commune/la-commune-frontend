@@ -1,4 +1,11 @@
-import { collection, addDoc, Timestamp, query, where, getDocs } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  Timestamp,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 import { Customer } from "@/models/customer.model";
 
 export async function createCustomer(
@@ -9,23 +16,22 @@ export async function createCustomer(
     consentWhatsApp: boolean;
   },
 ) {
-  return addDoc(collection(firestore, "customers"), {
-    name: data.name ?? null,
+  const costumerData: Customer = {
+    name: data.name,
     phone: data.phone,
     consentWhatsApp: data.consentWhatsApp,
     active: true,
     totalVisits: 0,
     totalStamps: 0,
     createdAt: Timestamp.now(),
-    schemaVelastVisitAtrsion: Timestamp.now(),
-    notes: '',
-  });
+    lastVisitAt: Timestamp.now(),
+    notes: "",
+    schemaVersion: 1,
+  };
+  return addDoc(collection(firestore, "customers"), costumerData);
 }
 
-export async function getCardByCustomer(
-  firestore: any,
-  customerRef: any,
-) {
+export async function getCardByCustomer(firestore: any, customerRef: any) {
   const q = query(
     collection(firestore, "cards"),
     where("customerId", "==", customerRef),
