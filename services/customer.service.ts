@@ -1,4 +1,4 @@
-import { collection, addDoc, Timestamp } from "firebase/firestore";
+import { collection, addDoc, Timestamp, query, where, getDocs } from "firebase/firestore";
 import { Customer } from "@/models/customer.model";
 
 export async function createCustomer(
@@ -17,20 +17,25 @@ export async function createCustomer(
     totalVisits: 0,
     totalStamps: 0,
     createdAt: Timestamp.now(),
-    schemaVersion: 1,
+    schemaVelastVisitAtrsion: Timestamp.now(),
+    notes: '',
   });
 }
 
-// Uso en componenete
+export async function getCardByCustomer(
+  firestore: any,
+  customerRef: any,
+) {
+  const q = query(
+    collection(firestore, "cards"),
+    where("customerId", "==", customerRef),
+    where("status", "==", "active"),
+  );
 
-// "use client";
+  const snap = await getDocs(q);
 
-// import { useFirestore } from "reactfire";
-// import { createCustomer } from "@/services/customer.service";
+  if (snap.empty) return null;
 
-// const firestore = useFirestore();
-
-// await createCustomer(firestore, {
-//   name: "Juan",
-//   phone: "2221234567",
-// });
+  const doc = snap.docs[0];
+  return { id: doc.id, ...doc.data() };
+}

@@ -1,4 +1,4 @@
-import { doc, runTransaction, Timestamp, collection, DocumentReference, addDoc } from "firebase/firestore";
+import { doc, runTransaction, Timestamp, collection, DocumentReference, addDoc, where, query, getDocs } from "firebase/firestore";
 
 export async function createCard(
   firestore: any,
@@ -41,4 +41,26 @@ export async function addStamp(firestore: any, cardId: string) {
       source: "manual",
     });
   });
+}
+
+export async function getCardByCustomer(
+  firestore: any,
+  customerRef: DocumentReference,
+) {
+  const q = query(
+    collection(firestore, "cards"),
+    where("customerId", "==", customerRef),
+    where("status", "==", "active"),
+  );
+
+  const snap = await getDocs(q);
+
+  if (snap.empty) return null;
+
+  const doc = snap.docs[0];
+
+  return {
+    id: doc.id,
+    ...doc.data(),
+  };
 }
