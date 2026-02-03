@@ -41,7 +41,7 @@ export default function OnboardingPage() {
     localStorage.setItem("customerId", customerRef.id);
     localStorage.setItem("cardId", cardRef.id);
 
-    router.replace("/");
+    router.replace("/card/" + cardRef.id);
   };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {

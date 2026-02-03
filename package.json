@@ -1,7 +1,7 @@
 {
   "name": "La commune",
-  "description": "Boilerplate & template for Vercel projects using Next.js, Firebase and shadcn/ui.",
-  "author": "Enesien Software <contact@enesien.com> (https://enesien.com)",
+  "description": "La commune - Create and share custom QR codes easily.",
+  "author": "La commune",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -32,6 +32,7 @@
     "next": "latest",
     "qrcode.react": "^4.2.0",
     "react": "latest",
+    "react-canvas-confetti": "^2.0.7",
     "react-dom": "latest",
     "react-hook-form": "^7.50.1",
     "reactfire": "^4.2.3",
