@@ -15,8 +15,7 @@ export async function createCard(
     maxStamps: 7,
     status: "active",
     createdAt: Timestamp.now(),
-    schemaVersion: 1,
-    pinHash: process.env.PIN_HASH_SECRET!
+    schemaVersion: 1
   }
   return addDoc(collection(firestore, "cards"), cardData);
 }
