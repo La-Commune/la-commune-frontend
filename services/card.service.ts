@@ -12,7 +12,7 @@ export async function createCard(
     customerId: params.customerRef,
     rewardId: params.rewardRef,
     stamps: 0,
-    maxStamps: 7,
+    maxStamps: 5,
     status: "active",
     createdAt: Timestamp.now(),
     schemaVersion: 1
