@@ -58,15 +58,12 @@ export default function Home() {
             </p>
 
             <p className="text-sm text-[#6B6460] leading-relaxed max-w-md mx-auto">
-              Después de tu quinta bebida, la sexta corre por la casa.
-              <br />
-              <span className="italic">
-                Si ya llegaste, recuérdaselo al barista.
-              </span>
+              Después de tu quinta bebida, la siguiente corre por la casa.
+              Pídela junto con tu pedido en tu próxima visita.
             </p>
 
             <span className="inline-block text-xs tracking-wide text-[#6B6460] border border-[#E7E4E1] rounded-full px-4 py-1">
-              Beneficio activo · Registro manual por ahora
+              Recuerda mencionarlo al barista
             </span>
           </div>
         </section>
