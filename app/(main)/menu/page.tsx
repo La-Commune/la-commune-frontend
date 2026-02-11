@@ -11,7 +11,7 @@ type Drink = {
   optional?: Ingredient[];
   note?: string;
   available?: boolean;
-  tag?: "Fuerte" | "Cremoso" | "Dulce" | "Gourmet";
+  tag?: "Fuerte" | "Cremoso" | "Dulce" | "Gourmet" | "Intenso";
 };
 
 type Section = {
@@ -41,10 +41,14 @@ const sections: Section[] = [
         ingredients: [{ name: "Espresso" }, { name: "Leche vaporizada" }],
       },
       {
-        name: "Leche vaporizada (12 oz)",
-        price: 30,
-        ingredients: [{ name: "Leche entera o deslactozada" }],
-        note: "Puedes agregar un toque de sabor",
+        name: "Flat White",
+        price: 40,
+        ingredients: [
+          { name: "Espresso" },
+          { name: "Leche vaporizada" },
+        ],
+        note: "Más café, menos espuma",
+        tag: "Intenso",
       },
     ],
   },
@@ -103,7 +107,7 @@ const sections: Section[] = [
           { name: "Leche" },
           { name: "Praliné (nuez pecana)" },
         ],
-        tag: "Gourmet"
+        tag: "Gourmet",
       },
       {
         name: "Chocolate caliente",
@@ -184,7 +188,6 @@ export default function CafeMenu() {
                       !isAvailable ? "opacity-40" : ""
                     }`}
                   >
-                    {/* Name + price */}
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <p className="text-[15px] font-medium text-stone-100">
@@ -201,12 +204,10 @@ export default function CafeMenu() {
                       </span>
                     </div>
 
-                    {/* Ingredients */}
                     <p className="text-xs text-stone-300">
                       {drink.ingredients.map((i) => `• ${i.name}`).join(" ")}
                     </p>
 
-                    {/* Optional */}
                     {drink.optional && isAvailable && (
                       <p className="text-xs text-stone-500">
                         Personalízalo:{" "}
@@ -214,14 +215,12 @@ export default function CafeMenu() {
                       </p>
                     )}
 
-                    {/* Note */}
                     {drink.note && isAvailable && (
                       <p className="text-xs italic text-stone-400 border-l-2 border-stone-600 pl-3">
                         Nota: {drink.note}
                       </p>
                     )}
 
-                    {/* Availability */}
                     {!isAvailable && (
                       <span className="inline-block text-[10px] uppercase tracking-widest text-stone-500 border border-stone-600 rounded-full px-2 py-1">
                         No disponible hoy
@@ -235,7 +234,7 @@ export default function CafeMenu() {
         ))}
       </div>
 
-      {/* Personalization */}
+      {/* Personalización */}
       <div className="mt-16 grid gap-8 md:grid-cols-2">
         <div className="rounded-3xl bg-[#1F1F1F] p-8">
           <h3 className="text-xs uppercase tracking-widest text-stone-400 mb-4">
