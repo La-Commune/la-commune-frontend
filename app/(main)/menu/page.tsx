@@ -11,6 +11,7 @@ type Drink = {
   optional?: Ingredient[];
   note?: string;
   available?: boolean;
+  tag?: "Fuerte" | "Cremoso" | "Dulce" | "Gourmet";
 };
 
 type Section = {
@@ -21,6 +22,33 @@ type Section = {
 
 const sections: Section[] = [
   {
+    title: "Con leche",
+    description: "Suaves, balanceadas y cremosas",
+    drinks: [
+      {
+        name: "Cappuccino",
+        price: 40,
+        ingredients: [
+          { name: "Espresso" },
+          { name: "Leche vaporizada" },
+          { name: "Espuma de leche" },
+        ],
+        tag: "Cremoso",
+      },
+      {
+        name: "Latte",
+        price: 40,
+        ingredients: [{ name: "Espresso" }, { name: "Leche vaporizada" }],
+      },
+      {
+        name: "Leche vaporizada (12 oz)",
+        price: 30,
+        ingredients: [{ name: "Leche entera o deslactozada" }],
+        note: "Puedes agregar un toque de sabor",
+      },
+    ],
+  },
+  {
     title: "Base espresso",
     description: "Bebidas intensas, cortas y directas",
     drinks: [
@@ -28,6 +56,7 @@ const sections: Section[] = [
         name: "Espresso",
         price: 30,
         ingredients: [{ name: "Espresso" }],
+        tag: "Fuerte",
       },
       {
         name: "Espresso con panna",
@@ -50,32 +79,6 @@ const sections: Section[] = [
     ],
   },
   {
-    title: "Con leche",
-    description: "Suaves, balanceadas y cremosas",
-    drinks: [
-      {
-        name: "Cappuccino",
-        price: 40,
-        ingredients: [
-          { name: "Espresso" },
-          { name: "Leche vaporizada" },
-          { name: "Espuma de leche" },
-        ],
-      },
-      {
-        name: "Latte",
-        price: 40,
-        ingredients: [{ name: "Espresso" }, { name: "Leche vaporizada" }],
-      },
-      {
-        name: "Leche vaporizada (12 oz)",
-        price: 30,
-        ingredients: [{ name: "Leche entera o deslactozada" }],
-        note: "Puedes agregar un toque de sabor",
-      },
-    ],
-  },
-  {
     title: "Especiales",
     description: "Con sabores y perfil más dulce",
     drinks: [
@@ -88,6 +91,8 @@ const sections: Section[] = [
           { name: "Cocoa" },
           { name: "Leche" },
         ],
+        note: "Clásico o con un toque de vainilla, al mismo precio",
+        tag: "Dulce",
       },
       {
         name: "Latte Praliné",
@@ -98,33 +103,37 @@ const sections: Section[] = [
           { name: "Leche" },
           { name: "Praliné (nuez pecana)" },
         ],
-        available: true,
+        tag: "Gourmet"
       },
       {
         name: "Chocolate caliente",
         price: 40,
-        ingredients: [{ name: "Chocolate" }, { name: "Cocoa" }, { name: "Leche" }],
+        ingredients: [
+          { name: "Chocolate" },
+          { name: "Cocoa" },
+          { name: "Leche" },
+        ],
         optional: [{ name: "Vainilla" }],
-        note: "Recomendado si te gusta un perfil más redondo",
+        note: "Perfil más redondo y reconfortante",
+        tag: "Dulce",
       },
     ],
   },
   {
-    title: "Alimentos",
+    title: "Galletas",
     description: "Para acompañar tu café",
     drinks: [
       {
         name: "Pastizetas mini · 3 piezas",
         price: 20,
-        ingredients: [{ name: "Galleta artesanal tamaño bocado" }, { name: "Textura suave" }],
-        note: "Ideales para acompañar tu café",
+        ingredients: [{ name: "Galleta artesanal tamaño bocado" }],
         optional: [{ name: "Cubierta chocolate +$5 MXN" }],
         available: false,
       },
       {
         name: "Pastizetas mini · 5 piezas",
         price: 30,
-        ingredients: [{ name: "Galleta artesanal tamaño bocado" }, { name: "Textura suave" }],
+        ingredients: [{ name: "Galleta artesanal tamaño bocado" }],
         optional: [{ name: "Cubierta chocolate +$10 MXN" }],
         available: false,
       },
@@ -136,35 +145,26 @@ export default function CafeMenu() {
   return (
     <section className="w-full max-w-5xl mx-auto px-4 sm:px-6 py-16">
       {/* Header */}
-      <header className="text-center mb-16 space-y-3">
-        <h1 className="text-3xl sm:text-4xl font-medium tracking-widest text-black uppercase">
-          menú
+      <header className="text-center mb-12 space-y-3">
+        <h1 className="text-3xl sm:text-4xl font-medium tracking-widest uppercase">
+          Menú
         </h1>
-        <p className="text-sm sm:text-base tracking-wide text-stone-400">
+        <p className="text-sm tracking-wide text-stone-400">
           Bebidas calientes y alimentos
         </p>
       </header>
 
+      {/* Scroll hint */}
+      <p className="md:hidden text-xs text-stone-400 mb-3 text-right">
+        Desliza →
+      </p>
+
       {/* Menu */}
-      <div
-        className="
-          flex gap-6 overflow-x-auto snap-x snap-mandatory pb-4
-          md:grid md:grid-cols-3 md:gap-8 md:overflow-visible
-        "
-      >
+      <div className="flex gap-6 overflow-x-auto snap-x snap-mandatory pb-4 md:grid md:grid-cols-3 md:gap-8 md:overflow-visible">
         {sections.map((section) => (
           <div
             key={section.title}
-            className="
-              min-w-[260px] sm:min-w-[280px]
-              md:min-w-0
-              snap-center
-              rounded-3xl
-              bg-[#1F1F1F]
-              p-8
-              shadow-lg
-              flex-shrink-0
-            "
+            className="min-w-[260px] snap-center rounded-3xl bg-[#1F1F1F] p-8 shadow-lg"
           >
             <h2 className="text-xs uppercase tracking-widest text-stone-300 mb-1">
               {section.title}
@@ -185,23 +185,30 @@ export default function CafeMenu() {
                     }`}
                   >
                     {/* Name + price */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-base tracking-wide text-stone-100">
-                        {drink.name}
-                      </span>
-                      <span className="text-sm tracking-wide tabular-nums text-stone-400">
-                        ${drink.price}
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-[15px] font-medium text-stone-100">
+                          {drink.name}
+                        </p>
+                        {drink.tag && (
+                          <span className="inline-block mt-1 text-[10px] uppercase tracking-widest text-stone-400 border border-stone-600 rounded-full px-2 py-0.5">
+                            {drink.tag}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-sm tabular-nums text-stone-400">
+                        ${drink.price} MXN
                       </span>
                     </div>
 
                     {/* Ingredients */}
-                    <p className="text-xs tracking-wide text-stone-400">
-                      {drink.ingredients.map((i) => i.name).join(" · ")}
+                    <p className="text-xs text-stone-300">
+                      {drink.ingredients.map((i) => `• ${i.name}`).join(" ")}
                     </p>
 
                     {/* Optional */}
                     {drink.optional && isAvailable && (
-                      <p className="text-xs tracking-wide text-stone-500">
+                      <p className="text-xs text-stone-500">
                         Personalízalo:{" "}
                         {drink.optional.map((o) => o.name).join(" · ")}
                       </p>
@@ -209,16 +216,16 @@ export default function CafeMenu() {
 
                     {/* Note */}
                     {drink.note && isAvailable && (
-                      <p className="text-xs italic tracking-wide text-stone-400 border-l-2 border-stone-600 pl-3">
-                        {drink.note}
+                      <p className="text-xs italic text-stone-400 border-l-2 border-stone-600 pl-3">
+                        Nota: {drink.note}
                       </p>
                     )}
 
                     {/* Availability */}
                     {!isAvailable && (
-                      <p className="text-xs uppercase tracking-widest text-stone-500">
+                      <span className="inline-block text-[10px] uppercase tracking-widest text-stone-500 border border-stone-600 rounded-full px-2 py-1">
                         No disponible hoy
-                      </p>
+                      </span>
                     )}
                   </li>
                 );
@@ -234,20 +241,27 @@ export default function CafeMenu() {
           <h3 className="text-xs uppercase tracking-widest text-stone-400 mb-4">
             Intensidad
           </h3>
-          <p className="text-sm tracking-wide text-stone-200">
-            Suave · Normal
-          </p>
+          <div className="flex gap-2">
+            {["Suave", "Normal", "Intenso"].map((level) => (
+              <span
+                key={level}
+                className="text-xs px-3 py-1 rounded-full border border-stone-600 text-stone-300"
+              >
+                {level}
+              </span>
+            ))}
+          </div>
         </div>
 
         <div className="rounded-3xl bg-[#1F1F1F] p-8">
           <h3 className="text-xs uppercase tracking-widest text-stone-400 mb-4">
             Sabores
           </h3>
-          <p className="text-sm tracking-wide text-stone-200">
+          <p className="text-sm text-stone-200">
             Vainilla · Avellana · Caramelo
           </p>
-          <p className="text-xs tracking-wide text-stone-400 mt-2">
-            +$5 MXN por sabor
+          <p className="text-xs text-stone-400 mt-2">
+            Disponible para bebidas con leche · +$5 MXN
           </p>
         </div>
       </div>
