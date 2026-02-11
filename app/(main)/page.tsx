@@ -45,9 +45,35 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Experience / Info Card */}
+        <section className="w-full border border-[#E7E4E1] bg-[#FAF9F8] px-8 sm:px-10 py-16 text-center">
+          <div className="space-y-6">
+            <h3 className="text-xs uppercase tracking-widest text-[#6B6460]">
+              Experiencia
+            </h3>
+
+            <p className="text-base sm:text-lg font-medium text-[#1F1B18] leading-relaxed tracking-wide">
+              Cada bebida se prepara al momento,
+              cuidando proporciones, textura y balance.
+            </p>
+
+            <p className="text-sm text-[#6B6460] leading-relaxed max-w-md mx-auto">
+              Después de tu quinta bebida, la sexta corre por la casa.
+              <br />
+              <span className="italic">
+                Si ya llegaste, recuérdaselo al barista.
+              </span>
+            </p>
+
+            <span className="inline-block text-xs tracking-wide text-[#6B6460] border border-[#E7E4E1] rounded-full px-4 py-1">
+              Beneficio activo · Registro manual por ahora
+            </span>
+          </div>
+        </section>
+
 
         {/* Loyalty Card */}
-        <section className="w-full bg-[#5f4633] px-8 sm:px-10 pt-24 pb-20 text-center">
+        <section className="w-full hidden bg-[#5f4633] px-8 sm:px-10 pt-24 pb-20 text-center">
           <div className="space-y-4">
             <h2 className="text-2xl sm:text-3xl font-medium text-[#d1d1aa] leading-snug tracking-wide">
               Registra tus visitas <br className="hidden sm:block" />
