@@ -238,7 +238,7 @@ export default function CafeMenu() {
       <div className="mt-16 grid gap-8 md:grid-cols-2">
         <div className="rounded-3xl bg-[#1F1F1F] p-8">
           <h3 className="text-xs uppercase tracking-widest text-stone-400 mb-4">
-            Intensidad
+            Intensidad del café
           </h3>
           <div className="flex gap-2">
             {["Suave", "Normal"].map((level) => (
