@@ -109,6 +109,27 @@ const sections: Section[] = [
       },
     ],
   },
+  {
+    title: "Alimentos",
+    description: "Para acompañar tu café",
+    drinks: [
+      {
+        name: "Pastizetas mini · 3 piezas",
+        price: 20,
+        ingredients: [{ name: "Galleta artesanal tamaño bocado" }, { name: "Textura suave" }],
+        note: "Ideales para acompañar tu café",
+        optional: [{ name: "Cubierta chocolate +$5 MXN" }],
+        available: false,
+      },
+      {
+        name: "Pastizetas mini · 5 piezas",
+        price: 30,
+        ingredients: [{ name: "Galleta artesanal tamaño bocado" }, { name: "Textura suave" }],
+        optional: [{ name: "Cubierta chocolate +$10 MXN" }],
+        available: false,
+      },
+    ],
+  },
 ];
 
 export default function CafeMenu() {
@@ -120,7 +141,7 @@ export default function CafeMenu() {
           menú
         </h1>
         <p className="text-sm sm:text-base tracking-wide text-stone-400">
-          Bebidas calientes
+          Bebidas calientes y alimentos
         </p>
       </header>
 
