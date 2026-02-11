@@ -14,10 +14,10 @@ const sections: Section[] = [
   {
     title: "Base espresso",
     drinks: [
-      { name: "Espresso", price: 25 },
-      { name: "Espresso con panna", price: 30 },
-      { name: "Americano", price: 30 },
-      { name: "Long Black", price: 30 },
+      { name: "Espresso", price: 30 },
+      { name: "Espresso con panna", price: 35 },
+      { name: "Americano", price: 35 },
+      { name: "Long Black", price: 35 },
     ],
   },
   {
