@@ -35,13 +35,13 @@ const sections: Section[] = [
       },
       {
         name: "Americano",
-        price: 35,
+        price: 30,
         ingredients: [{ name: "Espresso" }, { name: "Agua caliente" }],
         note: "Espresso servido primero",
       },
       {
         name: "Long Black",
-        price: 35,
+        price: 30,
         ingredients: [{ name: "Agua caliente" }, { name: "Espresso" }],
         note: "Agua caliente primero, espresso después",
       },
@@ -66,7 +66,7 @@ const sections: Section[] = [
         ingredients: [{ name: "Espresso" }, { name: "Leche vaporizada" }],
       },
       {
-        name: "Leche vaporizada",
+        name: "Leche vaporizada (12 oz)",
         price: 30,
         ingredients: [{ name: "Leche entera o deslactozada" }],
         note: "Puedes agregar un toque de sabor",
