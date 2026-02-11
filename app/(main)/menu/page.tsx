@@ -241,7 +241,7 @@ export default function CafeMenu() {
             Intensidad
           </h3>
           <div className="flex gap-2">
-            {["Suave", "Normal", "Intenso"].map((level) => (
+            {["Suave", "Normal"].map((level) => (
               <span
                 key={level}
                 className="text-xs px-3 py-1 rounded-full border border-stone-600 text-stone-300"
