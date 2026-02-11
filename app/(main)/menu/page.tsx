@@ -10,6 +10,7 @@ type Drink = {
   ingredients: Ingredient[];
   optional?: Ingredient[];
   note?: string;
+  available?: boolean;
 };
 
 type Section = {
@@ -32,6 +33,7 @@ const sections: Section[] = [
         name: "Espresso con panna",
         price: 35,
         ingredients: [{ name: "Espresso" }, { name: "Crema" }],
+        available: false,
       },
       {
         name: "Americano",
@@ -96,6 +98,7 @@ const sections: Section[] = [
           { name: "Leche" },
           { name: "Praliné (nuez pecana)" },
         ],
+        available: true,
       },
       {
         name: "Chocolate caliente",
@@ -150,39 +153,55 @@ export default function CafeMenu() {
             </p>
 
             <ul className="space-y-6">
-              {section.drinks.map((drink) => (
-                <li key={drink.name} className="space-y-2">
-                  {/* Name + price */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-base tracking-wide text-stone-100">
-                      {drink.name}
-                    </span>
-                    <span className="text-sm tracking-wide tabular-nums text-stone-400">
-                      ${drink.price}
-                    </span>
-                  </div>
+              {section.drinks.map((drink) => {
+                const isAvailable = drink.available !== false;
 
-                  {/* Ingredients */}
-                  <p className="text-xs tracking-wide text-stone-400">
-                    {drink.ingredients.map((i) => i.name).join(" · ")}
-                  </p>
+                return (
+                  <li
+                    key={drink.name}
+                    className={`space-y-2 ${
+                      !isAvailable ? "opacity-40" : ""
+                    }`}
+                  >
+                    {/* Name + price */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-base tracking-wide text-stone-100">
+                        {drink.name}
+                      </span>
+                      <span className="text-sm tracking-wide tabular-nums text-stone-400">
+                        ${drink.price}
+                      </span>
+                    </div>
 
-                  {/* Optional */}
-                  {drink.optional && (
-                    <p className="text-xs tracking-wide text-stone-500">
-                      Personalízalo:{" "}
-                      {drink.optional.map((o) => o.name).join(" · ")}
+                    {/* Ingredients */}
+                    <p className="text-xs tracking-wide text-stone-400">
+                      {drink.ingredients.map((i) => i.name).join(" · ")}
                     </p>
-                  )}
 
-                  {/* Note */}
-                  {drink.note && (
-                    <p className="text-xs italic tracking-wide text-stone-400 border-l-2 border-stone-600 pl-3">
-                      {drink.note}
-                    </p>
-                  )}
-                </li>
-              ))}
+                    {/* Optional */}
+                    {drink.optional && isAvailable && (
+                      <p className="text-xs tracking-wide text-stone-500">
+                        Personalízalo:{" "}
+                        {drink.optional.map((o) => o.name).join(" · ")}
+                      </p>
+                    )}
+
+                    {/* Note */}
+                    {drink.note && isAvailable && (
+                      <p className="text-xs italic tracking-wide text-stone-400 border-l-2 border-stone-600 pl-3">
+                        {drink.note}
+                      </p>
+                    )}
+
+                    {/* Availability */}
+                    {!isAvailable && (
+                      <p className="text-xs uppercase tracking-widest text-stone-500">
+                        No disponible hoy
+                      </p>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ))}
