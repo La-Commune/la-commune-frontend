@@ -151,12 +151,16 @@ const sections: Section[] = [
         available: false,
       },
       {
-        name: "Pastizetas mini · 5 piezas",
-        price: 23,
-        ingredients: [{ name: "Galleta artesanal tamaño bocado" }],
-        optional: [{ name: "Cubierta chocolate +$10 MXN" }],
+        name: "Combo Café + 3 mini pastizetas",
+        price: 50,
+        ingredients: [
+          { name: "Cappuccino o Latte" },
+          { name: "3 mini pastizetas artesanales" }
+        ],
+        note: "Disponible todo el día · Ideal para acompañar",
+        highlight: true,
         available: false,
-      },
+      }
     ],
   },
 ];
