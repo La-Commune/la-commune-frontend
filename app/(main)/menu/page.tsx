@@ -116,9 +116,8 @@ const sections: Section[] = [
           { name: "Chocolate" },
           { name: "Cocoa" },
           { name: "Leche" },
+          { name: "Vainilla" },
         ],
-        optional: [{ name: "Vainilla" }],
-        note: "Perfil más redondo y reconfortante",
         tag: "Dulce",
       },
     ],
@@ -129,14 +128,14 @@ const sections: Section[] = [
     drinks: [
       {
         name: "Pastizetas mini · 3 piezas",
-        price: 20,
+        price: 15,
         ingredients: [{ name: "Galleta artesanal tamaño bocado" }],
         optional: [{ name: "Cubierta chocolate +$5 MXN" }],
         available: false,
       },
       {
         name: "Pastizetas mini · 5 piezas",
-        price: 30,
+        price: 23,
         ingredients: [{ name: "Galleta artesanal tamaño bocado" }],
         optional: [{ name: "Cubierta chocolate +$10 MXN" }],
         available: false,
