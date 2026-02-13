@@ -84,7 +84,7 @@ const sections: Section[] = [
         ],
         ingredients: [
           { name: "Espresso" },
-          { name: "Caramelo artesanal" },
+          { name: "Caramelo" },
           { name: "Leche vaporizada" },
           { name: "Nuez pecana" },
         ],
