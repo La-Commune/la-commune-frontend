@@ -67,6 +67,7 @@ const sections: Section[] = [
           { name: "Leche" },
           { name: "Vainilla" },
         ],
+        available: false,
         tag: "Dulce",
       },
     ],
@@ -90,6 +91,7 @@ const sections: Section[] = [
         ],
         note: "Receta especial con nuez pecana garapiñada con cubierta de praliné",
         tag: "Gourmet",
+        available: false,
         highlight: true,
       },
       {
@@ -102,6 +104,7 @@ const sections: Section[] = [
           { name: "Vainilla" },
         ],
         note: "Sin café · Perfil más cremoso",
+        available: false,
         tag: "Dulce",
       },
     ],
