@@ -17,7 +17,7 @@ type Drink = {
   optional?: Ingredient[];
   note?: string;
   available?: boolean;
-  tag?: "Fuerte" | "Cremoso" | "Dulce" | "Gourmet" | "Intenso";
+  tag?: "Fuerte" | "Cremoso" | "Dulce" | "Gourmet" | "Intenso" | "Refrescante";
   highlight?: boolean;
 };
 
@@ -38,7 +38,6 @@ const sections: Section[] = [
         name: "Latte",
         price: 40,
         ingredients: [{ name: "Espresso" }, { name: "Leche vaporizada" }],
-        note: "Hazlo especial agregando un sabor por +$5",
       },
       {
         name: "Cappuccino",
@@ -67,7 +66,6 @@ const sections: Section[] = [
           { name: "Leche" },
           { name: "Vainilla" },
         ],
-        available: false,
         tag: "Dulce",
       },
     ],
@@ -91,7 +89,6 @@ const sections: Section[] = [
         ],
         note: "Receta especial con nuez pecana garapiñada con cubierta de praliné",
         tag: "Gourmet",
-        available: false,
         highlight: true,
       },
       {
@@ -104,7 +101,17 @@ const sections: Section[] = [
           { name: "Vainilla" },
         ],
         note: "Sin café · Perfil más cremoso",
-        available: false,
+        tag: "Dulce",
+      },
+      {
+        name: "Latte Helado",
+        price: 50,
+        ingredients: [
+          { name: "Espresso" },
+          { name: "Caramelo" },
+          { name: "Leche fría" },
+          { name: "Hielo" },
+        ],
         tag: "Dulce",
       },
     ],
@@ -138,7 +145,7 @@ export default function CafeMenu() {
           Menú
         </h1>
         <p className="text-sm tracking-wide text-stone-400">
-          Bebidas calientes y alimentos
+          Bebidas
         </p>
       </header>
 
