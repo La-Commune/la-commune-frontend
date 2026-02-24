@@ -35,6 +35,12 @@ const sections: Section[] = [
     type: "drink",
     drinks: [
       {
+        name: "Latte",
+        price: 40,
+        ingredients: [{ name: "Espresso" }, { name: "Leche vaporizada" }],
+        note: "Hazlo especial agregando un sabor por +$5",
+      },
+      {
         name: "Cappuccino",
         price: 40,
         ingredients: [
@@ -45,12 +51,6 @@ const sections: Section[] = [
         tag: "Cremoso",
       },
       {
-        name: "Latte",
-        price: 40,
-        ingredients: [{ name: "Espresso" }, { name: "Leche vaporizada" }],
-        note: "Hazlo especial agregando un sabor por +$5",
-      },
-      {
         name: "Flat White",
         price: 40,
         ingredients: [{ name: "Espresso" }, { name: "Leche vaporizada" }],
@@ -58,7 +58,7 @@ const sections: Section[] = [
         tag: "Intenso",
       },
       {
-        name: "Mocha",
+        name: "Moka",
         price: 45,
         ingredients: [
           { name: "Espresso" },
@@ -78,7 +78,7 @@ const sections: Section[] = [
     type: "drink",
     drinks: [
       {
-        name: "Latte Praliné de la Casa",
+        name: "Latte Praliné",
         sizes: [
           { label: "10 oz", price: 45 },
           { label: "12 oz", price: 52 },
@@ -121,49 +121,11 @@ const sections: Section[] = [
         tag: "Fuerte",
       },
       {
-        name: "Espresso con panna",
-        price: 35,
-        ingredients: [{ name: "Espresso" }, { name: "Crema" }],
-        available: false,
-      },
-      {
         name: "Americano",
         price: 30,
         ingredients: [{ name: "Espresso" }, { name: "Agua caliente" }],
         note: "Espresso servido primero",
       },
-      {
-        name: "Long Black",
-        price: 30,
-        ingredients: [{ name: "Agua caliente" }, { name: "Espresso" }],
-        note: "Agua caliente primero, espresso después",
-      },
-    ],
-  },
-
-  {
-    title: "Galletas",
-    description: "Para acompañar tu café",
-    type: "food",
-    drinks: [
-      {
-        name: "Pastizetas mini · 3 piezas",
-        price: 15,
-        ingredients: [{ name: "Galleta artesanal tamaño bocado" }],
-        optional: [{ name: "Cubierta chocolate +$5 MXN" }],
-        available: false,
-      },
-      {
-        name: "Combo Café + 3 mini pastizetas",
-        price: 50,
-        ingredients: [
-          { name: "Cappuccino o Latte" },
-          { name: "3 mini pastizetas artesanales" }
-        ],
-        note: "Disponible todo el día · Ideal para acompañar",
-        highlight: true,
-        available: false,
-      }
     ],
   },
 ];
