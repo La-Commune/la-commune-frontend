@@ -1,128 +1,151 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import React, { FC, ReactNode } from "react";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  useSpring,
+} from "framer-motion";
+import React, { useRef } from "react";
 
-// --- Reusable Card Component ---
-interface CardProps {
-  title: string | ReactNode;
-  description?: string | ReactNode;
+/* ===============================
+   Animated Text (línea por línea)
+================================= */
+const AnimatedLines = ({ text }: { text: string }) => {
+  const lines = text.split("\n");
+
+  return (
+    <div className="overflow-hidden">
+      {lines.map((line, index) => (
+        <motion.div
+          key={index}
+          initial={{ y: 80, opacity: 0 }}
+          whileInView={{ y: 0, opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{
+            duration: 1,
+            delay: index * 0.2,
+            ease: [0.16, 1, 0.3, 1],
+          }}
+          className="overflow-hidden"
+        >
+          <h2 className="text-4xl sm:text-6xl md:text-7xl font-light leading-tight tracking-wide">
+            {line}
+          </h2>
+        </motion.div>
+      ))}
+    </div>
+  );
+};
+
+/* ===============================
+   Premium Section
+================================= */
+interface SectionProps {
+  title: string;
+  subtitle?: string;
+  videoSrc: string;
   ctaText?: string;
   ctaLink?: string;
-  bgColor?: string;
-  borderColor?: string;
-  textColor?: string;
-  children?: ReactNode;
 }
 
-const Card: FC<CardProps> = ({
+const PremiumSection: React.FC<SectionProps> = ({
   title,
-  description,
+  subtitle,
+  videoSrc,
   ctaText,
   ctaLink,
-  bgColor = "bg-white",
-  borderColor = "border-[#E7E4E1]",
-  textColor = "text-[#1F1B18]",
-  children,
 }) => {
   const router = useRouter();
+  const ref = useRef(null);
+
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
+
+  // Parallax effect
+  const y = useTransform(scrollYProgress, [0, 1], ["-15%", "15%"]);
+  const smoothY = useSpring(y, { stiffness: 50, damping: 20 });
 
   return (
     <section
-      className={`w-full ${bgColor} border ${borderColor} px-6 sm:px-10 pt-16 sm:pt-24 pb-16 sm:pb-20 text-center rounded-xl`}
+      ref={ref}
+      className="relative h-screen w-full snap-start flex items-center justify-center text-center overflow-hidden"
     >
-      <div className="space-y-4">
-        <h2
-          className={`text-2xl sm:text-3xl font-medium leading-snug tracking-wide ${textColor}`}
-        >
-          {title}
-        </h2>
+      {/* Background Video with Parallax */}
+      <motion.video
+        style={{ y: smoothY }}
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="absolute inset-0 w-full h-[120%] object-cover"
+      >
+        <source src={videoSrc} type="video/mp4" />
+      </motion.video>
 
-        {description && (
-          <div
-            className={`text-sm sm:text-base leading-relaxed tracking-wide max-w-md mx-auto ${textColor} space-y-2`}
+      {/* Dark cinematic overlay */}
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
+
+      {/* Content */}
+      <div className="relative z-10 px-6 max-w-4xl text-white">
+        <AnimatedLines text={title} />
+
+        {subtitle && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1.5, delay: 0.6 }}
+            className="mt-8 text-lg sm:text-xl text-neutral-300 max-w-2xl mx-auto leading-relaxed"
           >
-            {description}
-          </div>
+            {subtitle}
+          </motion.p>
         )}
-      </div>
 
-      {children}
-
-      {ctaText && ctaLink && (
-        <div className="mt-8 sm:mt-10">
-          <button
+        {ctaText && ctaLink && (
+          <motion.button
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1.5, delay: 1 }}
             onClick={() => router.push(ctaLink)}
-            className={`
-              inline-flex items-center gap-2 sm:gap-3 text-sm sm:text-base uppercase tracking-widest
-              ${textColor} border-b ${textColor}/40 pb-1 px-4 py-2
-              transition-colors duration-200
-              hover:border-current hover:text-[#000]
-              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#1F1B18] rounded
-            `}
+            className="mt-12 uppercase tracking-[0.4em] text-sm border-b border-white/50 pb-2 hover:border-white transition-all duration-500"
           >
             {ctaText}
-            <span className="text-base leading-none">→</span>
-          </button>
-        </div>
-      )}
+          </motion.button>
+        )}
+      </div>
     </section>
   );
 };
 
-// --- Main Component ---
+/* ===============================
+   MAIN
+================================= */
 export default function Home() {
   return (
-    <main className="flex grow flex-col items-center bg-white px-4 sm:px-0 py-12">
-      <div className="w-full max-w-md space-y-10">
-        {/* Menu Card */}
-        <Card
-          title="Menú"
-          description="Descubre nuestras opciones de café y bebidas disponibles hoy."
-          ctaText="Ver menú"
-          ctaLink="/menu"
-          bgColor="bg-[#5f4633]"
-          textColor="text-[#d1d1aa]"
-          borderColor="border-[#5f4633]/40"
-        />
-        {/* Experience / Info Card */}
-        <Card
-          title="Nuestra experiencia"
-          description={
-            <>
-              <p className="text-base sm:text-lg font-medium text-[#3B2F2F] leading-relaxed tracking-wide">
-                Preparamos cada bebida con dedicación, buscando el equilibrio perfecto en cada taza.
-              </p>
+    <main className="h-screen overflow-y-scroll snap-y snap-mandatory bg-black scroll-smooth">
 
-              <p className="text-sm text-[#6A5A5A] leading-relaxed max-w-md mx-auto">
-                Después de cinco bebidas, la siguiente es un pequeño regalo de nuestra parte.
-              </p>
+      <PremiumSection
+        title={`Café\nque despierta`}
+        subtitle="Explora nuestro menú y descubre sabores que cuentan historias."
+        videoSrc="/videos/coffee-slow.mp4"
+        ctaText="Ver menú"
+        ctaLink="/menu"
+      />
 
-              <span className="inline-flex items-center gap-1 text-xs tracking-wide text-[#5A4A4A] border border-[#EADADA] rounded-full px-4 py-1 bg-[#F7EEEE]">
-                💛 Solo menciónalo al ordenar
-              </span>
-            </>
-          }
-          bgColor="bg-[#FFF8F8]"
-          borderColor="border-[#F3E6E6]"
-          textColor="text-[#3B2F2F]"
-        />
-        {/* Loyalty Card (opcional) */}
-        {/* <Card
-          title={
-            <>
-              Registra tus visitas <br className="hidden sm:block" />
-              y recibe beneficios
-            </>
-          }
-          description="Cada vez que vengas, suma un sello en tu tarjeta digital."
-          ctaText="Ver tarjeta"
-          ctaLink="/card"
-          bgColor="bg-[#5f4633]"
-          textColor="text-[#d1d1aa]"
-          borderColor="border-[#5f4633]/40"
-        /> */}
-      </div>
+      <PremiumSection
+        title={`Registra tus visitas y recibe beneficios`}
+        subtitle="Después de cinco bebidas, la siguiente es cortesía de la casa."
+        videoSrc="/videos/coffee-hero.mp4"
+      />
+
+      <footer className="h-screen snap-start flex items-center justify-center bg-black text-neutral-500 uppercase tracking-widest text-sm">
+        © {new Date().getFullYear()} La Commune. Hecho con amor.
+      </footer>
     </main>
   );
 }
