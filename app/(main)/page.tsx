@@ -40,7 +40,7 @@ const Card: FC<CardProps> = ({
 
         {description && (
           <div
-            className={`text-sm sm:text-base leading-relaxed tracking-wide max-w-md mx-auto ${textColor}/90 space-y-2`}
+            className={`text-sm sm:text-base leading-relaxed tracking-wide max-w-md mx-auto ${textColor} space-y-2`}
           >
             {description}
           </div>
