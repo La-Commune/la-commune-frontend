@@ -6,7 +6,7 @@ export default function LoginPage() {
   return (
     <div className="grow flex flex-col items-center justify-center">
       <section className="w-[32rem] space-y-4">
-        <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl mb-6">
+        <h1 className="font-display scroll-m-20 text-4xl font-light tracking-tight lg:text-5xl mb-6">
           Login Example
         </h1>
         <AuthCard />
