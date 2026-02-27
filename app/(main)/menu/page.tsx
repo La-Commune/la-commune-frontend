@@ -141,7 +141,7 @@ export default function CafeMenu() {
   return (
     <section className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-16">
       <header className="text-center mb-14 space-y-3">
-        <h1 className="text-3xl sm:text-4xl font-medium tracking-[0.25em] uppercase">
+        <h1 className="font-display text-5xl sm:text-7xl font-light tracking-[0.2em] uppercase">
           Menú
         </h1>
         <p className="text-sm tracking-wide text-stone-400">
@@ -203,7 +203,7 @@ export default function CafeMenu() {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <p className="text-[15px] font-medium text-stone-100 flex items-center gap-2">
+                          <p className="font-display text-xl font-medium text-stone-100 flex items-center gap-2">
                             {drink.name}
                             {drink.highlight && (
                               <span className="text-[9px] uppercase tracking-widest bg-amber-600/20 text-amber-400 border border-amber-500 rounded-full px-2 py-0.5">
