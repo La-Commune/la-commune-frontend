@@ -81,7 +81,7 @@ const PremiumSection: React.FC<SectionProps> = ({
   return (
     <section
       ref={ref}
-      className={`relative h-screen w-full snap-start overflow-hidden flex items-center ${
+      className={`relative h-[100dvh] w-full snap-start overflow-hidden flex items-center ${
         align === "left" ? "justify-start" : "justify-center"
       }`}
     >
@@ -155,7 +155,7 @@ const PremiumSection: React.FC<SectionProps> = ({
 ================================= */
 export default function Home() {
   return (
-    <main className="h-screen overflow-y-scroll snap-y snap-proximity bg-neutral-950 scroll-smooth">
+    <main className="h-[100dvh] overflow-y-scroll snap-y snap-mandatory bg-neutral-950">
 
       {/* Hero — centrado, marca como eyebrow */}
       <PremiumSection
@@ -177,7 +177,7 @@ export default function Home() {
       />
 
       {/* Footer compacto — no ocupa pantalla completa */}
-      <footer className="snap-start h-screen flex flex-col items-center justify-end pb-16 bg-neutral-950">
+      <footer className="snap-start h-[100dvh] flex flex-col items-center justify-end pb-16 bg-neutral-950">
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
