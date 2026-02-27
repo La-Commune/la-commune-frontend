@@ -1,12 +1,22 @@
 import type { Metadata } from "next";
-import { Work_Sans } from "next/font/google";
+import { Work_Sans, Cormorant_Garamond } from "next/font/google";
 import "@/app/globals.css";
 import { cn } from "@/lib/utils";
 import { MyFirebaseProvider } from "@/components/firebase-providers";
 import { Toaster } from "@/components/ui/toaster";
 import { ReactNode } from "react";
 
-const font = Work_Sans({ subsets: ["latin"] });
+const sans = Work_Sans({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
+
+const display = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-display",
+});
 
 export const metadata: Metadata = {
   title: "La commune",
@@ -17,7 +27,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body className={cn(font.className)}>
+      <body className={cn(sans.variable, display.variable, sans.className)}>
         <MyFirebaseProvider>
           {children}
           <Toaster />
