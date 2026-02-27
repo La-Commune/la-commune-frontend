@@ -85,7 +85,7 @@ function Card({
   return (
     <div className="flex grow flex-col items-center justify-center gap-10 px-4">
       <section className="text-center space-y-2 max-w-sm">
-        <h1 className="text-xl font-medium text-stone-800">
+        <h1 className="font-display text-2xl font-medium text-stone-800">
           {name ? `Hola, ${name} ☕` : "Hola ☕"}
         </h1>
 

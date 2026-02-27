@@ -53,7 +53,7 @@ export default function OnboardingPage() {
       <div className="w-full max-w-sm space-y-10 text-center">
         {/* Header */}
         <div className="space-y-3">
-          <h1 className="text-2xl font-medium tracking-wide text-stone-800">
+          <h1 className="font-display text-3xl font-medium tracking-wide text-stone-800">
             Guarda tu tarjeta ☕
           </h1>
 
