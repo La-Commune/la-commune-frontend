@@ -78,7 +78,7 @@ function PinPad({
           if (k === "") return <div key={i} />;
           return (
             <button
-              key={k}
+              key={i}
               onClick={() => (k === "⌫" ? del() : press(k))}
               className="w-16 h-16 rounded-2xl border border-stone-800 text-stone-300 text-lg font-light hover:border-stone-600 hover:text-white hover:bg-stone-900 active:scale-95 transition-all duration-150"
             >
