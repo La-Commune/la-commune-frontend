@@ -44,6 +44,7 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^8.4.1",
+    "@netlify/plugin-nextjs": "^5.15.8",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
