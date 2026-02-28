@@ -29,6 +29,11 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "La Commune",
   },
+  icons: {
+    apple: [
+      { url: "/icons/icon-180.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
   other: {
     "mobile-web-app-capable": "yes",
   },
