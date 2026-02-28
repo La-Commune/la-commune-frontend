@@ -57,6 +57,7 @@ interface SectionProps {
   ctaLink?: string;
   secondaryCtaText?: string;
   secondaryCtaLink?: string;
+  onSecondaryCtaClick?: () => void;
   align?: "center" | "left";
 }
 
@@ -69,6 +70,7 @@ const PremiumSection: React.FC<SectionProps> = ({
   ctaLink,
   secondaryCtaText,
   secondaryCtaLink,
+  onSecondaryCtaClick,
   align = "center",
 }) => {
   const router = useRouter();
@@ -174,13 +176,22 @@ const PremiumSection: React.FC<SectionProps> = ({
               {ctaText}
             </button>
 
-            {secondaryCtaText && secondaryCtaLink && (
-              <Link
-                href={secondaryCtaLink}
-                className="text-[10px] uppercase tracking-[0.3em] text-stone-500 hover:text-stone-300 transition-colors duration-300"
-              >
-                {secondaryCtaText}
-              </Link>
+            {secondaryCtaText && (
+              onSecondaryCtaClick ? (
+                <button
+                  onClick={onSecondaryCtaClick}
+                  className="text-[10px] uppercase tracking-[0.3em] text-stone-500 hover:text-stone-300 transition-colors duration-300"
+                >
+                  {secondaryCtaText}
+                </button>
+              ) : secondaryCtaLink ? (
+                <Link
+                  href={secondaryCtaLink}
+                  className="text-[10px] uppercase tracking-[0.3em] text-stone-500 hover:text-stone-300 transition-colors duration-300"
+                >
+                  {secondaryCtaText}
+                </Link>
+              ) : null
             )}
           </motion.div>
         )}
@@ -193,11 +204,20 @@ const PremiumSection: React.FC<SectionProps> = ({
    MAIN
 ================================= */
 export default function Home() {
+  const router = useRouter();
   const [cardId, setCardId] = useState<string | null>(null);
+  console.log("Card ID from localStorage:", cardId);
+  
 
   useEffect(() => {
     setCardId(localStorage.getItem("cardId"));
   }, []);
+
+  const handleClearSession = () => {
+    localStorage.removeItem("cardId");
+    localStorage.removeItem("customerId");
+    router.push("/onboarding");
+  };
 
   const loyaltyCta = cardId
     ? { text: "Ver mi tarjeta", link: `/card/${cardId}` }
@@ -224,8 +244,9 @@ export default function Home() {
         videoSrc="/videos/coffee-hero.mp4"
         ctaText={loyaltyCta.text}
         ctaLink={loyaltyCta.link}
-        secondaryCtaText={cardId ? undefined : "Ver cómo funciona"}
+        secondaryCtaText={cardId ? "No es mi tarjeta" : "Ver cómo funciona"}
         secondaryCtaLink={cardId ? undefined : "/card/preview"}
+        onSecondaryCtaClick={cardId ? handleClearSession : undefined}
         align="left"
       />
 

@@ -7,9 +7,9 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useFirestore } from "reactfire";
-import { createCustomer } from "@/services/customer.service";
+import { createCustomer, getCustomerByPhone } from "@/services/customer.service";
 import { doc } from "firebase/firestore";
-import { createCard } from "@/services/card.service";
+import { createCard, getCardByCustomer } from "@/services/card.service";
 
 export default function OnboardingPage() {
   const params = useSearchParams();
@@ -20,29 +20,53 @@ export default function OnboardingPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [consentWhatsApp, setConsentWhatsApp] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const isValidPhone = phone.length === 10;
 
   const handleSubmit = async () => {
     if (!phone) return;
+    setLoading(true);
+    setError(null);
 
-    const customerRef = await createCustomer(firestore, {
-      name,
-      phone,
-      consentWhatsApp,
-    });    
+    try {
+      // Si ya existe un cliente con ese teléfono, recuperar su tarjeta
+      const existing = await getCustomerByPhone(firestore, phone);
 
-    const rewardRef = doc(firestore, "rewards", "default");
+      if (existing) {
+        const existingCard = await getCardByCustomer(firestore, existing.ref);
 
-    const cardRef = await createCard(firestore, {
-      customerRef,
-      rewardRef
-    });
+        if (existingCard) {
+          localStorage.setItem("customerId", existing.id);
+          localStorage.setItem("cardId", existingCard.id);
+          router.replace("/card/" + existingCard.id);
+          return;
+        }
+      }
 
-    localStorage.setItem("customerId", customerRef.id);
-    localStorage.setItem("cardId", cardRef.id);
+      // Cliente nuevo — registrar
+      const customerRef = await createCustomer(firestore, {
+        name,
+        phone,
+        consentWhatsApp,
+      });
 
-    router.replace("/card/" + cardRef.id);
+      const rewardRef = doc(firestore, "rewards", "default");
+
+      const cardRef = await createCard(firestore, {
+        customerRef,
+        rewardRef,
+      });
+
+      localStorage.setItem("customerId", customerRef.id);
+      localStorage.setItem("cardId", cardRef.id);
+
+      router.replace("/card/" + cardRef.id);
+    } catch {
+      setError("Algo salió mal. Intenta de nuevo.");
+      setLoading(false);
+    }
   };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,10 +106,10 @@ export default function OnboardingPage() {
               Programa de fidelidad
             </p>
             <h1 className="font-display text-4xl font-light tracking-wide">
-              Guarda tu tarjeta
+              Tu tarjeta, siempre contigo
             </h1>
             <p className="text-sm leading-relaxed text-stone-400">
-              Así no pierdes tus sellos y cada visita suma para tu próximo café.
+              Ingresa tu número de WhatsApp. Si ya tienes tarjeta, te llevamos directo a ella.
             </p>
           </div>
 
@@ -138,14 +162,19 @@ export default function OnboardingPage() {
             </label>
           </div>
 
+          {/* Error */}
+          {error && (
+            <p className="text-[11px] text-red-400 tracking-wide">{error}</p>
+          )}
+
           {/* CTA */}
           <div className="space-y-4">
             <Button
               className="w-full rounded-full bg-white text-neutral-900 py-6 text-sm tracking-wide transition hover:bg-stone-100 disabled:opacity-30"
               onClick={handleSubmit}
-              disabled={!isValidPhone}
+              disabled={!isValidPhone || loading}
             >
-              Crear mi tarjeta
+              {loading ? "Un momento…" : "Continuar"}
             </Button>
             <p className="text-[11px] text-stone-600 tracking-wide">
               Sin contraseñas · Sin spam
