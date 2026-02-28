@@ -30,7 +30,7 @@ export default function OnboardingPage() {
       name,
       phone,
       consentWhatsApp,
-    });
+    });    
 
     const rewardRef = doc(firestore, "rewards", "default");
 
