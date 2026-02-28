@@ -178,23 +178,23 @@ export default function CafeMenu() {
           </div>
         </header>
 
-        {/* Secciones — flex wrap: el último item crece para llenar el espacio disponible */}
-        <div className="flex flex-wrap gap-px bg-stone-800 print:grid print:grid-cols-3 print:gap-0 print:bg-white">
+        {/* Secciones */}
+        <div className="flex flex-wrap gap-px bg-stone-800 print:grid print:grid-cols-3 print:gap-6 print:bg-white print:items-start">
           {sections.map((section) => {
             const isFood = section.type === "food";
 
             return (
               <div
                 key={section.title}
-                className="bg-neutral-950 flex-1 basis-[260px] px-6 py-8 sm:px-8 sm:py-10 print:bg-white print:p-6 print:border print:border-neutral-200 flex flex-col print:break-inside-avoid"
+                className="bg-neutral-950 flex-1 basis-[260px] px-6 py-8 sm:px-8 sm:py-10 print:bg-white print:p-0 flex flex-col print:self-start print:break-inside-avoid"
               >
                 {/* Encabezado de sección */}
-                <div className="mb-6 shrink-0">
+                <div className="mb-6 shrink-0 print:pb-1 print:border-b print:border-neutral-800">
                   <h2
                     className={`text-[10px] uppercase tracking-[0.35em] mb-1 ${
                       isFood
-                        ? "text-amber-300 print:text-amber-700"
-                        : "text-stone-400 print:text-neutral-500"
+                        ? "text-amber-300 print:text-amber-800"
+                        : "text-stone-400 print:text-neutral-700"
                     }`}
                   >
                     {section.title}
@@ -218,12 +218,12 @@ export default function CafeMenu() {
                 </div>
 
                 {/* Lista de bebidas */}
-                <ul className="flex-1 flex flex-col divide-y divide-stone-800/40 print:divide-neutral-200">
+                <ul className="divide-y divide-stone-800/40 print:divide-neutral-200">
                   {section.drinks.map((drink) => {
                     const isAvailable = drink.available !== false;
 
                     return (
-                      <li key={drink.name} className={`flex-1 flex flex-col justify-center py-4 space-y-1.5 ${!isAvailable ? "opacity-40" : ""}`}>
+                      <li key={drink.name} className={`py-4 space-y-1.5 ${!isAvailable ? "opacity-40" : ""}`}>
 
                         {/* Nombre + precio */}
                         <div className="flex items-start justify-between gap-3 mb-1.5">
