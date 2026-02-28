@@ -29,6 +29,20 @@ export function StampCardFront({
   const remaining = card ? card.maxStamps - card.stamps : 0;
   const progress = card ? (card.stamps / card.maxStamps) * 100 : 0;
 
+  const progressMessage = card
+    ? card.stamps >= card.maxStamps
+      ? "¡Bebida de cortesía lista!"
+      : card.stamps === card.maxStamps - 1
+        ? "¡Solo falta uno!"
+        : card.stamps === Math.floor(card.maxStamps / 2)
+          ? "¡Ya vas a la mitad!"
+          : card.stamps === 1
+            ? "¡Primer sello!"
+            : card.stamps > 1
+              ? "¡Vas avanzando!"
+              : "Empieza tu aventura"
+    : null;
+
   // Detectar sello nuevo
   useEffect(() => {
     if (!card) return;
@@ -94,6 +108,12 @@ export function StampCardFront({
             />
           ))}
         </div>
+
+        {progressMessage && (
+          <p className="text-[9px] tracking-widest uppercase text-[#A89E97]">
+            {progressMessage}
+          </p>
+        )}
       </div>
 
       {/* Barra de progreso + conteo */}

@@ -48,6 +48,7 @@ export function StampCardView({ cardId }: { cardId: string }) {
     if (flipTimerRef.current) clearTimeout(flipTimerRef.current);
     if (notifTimerRef.current) clearTimeout(notifTimerRef.current);
 
+    if ("vibrate" in navigator) navigator.vibrate(80);
     setStampNotification(true);
 
     // Voltear al frente después de 800ms (si está mostrando el QR)
