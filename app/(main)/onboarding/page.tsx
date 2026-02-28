@@ -2,6 +2,8 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState } from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useFirestore } from "reactfire";
@@ -49,83 +51,97 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="grow flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm space-y-10 text-center">
-        {/* Header */}
-        <div className="space-y-3">
-          <h1 className="font-display text-3xl font-medium tracking-wide text-stone-800">
-            Guarda tu tarjeta ☕
-          </h1>
+    <div className="min-h-screen bg-neutral-950 text-white flex flex-col">
 
-          <p className="text-sm leading-relaxed text-stone-500">
-            Así no pierdes tus sellos y cada visita suma para tu próximo café.
-          </p>
-        </div>
+      {/* Nav */}
+      <nav className="flex items-center justify-between px-6 sm:px-10 py-5">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-400 hover:text-white transition-colors duration-300 group"
+        >
+          <span className="w-4 h-px bg-stone-500 group-hover:w-7 group-hover:bg-white transition-all duration-500" />
+          Inicio
+        </Link>
+        <span className="text-[10px] uppercase tracking-[0.45em] text-stone-500">
+          La Commune
+        </span>
+        <div className="w-16" />
+      </nav>
 
-        {/* Form */}
-        <div className="space-y-6">
-          <Input
-            placeholder="Tu nombre (opcional)"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="text-center"
-          />
-
-          <div className="space-y-1">
-            <Input
-              required
-              type="tel"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              placeholder="Tu número de WhatsApp"
-              value={phone}
-              onChange={handlePhoneChange}
-              className="text-center tracking-widest"
-            />
-
-            <p className="text-[11px] text-stone-400 text-right">
-              {phone.length}/10
+      {/* Contenido */}
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="w-full max-w-sm space-y-10 text-center"
+        >
+          {/* Header */}
+          <div className="space-y-3">
+            <p className="text-[10px] uppercase tracking-[0.4em] text-stone-600">
+              Programa de fidelidad
+            </p>
+            <h1 className="font-display text-4xl font-light tracking-wide">
+              Guarda tu tarjeta
+            </h1>
+            <p className="text-sm leading-relaxed text-stone-400">
+              Así no pierdes tus sellos y cada visita suma para tu próximo café.
             </p>
           </div>
 
-          <label className="flex items-start gap-3 text-xs text-stone-500 leading-snug">
-            <input
-              type="checkbox"
-              checked={consentWhatsApp}
-              onChange={(e) => setConsentWhatsApp(e.target.checked)}
-              className="mt-0.5"
+          {/* Form */}
+          <div className="space-y-4">
+            <Input
+              placeholder="Tu nombre (opcional)"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="text-center bg-neutral-900 border-stone-700 text-white placeholder:text-stone-600 focus:border-stone-500"
             />
-            <span>
-              Acepto recibir mensajes por WhatsApp relacionados con mi tarjeta y
-              promociones del café.
-            </span>
-          </label>
-        </div>
 
-        {/* CTA */}
-        <div className="space-y-4">
-          <Button
-            className="
-              w-full
-              rounded-full
-              bg-[#2B2B2B]
-              py-6
-              text-sm
-              tracking-wide
-              transition
-              hover:bg-black
-              disabled:opacity-40
-            "
-            onClick={handleSubmit}
-            disabled={!isValidPhone}
-          >
-            Crear mi tarjeta
-          </Button>
+            <div className="space-y-1">
+              <Input
+                required
+                type="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="Tu número de WhatsApp"
+                value={phone}
+                onChange={handlePhoneChange}
+                className="text-center tracking-widest bg-neutral-900 border-stone-700 text-white placeholder:text-stone-600 focus:border-stone-500"
+              />
+              <p className="text-[11px] text-stone-600 text-right">
+                {phone.length}/10
+              </p>
+            </div>
 
-          <p className="text-[11px] text-stone-400 tracking-wide">
-            Sin contraseñas · Sin spam
-          </p>
-        </div>
+            <label className="flex items-start gap-3 text-xs text-stone-500 leading-snug text-left">
+              <input
+                type="checkbox"
+                checked={consentWhatsApp}
+                onChange={(e) => setConsentWhatsApp(e.target.checked)}
+                className="mt-0.5 accent-stone-400"
+              />
+              <span>
+                Acepto recibir mensajes por WhatsApp relacionados con mi tarjeta y
+                promociones del café.
+              </span>
+            </label>
+          </div>
+
+          {/* CTA */}
+          <div className="space-y-4">
+            <Button
+              className="w-full rounded-full bg-white text-neutral-900 py-6 text-sm tracking-wide transition hover:bg-stone-100 disabled:opacity-30"
+              onClick={handleSubmit}
+              disabled={!isValidPhone}
+            >
+              Crear mi tarjeta
+            </Button>
+            <p className="text-[11px] text-stone-600 tracking-wide">
+              Sin contraseñas · Sin spam
+            </p>
+          </div>
+        </motion.div>
       </div>
     </div>
   );

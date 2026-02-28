@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { StampCardView } from "@/components/ui/stamp-card";
 import { DownloadCardButton } from "@/components/ui/DownloadCardButton";
@@ -60,9 +62,9 @@ export default function CardEntry({
 
   if (loading || !cardId) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-sm text-stone-500 animate-pulse">
-          Cargando tu tarjeta…
+      <div className="flex min-h-screen items-center justify-center bg-neutral-950">
+        <p className="text-sm text-stone-600 animate-pulse tracking-widest uppercase text-[11px]">
+          Cargando…
         </p>
       </div>
     );
@@ -83,20 +85,65 @@ function Card({
   const lastVisit = formatDate(customer?.lastVisitAt);
 
   return (
-    <div className="flex grow flex-col items-center justify-center gap-10 px-4">
-      <section className="text-center space-y-2 max-w-sm">
-        <h1 className="font-display text-2xl font-medium text-stone-800">
-          {name ? `Hola, ${name} ☕` : "Hola ☕"}
-        </h1>
+    <div className="min-h-screen bg-neutral-950 text-white flex flex-col">
 
-        <p className="text-sm text-stone-500">
-          Esta es tu tarjeta digital
-        </p>
-      </section>
+      {/* Nav */}
+      <nav className="flex items-center justify-between px-6 sm:px-10 py-5">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-400 hover:text-white transition-colors duration-300 group"
+        >
+          <span className="w-4 h-px bg-stone-500 group-hover:w-7 group-hover:bg-white transition-all duration-500" />
+          Inicio
+        </Link>
+        <span className="text-[10px] uppercase tracking-[0.45em] text-stone-500">
+          La Commune
+        </span>
+        <div className="w-16" />
+      </nav>
 
-      <StampCardView cardId={cardId} />
+      {/* Contenido */}
+      <div className="flex-1 flex flex-col items-center justify-center gap-10 px-4 pb-16">
 
-      <DownloadCardButton />
+        {/* Saludo */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="text-center space-y-2"
+        >
+          <p className="text-[10px] uppercase tracking-[0.4em] text-stone-600">
+            Bienvenido de vuelta
+          </p>
+          <h1 className="font-display text-4xl sm:text-5xl font-light tracking-wide">
+            {name ? `Hola, ${name}` : "Hola"}
+          </h1>
+          {lastVisit && (
+            <p className="text-[11px] text-stone-600 tracking-wide">
+              Última visita: {lastVisit}
+            </p>
+          )}
+        </motion.div>
+
+        {/* Tarjeta */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+        >
+          <StampCardView cardId={cardId} />
+        </motion.div>
+
+        {/* Botón de descarga */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.5 }}
+        >
+          <DownloadCardButton />
+        </motion.div>
+
+      </div>
     </div>
   );
 }

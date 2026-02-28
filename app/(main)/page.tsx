@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   motion,
   useScroll,
@@ -54,6 +55,8 @@ interface SectionProps {
   videoSrc: string;
   ctaText?: string;
   ctaLink?: string;
+  secondaryCtaText?: string;
+  secondaryCtaLink?: string;
   align?: "center" | "left";
 }
 
@@ -64,6 +67,8 @@ const PremiumSection: React.FC<SectionProps> = ({
   videoSrc,
   ctaText,
   ctaLink,
+  secondaryCtaText,
+  secondaryCtaLink,
   align = "center",
 }) => {
   const router = useRouter();
@@ -133,17 +138,31 @@ const PremiumSection: React.FC<SectionProps> = ({
         )}
 
         {ctaText && ctaLink && (
-          <motion.button
+          <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 1, delay: 0.7 }}
-            onClick={() => router.push(ctaLink)}
-            className="mt-10 inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.35em] text-stone-200 hover:text-white transition-colors duration-300 group"
+            className="mt-10 flex flex-col items-start gap-4"
+            style={align === "center" ? { alignItems: "center" } : {}}
           >
-            <span className="w-6 h-px bg-stone-400 group-hover:w-10 group-hover:bg-white transition-all duration-500" />
-            {ctaText}
-          </motion.button>
+            <button
+              onClick={() => router.push(ctaLink)}
+              className="inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.35em] text-stone-200 hover:text-white transition-colors duration-300 group"
+            >
+              <span className="w-6 h-px bg-stone-400 group-hover:w-10 group-hover:bg-white transition-all duration-500" />
+              {ctaText}
+            </button>
+
+            {secondaryCtaText && secondaryCtaLink && (
+              <Link
+                href={secondaryCtaLink}
+                className="text-[10px] uppercase tracking-[0.3em] text-stone-500 hover:text-stone-300 transition-colors duration-300"
+              >
+                {secondaryCtaText}
+              </Link>
+            )}
+          </motion.div>
         )}
       </div>
     </section>
@@ -173,6 +192,10 @@ export default function Home() {
         title={`Cada visita\ncuenta`}
         subtitle="Después de cinco bebidas, la siguiente es cortesía de la casa."
         videoSrc="/videos/coffee-hero.mp4"
+        ctaText="Registrar mi tarjeta"
+        ctaLink="/onboarding"
+        secondaryCtaText="Ver cómo funciona"
+        secondaryCtaLink="/card/preview"
         align="left"
       />
 
@@ -223,11 +246,24 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Divisor + copyright */}
-          <div className="border-t border-stone-800 pt-6 text-center">
+          {/* Divisor + copyright + links */}
+          <div className="border-t border-stone-800 pt-6 flex flex-col items-center gap-3">
             <p className="text-[10px] tracking-[0.3em] uppercase text-stone-600">
               © {new Date().getFullYear()} · La Commune · Hecho con amor
             </p>
+            <div className="flex items-center gap-6">
+              <Link href="/menu" className="text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300">
+                Menú
+              </Link>
+              <span className="w-px h-3 bg-stone-800" />
+              <Link href="/card/preview" className="text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300">
+                Mi tarjeta
+              </Link>
+              <span className="w-px h-3 bg-stone-800" />
+              <Link href="/onboarding" className="text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300">
+                Registrarse
+              </Link>
+            </div>
           </div>
         </motion.div>
       </footer>

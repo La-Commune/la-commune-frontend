@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useCallback, useRef, useState } from "react";
 import ReactCanvasConfetti from "react-canvas-confetti";
 import { StampCardFront } from "./StampCardFront";
@@ -11,6 +11,7 @@ type ConfettiInstance = (opts: any) => void;
 export function StampCardView({ cardId }: { cardId: string }) {
   const [flipped, setFlipped] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [hintDismissed, setHintDismissed] = useState(false);
 
   const confettiRef = useRef<ConfettiInstance | null>(null);
 
@@ -31,8 +32,13 @@ export function StampCardView({ cardId }: { cardId: string }) {
     fireConfetti();
   };
 
+  const handleFlip = () => {
+    setFlipped((f) => !f);
+    setHintDismissed(true);
+  };
+
   return (
-    <div className="relative space-y-4 text-center">
+    <div className="relative flex flex-col items-center gap-3">
       <ReactCanvasConfetti
         onInit={({ confetti }) => {
           confettiRef.current = confetti;
@@ -49,24 +55,37 @@ export function StampCardView({ cardId }: { cardId: string }) {
       />
 
       <motion.div
-        className="w-[320px] h-[210px] mx-auto perspective"
-        whileTap={{ scale: 0.98 }}
+        className="w-[320px] h-[210px] mx-auto perspective cursor-pointer"
+        whileTap={{ scale: 0.97 }}
         animate={completed ? { scale: [1, 1.03, 1] } : {}}
         transition={{ duration: 0.4 }}
-        onClick={() => setFlipped((f) => !f)}
+        onClick={handleFlip}
       >
         <motion.div
           className="relative w-full h-full"
           animate={{ rotateY: flipped ? 180 : 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           style={{ transformStyle: "preserve-3d" }}
         >
-          <StampCardFront 
-            cardId={cardId} 
-            onComplete={handleComplete}/>
+          <StampCardFront cardId={cardId} onComplete={handleComplete} />
           <StampCardBack cardId={cardId} />
         </motion.div>
       </motion.div>
+
+      {/* Hint de volteo — desaparece tras el primer toque */}
+      <AnimatePresence>
+        {!hintDismissed && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4, delay: 1 }}
+            className="text-[10px] uppercase tracking-[0.3em] text-stone-600"
+          >
+            Toca para ver tu QR
+          </motion.p>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
