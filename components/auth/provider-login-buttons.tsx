@@ -7,7 +7,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from "firebase/auth";
-import { GithubIcon } from "lucide-react";
+import { Github as GithubIcon } from "lucide-react";
 import { FC, useState } from "react";
 import { useAuth } from "reactfire";
 

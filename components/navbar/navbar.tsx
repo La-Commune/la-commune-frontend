@@ -1,7 +1,7 @@
 import { NavbarMobile } from "@/components/navbar/navbar-mobile";
 import { NavbarUserLinks } from "@/components/navbar/navbar-user-links";
 import { buttonVariants } from "@/components/ui/button";
-import { CoffeeIcon } from "lucide-react";
+import { Coffee as CoffeeIcon } from "lucide-react";
 import Link from "next/link";
 import { FC } from "react";
 

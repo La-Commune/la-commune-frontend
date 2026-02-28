@@ -10,7 +10,7 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
-import { MenuIcon } from "lucide-react";
+import { Menu as MenuIcon } from "lucide-react";
 
 export const NavbarMobile = () => {
   return (
