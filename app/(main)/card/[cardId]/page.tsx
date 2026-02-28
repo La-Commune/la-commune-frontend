@@ -11,6 +11,7 @@ import { doc } from "firebase/firestore";
 import { useFirestore, useFirestoreDocData } from "reactfire";
 import { Customer } from "@/models/customer.model";
 import { formatDate } from "@/lib/utils";
+import { getCardByCustomer } from "@/services/card.service";
 
 
 export default function CardEntry() {
@@ -33,6 +34,24 @@ export default function CardEntry() {
   const { data: customer } = useFirestoreDocData(customerRef!, {
     suspense: false,
   });
+
+  // Escuchar estado de la tarjeta en tiempo real
+  const cardDocRef = doc(firestore, "cards", cardIdParam);
+  const { data: cardDoc } = useFirestoreDocData(cardDocRef, { suspense: false });
+
+  // Si la tarjeta fue canjeada, buscar la nueva tarjeta activa y redirigir
+  useEffect(() => {
+    if (!cardDoc || (cardDoc as any).status !== "redeemed") return;
+    if (!customerId) return;
+
+    const customerRef = doc(firestore, "customers", customerId);
+    getCardByCustomer(firestore, customerRef).then((newCard) => {
+      if (newCard) {
+        localStorage.setItem("cardId", newCard.id);
+        router.replace(`/card/${newCard.id}`);
+      }
+    });
+  }, [(cardDoc as any)?.status, customerId, firestore, router]);
 
   useEffect(() => {
     const storedCardId = localStorage.getItem("cardId");

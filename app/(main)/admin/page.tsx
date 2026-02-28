@@ -8,9 +8,9 @@ import { useFirestore, useFirestoreDocData } from "reactfire";
 import { Card } from "@/models/card.model";
 import { QrScanner } from "@/components/ui/QrScanner";
 import { verifyAdminPin } from "@/app/actions/verifyAdminPin";
-import { addStamp } from "@/services/card.service";
+import { addStamp, redeemCard } from "@/services/card.service";
 
-type Screen = "pin" | "stamp" | "success";
+type Screen = "pin" | "stamp" | "success" | "redeemed";
 
 interface LoadedCard {
   id: string;
@@ -182,6 +182,30 @@ function StampView({ onLogout }: { onLogout: () => void }) {
     setLoading(false);
   }, [card, firestore]);
 
+  const handleRedeem = useCallback(async () => {
+    if (!card) return;
+    setLoading(true);
+    setError("");
+    try {
+      const rewardRef = doc(firestore, "rewards", "default");
+      await redeemCard(firestore, {
+        oldCardId: card.id,
+        customerRef: card.customerId,
+        rewardRef,
+      });
+      setScreen("redeemed");
+      if (resetTimer.current) clearTimeout(resetTimer.current);
+      resetTimer.current = setTimeout(() => {
+        setScreen("stamp");
+        setCardInput("");
+        setCard(null);
+      }, 4000);
+    } catch {
+      setError("Error al canjear. Intenta de nuevo.");
+    }
+    setLoading(false);
+  }, [card, firestore]);
+
   const isComplete = card ? card.stamps >= card.maxStamps : false;
   const progress = card ? (card.stamps / card.maxStamps) * 100 : 0;
 
@@ -314,14 +338,52 @@ function StampView({ onLogout }: { onLogout: () => void }) {
               )}
             </div>
 
-            {/* Botón */}
-            <button
-              onClick={handleAddStamp}
-              disabled={loading || isComplete}
-              className="w-full py-4 rounded-xl bg-stone-200 text-neutral-900 text-[11px] uppercase tracking-[0.35em] hover:bg-white transition-colors duration-200 disabled:opacity-30 disabled:cursor-not-allowed font-medium"
+            {/* Botón — sello o canje según estado */}
+            {isComplete ? (
+              <button
+                onClick={handleRedeem}
+                disabled={loading}
+                className="w-full py-4 rounded-xl bg-amber-500/10 border border-amber-500/40 text-amber-400 text-[11px] uppercase tracking-[0.35em] hover:bg-amber-500/20 hover:border-amber-400 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed font-medium"
+              >
+                {loading ? "Canjeando…" : "Canjear cortesía · Nueva tarjeta"}
+              </button>
+            ) : (
+              <button
+                onClick={handleAddStamp}
+                disabled={loading}
+                className="w-full py-4 rounded-xl bg-stone-200 text-neutral-900 text-[11px] uppercase tracking-[0.35em] hover:bg-white transition-colors duration-200 disabled:opacity-30 disabled:cursor-not-allowed font-medium"
+              >
+                {loading ? "Guardando…" : "Añadir sello"}
+              </button>
+            )}
+          </motion.div>
+        )}
+
+        {screen === "redeemed" && (
+          <motion.div
+            key="redeemed"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            className="rounded-2xl border border-amber-800/40 bg-amber-900/10 p-8 text-center space-y-3"
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              className="text-4xl"
             >
-              {loading ? "Guardando…" : isComplete ? "Tarjeta completada" : "Añadir sello"}
-            </button>
+              ☕
+            </motion.div>
+            <p
+              className="text-xl font-light text-amber-300"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Cortesía entregada
+            </p>
+            <p className="text-[10px] uppercase tracking-widest text-amber-700">
+              {card?.customerName || "Cliente"} · Nueva tarjeta lista
+            </p>
           </motion.div>
         )}
 

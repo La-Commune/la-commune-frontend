@@ -1,5 +1,5 @@
 import { Card } from "@/models/card.model";
-import { doc, runTransaction, Timestamp, collection, DocumentReference, addDoc, where, query, getDocs } from "firebase/firestore";
+import { doc, runTransaction, Timestamp, collection, DocumentReference, addDoc, where, query, getDocs, updateDoc } from "firebase/firestore";
 
 export async function createCard(
   firestore: any,
@@ -66,6 +66,40 @@ export async function addStamp(
   });
 
   return result!;
+}
+
+export async function redeemCard(
+  firestore: any,
+  params: {
+    oldCardId: string;
+    customerRef: DocumentReference;
+    rewardRef: DocumentReference;
+  },
+) {
+  const oldCardRef = doc(firestore, "cards", params.oldCardId);
+
+  // Marcar tarjeta actual como canjeada
+  await updateDoc(oldCardRef, {
+    status: "redeemed",
+    redeemedAt: Timestamp.now(),
+  });
+
+  // Log del canje para auditoría
+  await addDoc(collection(firestore, "stamp-events"), {
+    cardId: oldCardRef,
+    customerId: params.customerRef,
+    createdAt: Timestamp.now(),
+    addedBy: "barista",
+    source: "redemption",
+  });
+
+  // Crear nueva tarjeta limpia para el mismo cliente
+  const newCardRef = await createCard(firestore, {
+    customerRef: params.customerRef,
+    rewardRef: params.rewardRef,
+  });
+
+  return newCardRef;
 }
 
 export async function getCardByCustomer(
