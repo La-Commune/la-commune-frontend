@@ -19,29 +19,53 @@ export async function createCard(
   }
   return addDoc(collection(firestore, "cards"), cardData);
 }
-export async function addStamp(firestore: any, cardId: string) {
+export type AddStampResult = {
+  stamps: number;
+  maxStamps: number;
+  status: string;
+};
+
+export async function addStamp(
+  firestore: any,
+  cardId: string,
+  options?: { customerId?: DocumentReference; addedBy?: string },
+): Promise<AddStampResult> {
   const cardRef = doc(firestore, "cards", cardId);
-  const eventsRef = collection(firestore, "stampEvents");
+  const eventsRef = collection(firestore, "stamp-events");
+  let result: AddStampResult | null = null;
 
   await runTransaction(firestore, async (tx) => {
     const snap = await tx.get(cardRef);
     if (!snap.exists()) throw new Error("Card not found");
 
     const card = snap.data();
+    if (card.stamps >= card.maxStamps) {
+      result = { stamps: card.stamps, maxStamps: card.maxStamps, status: card.status };
+      return;
+    }
 
-    if (card.stamps >= card.maxStamps) return;
+    const newStamps = card.stamps + 1;
+    const isComplete = newStamps >= card.maxStamps;
+    const newStatus = isComplete ? "completed" : card.status;
 
     tx.update(cardRef, {
-      stamps: card.stamps + 1,
+      stamps: newStamps,
       lastStampAt: Timestamp.now(),
+      ...(isComplete ? { status: "completed", completedAt: Timestamp.now() } : {}),
     });
 
     tx.set(doc(eventsRef), {
       cardId: cardRef,
+      customerId: options?.customerId ?? null,
       createdAt: Timestamp.now(),
+      addedBy: options?.addedBy ?? "system",
       source: "manual",
     });
+
+    result = { stamps: newStamps, maxStamps: card.maxStamps, status: newStatus };
   });
+
+  return result!;
 }
 
 export async function getCardByCustomer(

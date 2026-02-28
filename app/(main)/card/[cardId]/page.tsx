@@ -46,21 +46,10 @@ export default function CardEntry({
     }
 
     setCardId(storedCardId);
-
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1800);
-
-    return () => clearTimeout(timer);
+    setLoading(false);
   }, [params.cardId, router]);
 
-  useEffect(() => {
-    if (customer) {
-      console.log("Customer data:", customer as Customer);
-    }
-  }, [customer]);
-
-  if (loading || !cardId) {
+if (loading || !cardId) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-neutral-950">
         <p className="text-sm text-stone-600 animate-pulse tracking-widest uppercase text-[11px]">

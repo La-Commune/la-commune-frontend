@@ -9,7 +9,8 @@ export function PwaRegister() {
   useEffect(() => {
     // Registrar service worker
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+      const buildId = process.env.NEXT_PUBLIC_BUILD_ID || "v1";
+      navigator.serviceWorker.register(`/sw.js?v=${buildId}`).catch(() => {});
     }
 
     // Mostrar hint de instalación en iOS si no está en modo standalone

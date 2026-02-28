@@ -16,7 +16,7 @@ export async function createCustomer(
     consentWhatsApp: boolean;
   },
 ) {
-  const costumerData: Customer = {
+  const customerData: Customer = {
     name: data.name,
     phone: data.phone,
     consentWhatsApp: data.consentWhatsApp,
@@ -28,7 +28,7 @@ export async function createCustomer(
     notes: "",
     schemaVersion: 1,
   };
-  return addDoc(collection(firestore, "customers"), costumerData);
+  return addDoc(collection(firestore, "customers"), customerData);
 }
 
 export async function getCardByCustomer(firestore: any, customerRef: any) {
