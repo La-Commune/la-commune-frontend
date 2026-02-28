@@ -14,8 +14,7 @@ const sans = Work_Sans({
 
 const display = Cormorant_Garamond({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
-  style: ["normal", "italic"],
+  weight: ["300", "400", "500"],
   variable: "--font-display",
 });
 

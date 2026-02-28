@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
@@ -13,11 +13,8 @@ import { Customer } from "@/models/customer.model";
 import { formatDate } from "@/lib/utils";
 
 
-export default function CardEntry({
-  params,
-}: {
-  params: { cardId: string };
-}) {
+export default function CardEntry() {
+  const { cardId: cardIdParam } = useParams<{ cardId: string }>();
   const router = useRouter();
   const firestore = useFirestore();
 
@@ -40,14 +37,14 @@ export default function CardEntry({
   useEffect(() => {
     const storedCardId = localStorage.getItem("cardId");
 
-    if (!storedCardId || storedCardId !== params.cardId) {
-      router.replace(`/onboarding?cardId=${params.cardId}`);
+    if (!storedCardId || storedCardId !== cardIdParam) {
+      router.replace(`/onboarding?cardId=${cardIdParam}`);
       return;
     }
 
     setCardId(storedCardId);
     setLoading(false);
-  }, [params.cardId, router]);
+  }, [cardIdParam, router]);
 
 if (loading || !cardId) {
     return (
