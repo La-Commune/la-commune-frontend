@@ -21,6 +21,7 @@ type Drink = {
   available?: boolean;
   tag?: "Fuerte" | "Cremoso" | "Dulce" | "Gourmet" | "Intenso" | "Refrescante";
   highlight?: boolean;
+  seasonal?: boolean;
 };
 
 type Section = {
@@ -91,7 +92,7 @@ const sections: Section[] = [
         ],
         note: "Nuez pecana garapiñada con cubierta de praliné",
         tag: "Gourmet",
-        highlight: true,
+        seasonal: true,
       },
       {
         name: "Chocolate caliente",
@@ -234,6 +235,11 @@ export default function CafeMenu() {
                               {drink.highlight && (
                                 <span className="text-[9px] uppercase tracking-widest bg-amber-600/15 text-amber-400 border border-amber-500/50 rounded-full px-2 py-0.5 print:bg-transparent print:text-amber-700 print:border-amber-600">
                                   Especial
+                                </span>
+                              )}
+                              {drink.seasonal && (
+                                <span className="text-[9px] uppercase tracking-widest bg-emerald-600/10 text-emerald-400 border border-emerald-500/40 rounded-full px-2 py-0.5 print:bg-transparent print:text-emerald-700 print:border-emerald-600">
+                                  Temporada
                                 </span>
                               )}
                             </div>
