@@ -1,21 +1,14 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  doc,
-  getDoc,
-  updateDoc,
-  addDoc,
-  collection,
-  increment,
-  serverTimestamp,
-} from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { useFirestore } from "reactfire";
 import { Card } from "@/models/card.model";
 import { QrScanner } from "@/components/ui/QrScanner";
 import { verifyAdminPin } from "@/app/actions/verifyAdminPin";
+import { addStamp } from "@/services/card.service";
 
 type Screen = "pin" | "stamp" | "success";
 
@@ -113,6 +106,14 @@ function StampView({ onLogout }: { onLogout: () => void }) {
   const [screen, setScreen] = useState<Screen>("stamp");
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState("");
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup del timer al desmontar el componente
+  useEffect(() => {
+    return () => {
+      if (resetTimer.current) clearTimeout(resetTimer.current);
+    };
+  }, []);
 
   const resolveCardId = (raw: string) =>
     raw.trim().replace(/^.*\/card\//, "").split("?")[0].split("#")[0];
@@ -156,34 +157,19 @@ function StampView({ onLogout }: { onLogout: () => void }) {
     loadCard(value);
   }, [loadCard]);
 
-  const addStamp = useCallback(async () => {
+  const handleAddStamp = useCallback(async () => {
     if (!card) return;
     setLoading(true);
     setError("");
     try {
-      const cardRef = doc(firestore, "cards", card.id);
-      const newStamps = card.stamps + 1;
-      const isComplete = newStamps >= card.maxStamps;
-
-      await updateDoc(cardRef, {
-        stamps: increment(1),
-        lastStampAt: serverTimestamp(),
-        ...(isComplete
-          ? { status: "completed", completedAt: serverTimestamp() }
-          : {}),
-      });
-
-      await addDoc(collection(firestore, "stamp-events"), {
-        cardId: cardRef,
-        customerId: card.customerId ?? null,
-        createdAt: serverTimestamp(),
+      const result = await addStamp(firestore, card.id, {
+        customerId: card.customerId ?? undefined,
         addedBy: "barista",
-        source: "manual",
       });
-
-      setCard({ ...card, stamps: newStamps, status: isComplete ? "completed" : card.status });
+      setCard({ ...card, stamps: result.stamps, status: result.status });
       setScreen("success");
-      setTimeout(() => {
+      if (resetTimer.current) clearTimeout(resetTimer.current);
+      resetTimer.current = setTimeout(() => {
         setScreen("stamp");
         setCardInput("");
         setCard(null);
@@ -328,7 +314,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
 
             {/* Botón */}
             <button
-              onClick={addStamp}
+              onClick={handleAddStamp}
               disabled={loading || isComplete}
               className="w-full py-4 rounded-xl bg-stone-200 text-neutral-900 text-[11px] uppercase tracking-[0.35em] hover:bg-white transition-colors duration-200 disabled:opacity-30 disabled:cursor-not-allowed font-medium"
             >

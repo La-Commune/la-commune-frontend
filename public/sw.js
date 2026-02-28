@@ -1,4 +1,7 @@
-const CACHE = "la-commune-v1";
+// La versión se inyecta desde PwaRegister como query param (?v=BUILD_ID)
+// Así cada deploy genera un CACHE distinto y el browser descarga el SW actualizado
+const CACHE_VERSION = new URL(location.href).searchParams.get("v") || "v1";
+const CACHE = `la-commune-${CACHE_VERSION}`;
 const PRECACHE = ["/", "/menu", "/card/preview", "/onboarding", "/offline.html"];
 
 // Instalación: precachear rutas clave

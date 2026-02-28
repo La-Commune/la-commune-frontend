@@ -91,20 +91,30 @@ export default function OnboardingPage() {
 
           {/* Form */}
           <div className="space-y-4">
-            <Input
-              placeholder="Tu nombre (opcional)"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="text-center bg-neutral-900 border-stone-700 text-white placeholder:text-stone-600 focus:border-stone-500"
-            />
-
-            <div className="space-y-1">
+            <div className="space-y-1.5">
+              <label htmlFor="name" className="block text-[10px] uppercase tracking-[0.3em] text-stone-600 text-left">
+                Nombre <span className="text-stone-700">(opcional)</span>
+              </label>
               <Input
+                id="name"
+                placeholder="Tu nombre"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="text-center bg-neutral-900 border-stone-700 text-white placeholder:text-stone-600 focus:border-stone-500"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="phone" className="block text-[10px] uppercase tracking-[0.3em] text-stone-600 text-left">
+                WhatsApp <span className="text-red-500/70">*</span>
+              </label>
+              <Input
+                id="phone"
                 required
                 type="tel"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                placeholder="Tu número de WhatsApp"
+                placeholder="10 dígitos"
                 value={phone}
                 onChange={handlePhoneChange}
                 className="text-center tracking-widest bg-neutral-900 border-stone-700 text-white placeholder:text-stone-600 focus:border-stone-500"
