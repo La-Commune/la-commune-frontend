@@ -89,7 +89,7 @@ const sections: Section[] = [
           { name: "Leche vaporizada" },
           { name: "Nuez pecana" },
         ],
-        note: "Receta especial con nuez pecana garapiñada con cubierta de praliné",
+        note: "Nuez pecana garapiñada con cubierta de praliné",
         tag: "Gourmet",
         highlight: true,
       },
@@ -114,7 +114,7 @@ const sections: Section[] = [
           { name: "Leche fría" },
           { name: "Hielo" },
         ],
-        tag: "Dulce",
+        tag: "Refrescante",
       },
     ],
   },
@@ -141,10 +141,10 @@ const sections: Section[] = [
 
 export default function CafeMenu() {
   return (
-    <div className="min-h-screen bg-neutral-950 text-white">
+    <div className="min-h-screen bg-neutral-950 text-white print:bg-white print:text-neutral-900">
 
-      {/* Nav fija — back + wordmark */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 sm:px-10 py-5 bg-neutral-950/80 backdrop-blur-sm">
+      {/* Nav — oculta al imprimir */}
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 sm:px-10 py-5 bg-neutral-950/80 backdrop-blur-sm print:hidden">
         <Link
           href="/"
           className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-400 hover:text-white transition-colors duration-300 group"
@@ -152,106 +152,113 @@ export default function CafeMenu() {
           <span className="w-4 h-px bg-stone-500 group-hover:w-7 group-hover:bg-white transition-all duration-500" />
           Inicio
         </Link>
-
         <span className="text-[10px] uppercase tracking-[0.45em] text-stone-500">
           La Commune
         </span>
-
-        {/* Espaciador para centrar el wordmark */}
         <div className="w-16" />
       </nav>
 
-      {/* Contenido */}
-      <section className="w-full max-w-6xl mx-auto px-4 sm:px-6 pt-28 pb-16">
+      <div className="w-full max-w-5xl mx-auto px-4 sm:px-8 pt-28 pb-24 print:max-w-none print:px-12 print:pt-10 print:pb-10">
 
-        {/* Header con identidad */}
-        <header className="text-center mb-14 space-y-4">
-          <h1 className="font-display text-5xl sm:text-7xl font-light tracking-[0.2em] uppercase">
+        {/* Header */}
+        <header className="text-center mb-14 space-y-3">
+          <p className="text-[10px] uppercase tracking-[0.4em] text-stone-600 print:text-neutral-400">
+            La Commune
+          </p>
+          <h1 className="font-display text-5xl sm:text-7xl font-light tracking-[0.2em] uppercase print:text-5xl">
             Menú
           </h1>
           <div className="flex items-center justify-center gap-4">
-            <span className="w-8 h-px bg-stone-700" />
-            <p className="text-[10px] tracking-[0.35em] uppercase text-stone-500">
+            <span className="w-8 h-px bg-stone-700 print:bg-neutral-300" />
+            <p className="text-[10px] tracking-[0.35em] uppercase text-stone-500 print:text-neutral-400">
               Bebidas
             </p>
-            <span className="w-8 h-px bg-stone-700" />
+            <span className="w-8 h-px bg-stone-700 print:bg-neutral-300" />
           </div>
         </header>
 
-        <p className="md:hidden text-xs text-stone-500 mb-3 text-right">
-          Desliza →
-        </p>
-
-        <div className="flex gap-6 overflow-x-auto snap-x snap-mandatory pb-4 md:grid md:grid-cols-2 lg:grid-cols-4 md:gap-8 md:overflow-visible">
+        {/* Grid de secciones — gap-px actúa como separador */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-stone-800 print:bg-neutral-200">
           {sections.map((section) => {
             const isFood = section.type === "food";
 
             return (
               <div
                 key={section.title}
-                className={`min-w-[260px] snap-center rounded-3xl p-8 shadow-lg border transition-all duration-300
-                  ${
-                    isFood
-                      ? "bg-[#25211C] border-[#3A332A]"
-                      : "bg-[#1F1F1F] border-stone-800"
-                  }`}
+                className="bg-neutral-950 px-6 py-8 sm:px-8 sm:py-10 print:bg-white print:p-8"
               >
-                <h2
-                  className={`text-xs uppercase tracking-widest mb-1 ${
-                    isFood ? "text-amber-200" : "text-stone-300"
-                  }`}
-                >
-                  {section.title}
-                </h2>
+                {/* Encabezado de sección */}
+                <div className="mb-8">
+                  <h2
+                    className={`text-[10px] uppercase tracking-[0.35em] mb-1 ${
+                      isFood
+                        ? "text-amber-300 print:text-amber-700"
+                        : "text-stone-400 print:text-neutral-500"
+                    }`}
+                  >
+                    {section.title}
+                  </h2>
+                  <p
+                    className={`text-[11px] ${
+                      isFood
+                        ? "text-amber-500/50 print:text-amber-600/70"
+                        : "text-stone-600 print:text-neutral-400"
+                    }`}
+                  >
+                    {section.description}
+                  </p>
+                  <div
+                    className={`w-6 h-px mt-4 ${
+                      isFood
+                        ? "bg-amber-500/30 print:bg-amber-400"
+                        : "bg-stone-700 print:bg-neutral-300"
+                    }`}
+                  />
+                </div>
 
-                <p
-                  className={`text-[11px] tracking-wide mb-6 ${
-                    isFood ? "text-amber-400/60" : "text-stone-500"
-                  }`}
-                >
-                  {section.description}
-                </p>
-
-                <ul className="space-y-6">
+                {/* Lista de bebidas */}
+                <ul className="space-y-7">
                   {section.drinks.map((drink) => {
                     const isAvailable = drink.available !== false;
 
                     return (
-                      <li
-                        key={drink.name}
-                        className={`space-y-2 ${!isAvailable ? "opacity-40" : ""}`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <p className="font-display text-xl font-medium text-stone-100 flex items-center gap-2">
-                              {drink.name}
+                      <li key={drink.name} className={!isAvailable ? "opacity-40" : ""}>
+
+                        {/* Nombre + precio */}
+                        <div className="flex items-start justify-between gap-3 mb-1.5">
+                          <div className="space-y-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-display text-lg leading-tight font-medium text-stone-100 print:text-neutral-900">
+                                {drink.name}
+                              </span>
                               {drink.highlight && (
-                                <span className="text-[9px] uppercase tracking-widest bg-amber-600/20 text-amber-400 border border-amber-500 rounded-full px-2 py-0.5">
+                                <span className="text-[9px] uppercase tracking-widest bg-amber-600/15 text-amber-400 border border-amber-500/50 rounded-full px-2 py-0.5 print:bg-transparent print:text-amber-700 print:border-amber-600">
                                   Especial
                                 </span>
                               )}
-                            </p>
+                            </div>
 
                             {drink.tag && (
-                              <span className="inline-block mt-1 text-[10px] uppercase tracking-widest text-stone-400 border border-stone-600 rounded-full px-2 py-0.5">
+                              <span className="inline-block text-[10px] uppercase tracking-widest text-stone-500 border border-stone-700/60 rounded-full px-2 py-0.5 print:text-neutral-500 print:border-neutral-300">
                                 {drink.tag}
                               </span>
                             )}
                           </div>
 
-                          {!drink.sizes && (
-                            <span className="text-sm tabular-nums text-stone-400">
-                              ${drink.price} MXN
+                          {!drink.sizes && drink.price && (
+                            <span className="text-sm tabular-nums text-stone-400 print:text-neutral-600 shrink-0 pt-0.5">
+                              ${drink.price}
                             </span>
                           )}
                         </div>
 
+                        {/* Tamaños */}
                         {drink.sizes && (
-                          <div className="flex gap-3 mt-1 flex-wrap">
+                          <div className="flex gap-2 mb-2 flex-wrap">
                             {drink.sizes.map((size) => (
                               <span
                                 key={size.label}
-                                className="text-xs px-3 py-1 rounded-full border border-stone-600 text-stone-300"
+                                className="text-xs px-2.5 py-0.5 rounded-full border border-stone-700/60 text-stone-400 print:border-neutral-300 print:text-neutral-600"
                               >
                                 {size.label} · ${size.price}
                               </span>
@@ -259,33 +266,28 @@ export default function CafeMenu() {
                           </div>
                         )}
 
-                        <p className="text-xs text-stone-300 leading-relaxed">
-                          {drink.ingredients.map((i) => `• ${i.name}`).join(" ")}
+                        {/* Ingredientes */}
+                        <p className="text-[11px] text-stone-600 print:text-neutral-400 leading-snug">
+                          {drink.ingredients.map((i) => i.name).join(" · ")}
                         </p>
 
-                        {drink.optional && isAvailable && (
-                          <p className="text-xs text-stone-500">
-                            Personalízalo:{" "}
-                            {drink.optional.map((o) => o.name).join(" · ")}
-                          </p>
-                        )}
-
+                        {/* Nota */}
                         {drink.note && isAvailable && (
                           <p
-                            className={`text-xs italic pl-3 border-l-2 ${
+                            className={`text-[11px] italic mt-1 leading-snug ${
                               drink.highlight
-                                ? "text-amber-400 border-amber-500"
-                                : "text-stone-400 border-stone-600"
+                                ? "text-amber-500/60 print:text-amber-700/80"
+                                : "text-stone-600 print:text-neutral-400"
                             }`}
                           >
-                            Nota: {drink.note}
+                            {drink.note}
                           </p>
                         )}
 
                         {!isAvailable && (
-                          <span className="inline-block text-[10px] uppercase tracking-widest text-stone-500 border border-stone-600 rounded-full px-2 py-1">
+                          <p className="text-[10px] uppercase tracking-widest text-stone-600 print:text-neutral-400 mt-1">
                             No disponible hoy
-                          </span>
+                          </p>
                         )}
                       </li>
                     );
@@ -295,7 +297,29 @@ export default function CafeMenu() {
             );
           })}
         </div>
-      </section>
+
+        {/* Botón de descarga — oculto al imprimir */}
+        <div className="mt-16 flex justify-center print:hidden">
+          <button
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-4 text-[11px] uppercase tracking-[0.35em] text-stone-500 hover:text-white transition-colors duration-300 group"
+          >
+            <span className="w-8 h-px bg-stone-700 group-hover:w-12 group-hover:bg-white transition-all duration-500" />
+            Descargar menú
+            <span className="w-8 h-px bg-stone-700 group-hover:w-12 group-hover:bg-white transition-all duration-500" />
+          </button>
+        </div>
+
+        {/* Pie de página para impresión */}
+        <div className="hidden print:flex items-center justify-center mt-12 pt-6 border-t border-neutral-200 gap-4">
+          <span className="w-8 h-px bg-neutral-300" />
+          <p className="text-[10px] uppercase tracking-[0.4em] text-neutral-400">
+            La Commune · {new Date().getFullYear()}
+          </p>
+          <span className="w-8 h-px bg-neutral-300" />
+        </div>
+
+      </div>
     </div>
   );
 }
