@@ -5,6 +5,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  deleteField,
   query,
   orderBy,
 } from "firebase/firestore";
@@ -41,10 +42,17 @@ export async function updateMenuItem(
   firestore: any,
   sectionId: string,
   itemId: string,
-  data: Partial<MenuItem>
+  data: Partial<MenuItem>,
+  clearFields?: (keyof MenuItem)[]
 ): Promise<void> {
   const ref = doc(firestore, "menu-sections", sectionId, "items", itemId);
-  await updateDoc(ref, data as any);
+  const update: any = { ...data };
+  if (clearFields) {
+    for (const field of clearFields) {
+      update[field] = deleteField();
+    }
+  }
+  await updateDoc(ref, update);
 }
 
 export async function addMenuItem(
