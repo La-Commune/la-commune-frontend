@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { doc, getDoc } from "firebase/firestore";
-import { useFirestore } from "reactfire";
+import { useFirestore, useFirestoreDocData } from "reactfire";
 import { Card } from "@/models/card.model";
 import { QrScanner } from "@/components/ui/QrScanner";
 import { verifyAdminPin } from "@/app/actions/verifyAdminPin";
@@ -28,23 +28,25 @@ function PinPad({
   onSubmit,
   error,
   loading,
+  pinLength = 4,
 }: {
   value: string;
   onChange: (v: string) => void;
   onSubmit: () => void;
   error: string;
   loading?: boolean;
+  pinLength?: number;
 }) {
   const press = (digit: string) => {
-    if (value.length < 4) onChange(value + digit);
+    if (value.length < pinLength) onChange(value + digit);
   };
   const del = () => onChange(value.slice(0, -1));
 
   return (
     <div className="flex flex-col items-center gap-8">
-      {/* Indicadores */}
-      <div className="flex gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
+      {/* Indicadores dinámicos */}
+      <div className="flex gap-3 flex-wrap justify-center max-w-[260px]">
+        {Array.from({ length: pinLength }).map((_, i) => (
           <div
             key={i}
             className={`w-3 h-3 rounded-full border transition-all duration-200 ${
@@ -88,7 +90,7 @@ function PinPad({
 
       <button
         onClick={onSubmit}
-        disabled={value.length < 4 || loading}
+        disabled={value.length < pinLength || loading}
         className="mt-2 w-full max-w-[220px] py-3 rounded-full bg-stone-200 text-neutral-900 text-[11px] uppercase tracking-[0.35em] hover:bg-white transition-colors duration-200 disabled:opacity-20 disabled:cursor-not-allowed"
       >
         {loading ? "Verificando…" : "Entrar"}
@@ -365,6 +367,11 @@ function StampView({ onLogout }: { onLogout: () => void }) {
 
 /* ── Página principal ─────────────────────────────────── */
 export default function AdminPage() {
+  const firestore = useFirestore();
+  const configRef = doc(firestore, "config", "admin");
+  const { data: adminConfig } = useFirestoreDocData(configRef, { suspense: false });
+  const pinLength = (adminConfig as any)?.pinLength ?? 4;
+
   const [authed, setAuthed] = useState(false);
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
@@ -437,6 +444,7 @@ export default function AdminPage() {
                 onSubmit={handlePinSubmit}
                 error={pinError}
                 loading={pinLoading}
+                pinLength={pinLength}
               />
             </motion.div>
           ) : (

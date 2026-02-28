@@ -2,6 +2,18 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // config/admin — contiene pinHmac (hash HMAC, no el PIN) y pinLength
+    // El HMAC sin la clave ADMIN_HMAC_KEY del servidor es inútil
+    match /config/admin {
+      allow read: if true;
+      allow create, update: if request.resource.data.keys().hasOnly(['pinHmac','pinLength'])
+                            && request.resource.data.pinHmac is string
+                            && request.resource.data.pinLength is int
+                            && request.resource.data.pinLength >= 4
+                            && request.resource.data.pinLength <= 12;
+      allow delete: if false;
+    }
+
     // rewards — solo lectura (la app necesita leer "default" al crear tarjeta)
     match /rewards/{docId} {
       allow read: if true;
