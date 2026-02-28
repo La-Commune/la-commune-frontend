@@ -19,6 +19,12 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+const UNCACHEABLE_EXTENSIONS = /\.(mp4|webm|ogg|mov|avi|mkv)$/i;
+
+function isCacheable(res) {
+  return res.status === 200;
+}
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -29,6 +35,9 @@ self.addEventListener("fetch", (event) => {
   // Ignorar peticiones de Firebase / APIs externas
   if (url.hostname.includes("firestore") || url.hostname.includes("googleapis")) return;
 
+  // Ignorar videos — siempre devuelven 206 (range request) y no se pueden cachear
+  if (UNCACHEABLE_EXTENSIONS.test(url.pathname)) return;
+
   // Cache-first para assets estáticos de Next.js (_next/static)
   if (url.pathname.startsWith("/_next/static/")) {
     event.respondWith(
@@ -36,8 +45,10 @@ self.addEventListener("fetch", (event) => {
         (cached) =>
           cached ||
           fetch(request).then((res) => {
-            const clone = res.clone();
-            caches.open(CACHE).then((c) => c.put(request, clone));
+            if (isCacheable(res)) {
+              const clone = res.clone();
+              caches.open(CACHE).then((c) => c.put(request, clone));
+            }
             return res;
           })
       )
@@ -49,8 +60,10 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(request)
       .then((res) => {
-        const clone = res.clone();
-        caches.open(CACHE).then((c) => c.put(request, clone));
+        if (isCacheable(res)) {
+          const clone = res.clone();
+          caches.open(CACHE).then((c) => c.put(request, clone));
+        }
         return res;
       })
       .catch(
