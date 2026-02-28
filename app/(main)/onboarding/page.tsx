@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,14 @@ import { doc } from "firebase/firestore";
 import { createCard, getCardByCustomer } from "@/services/card.service";
 
 export default function OnboardingPage() {
+  return (
+    <Suspense>
+      <OnboardingForm />
+    </Suspense>
+  );
+}
+
+function OnboardingForm() {
   const params = useSearchParams();
   const router = useRouter();
   const cardId = params!.get("cardId");
