@@ -8,7 +8,7 @@ import {
   useTransform,
   useSpring,
 } from "framer-motion";
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 
 /* ===============================
    Animated Text (línea por línea)
@@ -73,6 +73,7 @@ const PremiumSection: React.FC<SectionProps> = ({
 }) => {
   const router = useRouter();
   const ref = useRef(null);
+  const [videoFailed, setVideoFailed] = useState(false);
 
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -91,16 +92,35 @@ const PremiumSection: React.FC<SectionProps> = ({
       }`}
     >
       {/* Background Video con parallax suave */}
-      <motion.video
-        style={{ y: smoothY }}
-        autoPlay
-        muted
-        loop
-        playsInline
-        className="absolute inset-0 w-full h-[116%] object-cover"
-      >
-        <source src={videoSrc} type="video/mp4" />
-      </motion.video>
+      {!videoFailed ? (
+        <motion.video
+          style={{ y: smoothY }}
+          autoPlay
+          muted
+          loop
+          playsInline
+          onError={() => setVideoFailed(true)}
+          className="absolute inset-0 w-full h-[116%] object-cover"
+        >
+          <source src={videoSrc} type="video/mp4" />
+        </motion.video>
+      ) : (
+        <motion.div
+          style={{ y: smoothY }}
+          className="absolute inset-0 w-full h-[116%]"
+        >
+          {/* Gradiente cálido — evoca café sin necesitar imagen */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_50%_80%,#2d1507_0%,#111111_65%)]" />
+          {/* Grano sutil para textura — sin assets externos */}
+          <div
+            className="absolute inset-0 opacity-[0.045]"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+              backgroundSize: "128px 128px",
+            }}
+          />
+        </motion.div>
+      )}
 
       {/* Overlay limpio — sin blur para que el video respire */}
       <div className="absolute inset-0 bg-black/40" />
