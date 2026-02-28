@@ -15,9 +15,7 @@ import {
 import { useFirestore } from "reactfire";
 import { Card } from "@/models/card.model";
 import { QrScanner } from "@/components/ui/QrScanner";
-
-// ⚠️ Cambia este PIN antes de ir a producción
-const ADMIN_PIN = "1234";
+import { verifyAdminPin } from "@/app/actions/verifyAdminPin";
 
 type Screen = "pin" | "stamp" | "success";
 
@@ -36,11 +34,13 @@ function PinPad({
   onChange,
   onSubmit,
   error,
+  loading,
 }: {
   value: string;
   onChange: (v: string) => void;
   onSubmit: () => void;
   error: string;
+  loading?: boolean;
 }) {
   const press = (digit: string) => {
     if (value.length < 4) onChange(value + digit);
@@ -95,10 +95,10 @@ function PinPad({
 
       <button
         onClick={onSubmit}
-        disabled={value.length < 4}
+        disabled={value.length < 4 || loading}
         className="mt-2 w-full max-w-[220px] py-3 rounded-full bg-stone-200 text-neutral-900 text-[11px] uppercase tracking-[0.35em] hover:bg-white transition-colors duration-200 disabled:opacity-20 disabled:cursor-not-allowed"
       >
-        Entrar
+        {loading ? "Verificando…" : "Entrar"}
       </button>
     </div>
   );
@@ -382,15 +382,24 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(false);
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
+  const [pinLoading, setPinLoading] = useState(false);
 
-  const handlePinSubmit = () => {
-    if (pin === ADMIN_PIN) {
-      setAuthed(true);
-      setPinError("");
-    } else {
-      setPinError("PIN incorrecto");
+  const handlePinSubmit = async () => {
+    setPinLoading(true);
+    try {
+      const ok = await verifyAdminPin(pin);
+      if (ok) {
+        setAuthed(true);
+        setPinError("");
+      } else {
+        setPinError("PIN incorrecto");
+        setPin("");
+      }
+    } catch {
+      setPinError("Error al verificar. Intenta de nuevo.");
       setPin("");
     }
+    setPinLoading(false);
   };
 
   return (
@@ -441,6 +450,7 @@ export default function AdminPage() {
                 onChange={(v) => { setPin(v); setPinError(""); }}
                 onSubmit={handlePinSubmit}
                 error={pinError}
+                loading={pinLoading}
               />
             </motion.div>
           ) : (
