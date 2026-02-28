@@ -4,27 +4,46 @@ import { doc } from "firebase/firestore";
 import { useFirestore, useFirestoreDocData } from "reactfire";
 import { Card } from "@/models/card.model";
 import { CoffeeBean } from "./CoffeeBean";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 
 export function StampCardFront({
   cardId,
   onComplete,
+  onStampAdded,
 }: {
   cardId: string;
   onComplete: () => void;
+  onStampAdded: () => void;
 }) {
   const firestore = useFirestore();
   const ref = doc(firestore, "cards", cardId);
   const { data } = useFirestoreDocData(ref);
 
   const hasCompletedRef = useRef(false);
+  const prevStampsRef = useRef<number | undefined>(undefined);
+  const [newStampIdx, setNewStampIdx] = useState<number | null>(null);
 
   const card = data as Card | undefined;
   const isComplete = card ? card.stamps >= card.maxStamps : false;
   const remaining = card ? card.maxStamps - card.stamps : 0;
   const progress = card ? (card.stamps / card.maxStamps) * 100 : 0;
 
+  // Detectar sello nuevo
+  useEffect(() => {
+    if (!card) return;
+    const prev = prevStampsRef.current;
+    prevStampsRef.current = card.stamps;
+
+    if (prev !== undefined && card.stamps > prev) {
+      setNewStampIdx(card.stamps - 1);
+      onStampAdded();
+      const t = setTimeout(() => setNewStampIdx(null), 1200);
+      return () => clearTimeout(t);
+    }
+  }, [card?.stamps, onStampAdded]);
+
+  // Detectar tarjeta completada
   useEffect(() => {
     if (isComplete && !hasCompletedRef.current) {
       hasCompletedRef.current = true;
@@ -62,15 +81,17 @@ export function StampCardFront({
             {isComplete ? "¡Bebida de cortesía!" : "Café de la casa"}
           </h2>
           <p className="text-[10px] tracking-wide text-[#8A817A] mt-0.5">
-            {isComplete
-              ? "Preséntala en barra"
-              : "Cliente frecuente"}
+            {isComplete ? "Preséntala en barra" : "Cliente frecuente"}
           </p>
         </div>
 
         <div className="flex justify-between">
           {Array.from({ length: card.maxStamps }).map((_, i) => (
-            <CoffeeBean key={i} active={i < card.stamps} />
+            <CoffeeBean
+              key={i}
+              active={i < card.stamps}
+              isNew={i === newStampIdx}
+            />
           ))}
         </div>
       </div>
