@@ -67,8 +67,15 @@ function Card({
   cardId: string;
   customer?: Customer;
 }) {
+  const router = useRouter();
   const name = customer?.name?.trim();
   const lastVisit = formatDate(customer?.lastVisitAt);
+
+  const handleLogout = () => {
+    localStorage.removeItem("cardId");
+    localStorage.removeItem("customerId");
+    router.replace("/");
+  };
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white flex flex-col">
@@ -85,7 +92,12 @@ function Card({
         <span className="text-[10px] uppercase tracking-[0.45em] text-stone-500">
           La Commune
         </span>
-        <div className="w-16" />
+        <button
+          onClick={handleLogout}
+          className="text-[10px] uppercase tracking-[0.3em] text-stone-700 hover:text-stone-400 transition-colors duration-300 text-stone-400 hover:text-white"
+        >
+          Salir
+        </button>
       </nav>
 
       {/* Contenido */}

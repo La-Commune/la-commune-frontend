@@ -5,6 +5,7 @@ import {
   query,
   where,
   getDocs,
+  doc,
 } from "firebase/firestore";
 import { Customer } from "@/models/customer.model";
 
@@ -29,6 +30,20 @@ export async function createCustomer(
     schemaVersion: 1,
   };
   return addDoc(collection(firestore, "customers"), customerData);
+}
+
+export async function getCustomerByPhone(firestore: any, phone: string) {
+  const q = query(
+    collection(firestore, "customers"),
+    where("phone", "==", phone),
+    where("active", "==", true),
+  );
+
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+
+  const d = snap.docs[0];
+  return { id: d.id, ref: doc(firestore, "customers", d.id), ...d.data() };
 }
 
 export async function getCardByCustomer(firestore: any, customerRef: any) {
