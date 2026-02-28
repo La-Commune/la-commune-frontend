@@ -41,5 +41,15 @@ service cloud.firestore {
       allow create: if true;
       allow read, update, delete: if false;
     }
+
+    // menu-sections — lectura pública; escritura solo desde panel admin (PIN en UI)
+    match /menu-sections/{sectionId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
+    match /menu-sections/{sectionId}/items/{itemId} {
+      allow read: if true;
+      allow create, update, delete: if true;
+    }
   }
 }

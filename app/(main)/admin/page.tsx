@@ -7,6 +7,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { useFirestore, useFirestoreDocData } from "reactfire";
 import { Card } from "@/models/card.model";
 import { QrScanner } from "@/components/ui/QrScanner";
+import { MenuAdmin } from "@/components/ui/MenuAdmin";
 import { verifyAdminPin } from "@/app/actions/verifyAdminPin";
 import { addStamp, redeemCard } from "@/services/card.service";
 
@@ -483,6 +484,7 @@ export default function AdminPage() {
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
   const [pinLoading, setPinLoading] = useState(false);
+  const [adminTab, setAdminTab] = useState<"stamps" | "menu">("stamps");
 
   // Auto-auth si la sesión del barista sigue activa en sessionStorage
   useEffect(() => {
@@ -571,6 +573,7 @@ export default function AdminPage() {
               transition={{ duration: 0.5 }}
               className="flex flex-col items-center gap-6 w-full"
             >
+              {/* Header */}
               <div className="text-center space-y-2">
                 <p className="text-[10px] uppercase tracking-[0.4em] text-stone-600">
                   Barista
@@ -579,14 +582,53 @@ export default function AdminPage() {
                   className="text-4xl font-light tracking-wide text-stone-200"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
-                  Añadir sello
+                  {adminTab === "stamps" ? "Añadir sello" : "Gestionar menú"}
                 </h1>
-                <p className="text-[11px] text-stone-600 tracking-wide">
-                  Escanea el QR del cliente y copia el ID de la URL
-                </p>
               </div>
 
-              <StampView onLogout={() => { sessionStorage.removeItem("barista-authed"); setAuthed(false); setPin(""); }} />
+              {/* Tabs */}
+              <div className="flex gap-1 p-1 bg-neutral-900 border border-stone-800 rounded-xl">
+                {(["stamps", "menu"] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setAdminTab(tab)}
+                    className={`px-5 py-2 rounded-lg text-[10px] uppercase tracking-[0.3em] transition-all duration-200 ${
+                      adminTab === tab
+                        ? "bg-stone-200 text-neutral-900"
+                        : "text-stone-600 hover:text-stone-300"
+                    }`}
+                  >
+                    {tab === "stamps" ? "Sellos" : "Menú"}
+                  </button>
+                ))}
+              </div>
+
+              {/* Contenido */}
+              <AnimatePresence mode="wait">
+                {adminTab === "stamps" ? (
+                  <motion.div
+                    key="stamps-view"
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 8 }}
+                    transition={{ duration: 0.2 }}
+                    className="w-full"
+                  >
+                    <StampView onLogout={() => { sessionStorage.removeItem("barista-authed"); setAuthed(false); setPin(""); }} />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="menu-view"
+                    initial={{ opacity: 0, x: 8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -8 }}
+                    transition={{ duration: 0.2 }}
+                    className="w-full"
+                  >
+                    <MenuAdmin />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           )}
         </AnimatePresence>

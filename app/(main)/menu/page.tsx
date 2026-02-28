@@ -1,146 +1,22 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-
-type Ingredient = {
-  name: string;
-};
-
-type SizeOption = {
-  label: string;
-  price: number;
-};
-
-type Drink = {
-  name: string;
-  price?: number;
-  sizes?: SizeOption[];
-  ingredients: Ingredient[];
-  optional?: Ingredient[];
-  note?: string;
-  available?: boolean;
-  tag?: "Fuerte" | "Cremoso" | "Dulce" | "Gourmet" | "Intenso" | "Refrescante";
-  highlight?: boolean;
-  seasonal?: boolean;
-};
-
-type Section = {
-  title: string;
-  description: string;
-  type: "drink" | "food";
-  drinks: Drink[];
-};
-
-const sections: Section[] = [
-  {
-    title: "Con leche",
-    description: "Suaves, balanceadas y cremosas",
-    type: "drink",
-    drinks: [
-      {
-        name: "Latte",
-        price: 40,
-        ingredients: [{ name: "Espresso" }, { name: "Leche vaporizada" }],
-      },
-      {
-        name: "Cappuccino",
-        price: 40,
-        ingredients: [
-          { name: "Espresso" },
-          { name: "Leche vaporizada" },
-          { name: "Espuma de leche" },
-        ],
-        tag: "Cremoso",
-      },
-      {
-        name: "Flat White",
-        price: 40,
-        ingredients: [{ name: "Espresso" }, { name: "Leche vaporizada" }],
-        note: "Más café, menos espuma",
-        tag: "Intenso",
-      },
-      {
-        name: "Moka",
-        price: 45,
-        ingredients: [
-          { name: "Espresso" },
-          { name: "Chocolate" },
-          { name: "Cocoa" },
-          { name: "Leche" },
-          { name: "Vainilla" },
-        ],
-        tag: "Dulce",
-      },
-    ],
-  },
-  {
-    title: "Especiales",
-    description: "Con sabores y perfil más dulce",
-    type: "drink",
-    drinks: [
-      {
-        name: "Latte Praliné",
-        sizes: [
-          { label: "10 oz", price: 45 },
-          { label: "12 oz", price: 52 },
-        ],
-        ingredients: [
-          { name: "Espresso" },
-          { name: "Caramelo" },
-          { name: "Leche vaporizada" },
-          { name: "Nuez pecana" },
-        ],
-        note: "Nuez pecana garapiñada con cubierta de praliné",
-        tag: "Gourmet",
-        seasonal: true,
-      },
-      {
-        name: "Chocolate caliente",
-        price: 40,
-        ingredients: [
-          { name: "Chocolate" },
-          { name: "Cocoa" },
-          { name: "Leche" },
-          { name: "Vainilla" },
-        ],
-        note: "Sin café · Perfil más cremoso",
-        tag: "Dulce",
-      },
-      {
-        name: "Latte Helado",
-        price: 50,
-        ingredients: [
-          { name: "Espresso" },
-          { name: "Caramelo" },
-          { name: "Leche fría" },
-          { name: "Hielo" },
-        ],
-        tag: "Refrescante",
-      },
-    ],
-  },
-  {
-    title: "Base espresso",
-    description: "Bebidas intensas, cortas y directas",
-    type: "drink",
-    drinks: [
-      {
-        name: "Espresso",
-        price: 30,
-        ingredients: [{ name: "Espresso" }],
-        tag: "Fuerte",
-      },
-      {
-        name: "Americano",
-        price: 30,
-        ingredients: [{ name: "Espresso" }, { name: "Agua caliente" }],
-        note: "Espresso servido primero",
-      },
-    ],
-  },
-];
+import { useFirestore } from "reactfire";
+import { MenuSection } from "@/models/menu.model";
+import { getFullMenu } from "@/services/menu.service";
 
 export default function CafeMenu() {
+  const firestore = useFirestore();
+  const [sections, setSections] = useState<MenuSection[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getFullMenu(firestore)
+      .then((data) => setSections(data.filter((s) => s.active)))
+      .finally(() => setLoading(false));
+  }, [firestore]);
+
   return (
     <div className="min-h-screen bg-neutral-950 text-white print:min-h-0 print:bg-white print:text-neutral-900">
 
@@ -178,143 +54,180 @@ export default function CafeMenu() {
           </div>
         </header>
 
-        {/* Secciones */}
-        <div className="flex flex-wrap gap-px bg-stone-800 print:grid print:grid-cols-3 print:gap-6 print:bg-white print:items-start">
-          {sections.map((section) => {
-            const isFood = section.type === "food";
-
-            return (
+        {/* Skeleton */}
+        {loading && (
+          <div className="flex flex-wrap gap-px bg-stone-800">
+            {[1, 2, 3].map((i) => (
               <div
-                key={section.title}
-                className="bg-neutral-950 flex-1 basis-[260px] px-6 py-8 sm:px-8 sm:py-10 print:bg-white print:p-0 flex flex-col print:self-start print:break-inside-avoid"
+                key={i}
+                className="bg-neutral-950 flex-1 basis-[260px] px-6 py-8 sm:px-8 sm:py-10 space-y-4"
               >
-                {/* Encabezado de sección */}
-                <div className="mb-6 shrink-0 print:pb-1 print:border-b print:border-neutral-800">
-                  <h2
-                    className={`text-[10px] uppercase tracking-[0.35em] mb-1 ${
-                      isFood
-                        ? "text-amber-300 print:text-amber-800"
-                        : "text-stone-400 print:text-neutral-700"
-                    }`}
-                  >
-                    {section.title}
-                  </h2>
-                  <p
-                    className={`text-[11px] ${
-                      isFood
-                        ? "text-amber-500/50 print:text-amber-600/70"
-                        : "text-stone-600 print:text-neutral-400"
-                    }`}
-                  >
-                    {section.description}
-                  </p>
-                  <div
-                    className={`w-6 h-px mt-4 ${
-                      isFood
-                        ? "bg-amber-500/30 print:bg-amber-400"
-                        : "bg-stone-700 print:bg-neutral-300"
-                    }`}
-                  />
+                <div className="h-3 w-24 bg-stone-900 rounded-full animate-pulse" />
+                <div className="h-2.5 w-40 bg-stone-900 rounded-full animate-pulse" />
+                <div className="mt-6 space-y-5">
+                  {[1, 2, 3].map((j) => (
+                    <div key={j} className="space-y-2 py-4 border-t border-stone-800/40">
+                      <div className="flex justify-between">
+                        <div className="h-4 w-28 bg-stone-900 rounded animate-pulse" />
+                        <div className="h-4 w-8 bg-stone-900 rounded animate-pulse" />
+                      </div>
+                      <div className="h-2.5 w-36 bg-stone-900 rounded-full animate-pulse" />
+                    </div>
+                  ))}
                 </div>
+              </div>
+            ))}
+          </div>
+        )}
 
-                {/* Lista de bebidas */}
-                <ul className="divide-y divide-stone-800/40 print:divide-neutral-200">
-                  {section.drinks.map((drink) => {
-                    const isAvailable = drink.available !== false;
+        {/* Secciones */}
+        {!loading && (
+          <div className="flex flex-wrap gap-px bg-stone-800 print:grid print:grid-cols-3 print:gap-6 print:bg-white print:items-start">
+            {sections.map((section) => {
+              const isFood = section.type === "food";
 
-                    return (
-                      <li key={drink.name} className={`py-4 space-y-1.5 ${!isAvailable ? "opacity-40" : ""}`}>
+              return (
+                <div
+                  key={section.id ?? section.title}
+                  className="bg-neutral-950 flex-1 basis-[260px] px-6 py-8 sm:px-8 sm:py-10 print:bg-white print:p-0 flex flex-col print:self-start print:break-inside-avoid"
+                >
+                  {/* Encabezado de sección */}
+                  <div className="mb-6 shrink-0 print:pb-1 print:border-b print:border-neutral-800">
+                    <h2
+                      className={`text-[10px] uppercase tracking-[0.35em] mb-1 ${
+                        isFood
+                          ? "text-amber-300 print:text-amber-800"
+                          : "text-stone-400 print:text-neutral-700"
+                      }`}
+                    >
+                      {section.title}
+                    </h2>
+                    <p
+                      className={`text-[11px] ${
+                        isFood
+                          ? "text-amber-500/50 print:text-amber-600/70"
+                          : "text-stone-600 print:text-neutral-400"
+                      }`}
+                    >
+                      {section.description}
+                    </p>
+                    <div
+                      className={`w-6 h-px mt-4 ${
+                        isFood
+                          ? "bg-amber-500/30 print:bg-amber-400"
+                          : "bg-stone-700 print:bg-neutral-300"
+                      }`}
+                    />
+                  </div>
 
-                        {/* Nombre + precio */}
-                        <div className="flex items-start justify-between gap-3 mb-1.5">
-                          <div className="space-y-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-display text-lg leading-tight font-medium text-stone-100 print:text-neutral-900">
-                                {drink.name}
-                              </span>
-                              {drink.highlight && (
-                                <span className="text-[9px] uppercase tracking-widest bg-amber-600/15 text-amber-400 border border-amber-500/50 rounded-full px-2 py-0.5 print:bg-transparent print:text-amber-700 print:border-amber-600">
-                                  Especial
+                  {/* Lista de items */}
+                  <ul className="divide-y divide-stone-800/40 print:divide-neutral-200">
+                    {(section.items ?? []).map((item) => {
+                      const isAvailable = item.available !== false;
+
+                      return (
+                        <li key={item.id ?? item.name} className={`py-4 space-y-1.5 ${!isAvailable ? "opacity-40" : ""}`}>
+
+                          {/* Nombre + precio */}
+                          <div className="flex items-start justify-between gap-3 mb-1.5">
+                            <div className="space-y-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-display text-lg leading-tight font-medium text-stone-100 print:text-neutral-900">
+                                  {item.name}
                                 </span>
-                              )}
-                              {drink.seasonal && (
-                                <span className="text-[9px] uppercase tracking-widest bg-emerald-600/10 text-emerald-400 border border-emerald-500/40 rounded-full px-2 py-0.5 print:bg-transparent print:text-emerald-700 print:border-emerald-600">
-                                  Temporada
-                                </span>
+                                {item.highlight && (
+                                  <span className="text-[9px] uppercase tracking-widest bg-amber-600/15 text-amber-400 border border-amber-500/50 rounded-full px-2 py-0.5 print:bg-transparent print:text-amber-700 print:border-amber-600">
+                                    Especial
+                                  </span>
+                                )}
+                                {item.seasonal && (
+                                  <span className="text-[9px] uppercase tracking-widest bg-emerald-600/10 text-emerald-400 border border-emerald-500/40 rounded-full px-2 py-0.5 print:bg-transparent print:text-emerald-700 print:border-emerald-600">
+                                    Temporada
+                                  </span>
+                                )}
+                              </div>
+
+                              {item.tags?.length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                  {item.tags.map((tag) => (
+                                    <span
+                                      key={tag}
+                                      className="inline-block text-[10px] uppercase tracking-widest text-stone-500 border border-stone-700/60 rounded-full px-2 py-0.5 print:text-neutral-500 print:border-neutral-300"
+                                    >
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
                               )}
                             </div>
 
-                            {drink.tag && (
-                              <span className="inline-block text-[10px] uppercase tracking-widest text-stone-500 border border-stone-700/60 rounded-full px-2 py-0.5 print:text-neutral-500 print:border-neutral-300">
-                                {drink.tag}
+                            {!item.sizes && item.price && (
+                              <span className="text-sm tabular-nums text-stone-400 print:text-neutral-600 shrink-0 pt-0.5">
+                                ${item.price}
                               </span>
                             )}
                           </div>
 
-                          {!drink.sizes && drink.price && (
-                            <span className="text-sm tabular-nums text-stone-400 print:text-neutral-600 shrink-0 pt-0.5">
-                              ${drink.price}
-                            </span>
+                          {/* Tamaños */}
+                          {item.sizes && (
+                            <div className="flex gap-2 mb-2 flex-wrap">
+                              {item.sizes.map((size) => (
+                                <span
+                                  key={size.label}
+                                  className="text-xs px-2.5 py-0.5 rounded-full border border-stone-700/60 text-stone-400 print:border-neutral-300 print:text-neutral-600"
+                                >
+                                  {size.label} · ${size.price}
+                                </span>
+                              ))}
+                            </div>
                           )}
-                        </div>
 
-                        {/* Tamaños */}
-                        {drink.sizes && (
-                          <div className="flex gap-2 mb-2 flex-wrap">
-                            {drink.sizes.map((size) => (
-                              <span
-                                key={size.label}
-                                className="text-xs px-2.5 py-0.5 rounded-full border border-stone-700/60 text-stone-400 print:border-neutral-300 print:text-neutral-600"
-                              >
-                                {size.label} · ${size.price}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Ingredientes */}
-                        <p className="text-[11px] text-stone-600 print:text-neutral-400 leading-snug">
-                          {drink.ingredients.map((i) => i.name).join(" · ")}
-                        </p>
-
-                        {/* Nota */}
-                        {drink.note && isAvailable && (
-                          <p
-                            className={`text-[11px] italic mt-1 leading-snug ${
-                              drink.highlight
-                                ? "text-amber-500/60 print:text-amber-700/80"
-                                : "text-stone-600 print:text-neutral-400"
-                            }`}
-                          >
-                            {drink.note}
+                          {/* Ingredientes */}
+                          <p className="text-[11px] text-stone-600 print:text-neutral-400 leading-snug">
+                            {item.ingredients.join(" · ")}
                           </p>
-                        )}
 
-                        {!isAvailable && (
-                          <p className="text-[10px] uppercase tracking-widest text-stone-600 print:text-neutral-400 mt-1">
-                            No disponible hoy
-                          </p>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            );
-          })}
-        </div>
+                          {/* Nota */}
+                          {item.note && isAvailable && (
+                            <p
+                              className={`text-[11px] italic mt-1 leading-snug ${
+                                item.highlight
+                                  ? "text-amber-500/60 print:text-amber-700/80"
+                                  : "text-stone-600 print:text-neutral-400"
+                              }`}
+                            >
+                              {item.note}
+                            </p>
+                          )}
+
+                          {!isAvailable && (
+                            <p className="text-[10px] uppercase tracking-widest text-stone-600 print:text-neutral-400 mt-1">
+                              No disponible hoy
+                            </p>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Botón de descarga — oculto al imprimir */}
-        <div className="mt-16 flex justify-center print:hidden">
-          <button
-            onClick={() => window.print()}
-            className="inline-flex items-center gap-4 text-[11px] uppercase tracking-[0.35em] text-stone-500 hover:text-white transition-colors duration-300 group"
-          >
-            <span className="w-8 h-px bg-stone-700 group-hover:w-12 group-hover:bg-white transition-all duration-500" />
-            Descargar menú
-            <span className="w-8 h-px bg-stone-700 group-hover:w-12 group-hover:bg-white transition-all duration-500" />
-          </button>
-        </div>
+        {!loading && (
+          <div className="mt-16 flex justify-center print:hidden">
+            <button
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-4 text-[11px] uppercase tracking-[0.35em] text-stone-500 hover:text-white transition-colors duration-300 group"
+            >
+              <span className="w-8 h-px bg-stone-700 group-hover:w-12 group-hover:bg-white transition-all duration-500" />
+              Descargar menú
+              <span className="w-8 h-px bg-stone-700 group-hover:w-12 group-hover:bg-white transition-all duration-500" />
+            </button>
+          </div>
+        )}
 
         {/* Pie de página para impresión */}
         <div className="hidden print:flex items-center justify-center mt-12 pt-6 border-t border-neutral-200 gap-4">
