@@ -167,7 +167,7 @@ export default function Home() {
         ctaLink="/menu"
       />
 
-      {/* Segunda sección — alineada a la izquierda, título más breve */}
+      {/* Segunda sección — fidelidad, alineada a la izquierda */}
       <PremiumSection
         eyebrow="Programa de fidelidad"
         title={`Cada visita\ncuenta`}
@@ -176,22 +176,59 @@ export default function Home() {
         align="left"
       />
 
-      {/* Footer compacto — no ocupa pantalla completa */}
-      <footer className="snap-start h-[100dvh] flex flex-col items-center justify-end pb-16 bg-neutral-950">
+      {/* Footer con horarios y ubicación */}
+      <footer className="snap-start h-[100dvh] flex flex-col items-center justify-center bg-neutral-950 px-8">
         <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 1 }}
-          className="text-center space-y-4"
+          className="w-full max-w-md"
         >
-          <p className="text-stone-200 tracking-[0.5em] text-xs uppercase">
-            La Commune
-          </p>
-          <div className="w-6 h-px bg-stone-700 mx-auto" />
-          <p className="text-stone-600 text-[10px] tracking-[0.3em] uppercase">
-            © {new Date().getFullYear()} · Hecho con amor
-          </p>
+          {/* Wordmark */}
+          <div className="text-center mb-12">
+            <p className="font-display text-3xl font-light tracking-[0.45em] uppercase text-stone-200">
+              La Commune
+            </p>
+            <div className="w-6 h-px bg-stone-700 mx-auto mt-5" />
+          </div>
+
+          {/* Horarios + Ubicación */}
+          <div className="grid grid-cols-2 gap-10 mb-12">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.35em] text-stone-500 mb-5">
+                Horarios
+              </p>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-[11px] text-stone-500 uppercase tracking-wider">Lun – Vie</p>
+                  <p className="text-sm text-stone-200 mt-0.5">7:00 – 20:00</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-stone-500 uppercase tracking-wider">Sáb – Dom</p>
+                  <p className="text-sm text-stone-200 mt-0.5">8:00 – 20:00</p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.35em] text-stone-500 mb-5">
+                Encuéntranos
+              </p>
+              <div className="space-y-1">
+                <p className="text-sm text-stone-200">Santa Natividad 135</p>
+                <p className="text-[11px] text-stone-500">Col. Mineral de la Reforma</p>
+                <p className="text-[11px] text-stone-500">Pachuca</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Divisor + copyright */}
+          <div className="border-t border-stone-800 pt-6 text-center">
+            <p className="text-[10px] tracking-[0.3em] uppercase text-stone-600">
+              © {new Date().getFullYear()} · La Commune · Hecho con amor
+            </p>
+          </div>
         </motion.div>
       </footer>
     </main>
