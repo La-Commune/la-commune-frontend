@@ -99,6 +99,19 @@ function PinPad({
   );
 }
 
+interface StampEntry {
+  customerName: string;
+  stamps: number;
+  maxStamps: number;
+  time: Date;
+}
+
+function timeAgo(date: Date): string {
+  const mins = Math.floor((Date.now() - date.getTime()) / 60000);
+  if (mins < 1) return "ahora";
+  return `hace ${mins}m`;
+}
+
 /* ── Vista de añadir sello ────────────────────────────── */
 function StampView({ onLogout }: { onLogout: () => void }) {
   const firestore = useFirestore();
@@ -108,6 +121,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
   const [screen, setScreen] = useState<Screen>("stamp");
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState("");
+  const [stampHistory, setStampHistory] = useState<StampEntry[]>([]);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Cleanup del timer al desmontar el componente
@@ -169,6 +183,10 @@ function StampView({ onLogout }: { onLogout: () => void }) {
         addedBy: "barista",
       });
       setCard({ ...card, stamps: result.stamps, status: result.status });
+      setStampHistory((prev) => [
+        { customerName: card.customerName || "Cliente", stamps: result.stamps, maxStamps: card.maxStamps, time: new Date() },
+        ...prev,
+      ].slice(0, 5));
       setScreen("success");
       if (resetTimer.current) clearTimeout(resetTimer.current);
       resetTimer.current = setTimeout(() => {
@@ -423,6 +441,33 @@ function StampView({ onLogout }: { onLogout: () => void }) {
       >
         Cerrar sesión
       </button>
+
+      {/* Historial de sellos de sesión */}
+      {stampHistory.length > 0 && (
+        <div className="w-full space-y-2">
+          <p className="text-[10px] uppercase tracking-widest text-stone-700 text-center">
+            Sellos de esta sesión
+          </p>
+          <div className="space-y-1.5">
+            {stampHistory.map((entry, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between px-4 py-2.5 rounded-xl border border-stone-900 bg-neutral-950 text-stone-500"
+              >
+                <span className="text-[11px] text-stone-400 truncate max-w-[140px]">
+                  {entry.customerName}
+                </span>
+                <span className="text-[10px] tracking-widest">
+                  {entry.stamps}/{entry.maxStamps}
+                </span>
+                <span className="text-[10px] text-stone-700">
+                  {timeAgo(entry.time)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -439,11 +484,19 @@ export default function AdminPage() {
   const [pinError, setPinError] = useState("");
   const [pinLoading, setPinLoading] = useState(false);
 
+  // Auto-auth si la sesión del barista sigue activa en sessionStorage
+  useEffect(() => {
+    if (sessionStorage.getItem("barista-authed") === "1") {
+      setAuthed(true);
+    }
+  }, []);
+
   const handlePinSubmit = async () => {
     setPinLoading(true);
     try {
       const ok = await verifyAdminPin(pin);
       if (ok) {
+        sessionStorage.setItem("barista-authed", "1");
         setAuthed(true);
         setPinError("");
       } else {
@@ -533,7 +586,7 @@ export default function AdminPage() {
                 </p>
               </div>
 
-              <StampView onLogout={() => { setAuthed(false); setPin(""); }} />
+              <StampView onLogout={() => { sessionStorage.removeItem("barista-authed"); setAuthed(false); setPin(""); }} />
             </motion.div>
           )}
         </AnimatePresence>
