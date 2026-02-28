@@ -1,4 +1,4 @@
-import { CoffeeIcon, Heart } from "lucide-react";
+import { Coffee as CoffeeIcon, Heart } from "lucide-react";
 
 export const Footer = () => {
   return (
