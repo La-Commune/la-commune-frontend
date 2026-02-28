@@ -31,10 +31,10 @@ export function QrScanner({ onScan, onClose }: Props) {
       .then(() => {
         if (!stopped) setStatus("ready");
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         if (!stopped) {
           setStatus("error");
-          if (err?.message?.includes("Permission")) {
+          if (err instanceof Error && err.message.includes("Permission")) {
             setErrorMsg("Permiso de cámara denegado");
           } else {
             setErrorMsg("No se pudo iniciar la cámara");

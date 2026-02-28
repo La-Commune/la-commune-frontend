@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Fondo oscuro -->
+  <rect width="512" height="512" fill="#111111"/>
+
+  <!-- Taza de café — trazo minimalista -->
+  <g transform="translate(256,230)" fill="none" stroke="#C7B7A3" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Cuerpo de la taza -->
+    <path d="M-90,-60 L-80,90 Q-80,110 -56,110 L56,110 Q80,110 80,90 L90,-60 Z" fill="#111111" stroke="#C7B7A3"/>
+    <!-- Asa -->
+    <path d="M80,0 Q130,0 130,45 Q130,90 80,90" fill="none"/>
+    <!-- Vapor izquierdo -->
+    <path d="M-30,-80 Q-20,-110 -30,-140" fill="none" opacity="0.6"/>
+    <!-- Vapor centro -->
+    <path d="M0,-90 Q10,-120 0,-150" fill="none" opacity="0.6"/>
+    <!-- Vapor derecho -->
+    <path d="M30,-80 Q40,-110 30,-140" fill="none" opacity="0.6"/>
+  </g>
+
+  <!-- Línea decorativa -->
+  <rect x="196" y="370" width="120" height="1" fill="#C7B7A3" opacity="0.35"/>
+
+  <!-- "LC" como texto SVG nativo (no requiere fuente externa) -->
+  <text
+    x="256" y="460"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="28"
+    font-weight="300"
+    fill="#C7B7A3"
+    text-anchor="middle"
+    letter-spacing="12"
+    opacity="0.7"
+  >LA COMMUNE</text>
+</svg>

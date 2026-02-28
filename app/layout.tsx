@@ -4,6 +4,7 @@ import "@/app/globals.css";
 import { cn } from "@/lib/utils";
 import { MyFirebaseProvider } from "@/components/firebase-providers";
 import { Toaster } from "@/components/ui/toaster";
+import { PwaRegister } from "@/components/ui/PwaRegister";
 import { ReactNode } from "react";
 
 const sans = Work_Sans({
@@ -19,9 +20,18 @@ const display = Cormorant_Garamond({
 });
 
 export const metadata: Metadata = {
-  title: "La commune",
+  title: "La Commune",
   description:
-    "La commune, tu cafetería de barrio. Junta sellos y canjea tu recompensa en tu próxima visita.",
+    "Tu tarjeta de fidelidad digital. Acumula visitas y desbloquea tu bebida de cortesía en La Commune, Pachuca.",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "La Commune",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -31,6 +41,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <MyFirebaseProvider>
           {children}
           <Toaster />
+          <PwaRegister />
         </MyFirebaseProvider>
       </body>
     </html>

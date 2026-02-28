@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Sin conexión · La Commune</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100dvh;
+      background: #111;
+      color: #e7e5e4;
+      font-family: Georgia, 'Times New Roman', serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      padding: 2rem;
+      text-align: center;
+    }
+    .eyebrow {
+      font-family: system-ui, sans-serif;
+      font-size: 10px;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: #57534e;
+    }
+    h1 { font-size: 2.5rem; font-weight: 300; letter-spacing: 0.05em; line-height: 1.1; }
+    p { font-size: 0.875rem; color: #78716c; max-width: 22ch; line-height: 1.6; font-family: system-ui, sans-serif; }
+    .line { width: 2rem; height: 1px; background: #44403c; }
+    a {
+      font-family: system-ui, sans-serif;
+      font-size: 10px;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: #a8a29e;
+      text-decoration: none;
+    }
+    a:hover { color: #fff; }
+  </style>
+</head>
+<body>
+  <p class="eyebrow">Sin conexión</p>
+  <h1>La Commune</h1>
+  <div class="line"></div>
+  <p>Parece que no tienes internet en este momento. Conéctate para ver tu tarjeta.</p>
+  <a href="/">Reintentar</a>
+</body>
+</html>
