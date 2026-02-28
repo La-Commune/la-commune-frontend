@@ -8,7 +8,7 @@ import {
   useTransform,
   useSpring,
 } from "framer-motion";
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 
 /* ===============================
    Animated Text (línea por línea)
@@ -193,6 +193,16 @@ const PremiumSection: React.FC<SectionProps> = ({
    MAIN
 ================================= */
 export default function Home() {
+  const [cardId, setCardId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCardId(localStorage.getItem("cardId"));
+  }, []);
+
+  const loyaltyCta = cardId
+    ? { text: "Ver mi tarjeta", link: `/card/${cardId}` }
+    : { text: "Registrar mi tarjeta", link: "/onboarding" };
+
   return (
     <main className="h-[100dvh] overflow-y-scroll snap-y snap-mandatory bg-neutral-950">
 
@@ -212,10 +222,10 @@ export default function Home() {
         title={`Cada visita\ncuenta`}
         subtitle="Después de cinco bebidas, la siguiente es cortesía de la casa."
         videoSrc="/videos/coffee-hero.mp4"
-        ctaText="Registrar mi tarjeta"
-        ctaLink="/onboarding"
-        secondaryCtaText="Ver cómo funciona"
-        secondaryCtaLink="/card/preview"
+        ctaText={loyaltyCta.text}
+        ctaLink={loyaltyCta.link}
+        secondaryCtaText={cardId ? undefined : "Ver cómo funciona"}
+        secondaryCtaLink={cardId ? undefined : "/card/preview"}
         align="left"
       />
 
