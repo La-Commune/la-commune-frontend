@@ -264,6 +264,13 @@ export default function Home() {
                 Registrarse
               </Link>
             </div>
+            {/* Acceso discreto para personal */}
+            <Link
+              href="/admin"
+              className="mt-2 text-[9px] tracking-[0.3em] uppercase text-stone-800 hover:text-stone-600 transition-colors duration-300"
+            >
+              Personal
+            </Link>
           </div>
         </motion.div>
       </footer>
