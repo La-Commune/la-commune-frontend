@@ -531,7 +531,7 @@ export default function AdminPage() {
       </nav>
 
       {/* Contenido */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-10 px-6 pb-16">
+      <div className="flex-1 flex flex-col items-center justify-center gap-10 px-6 sm:px-10 pb-16">
 
         <AnimatePresence mode="wait">
           {!authed ? (
@@ -571,7 +571,7 @@ export default function AdminPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5 }}
-              className="flex flex-col items-center gap-6 w-full"
+              className={`flex flex-col items-center gap-6 w-full ${adminTab === "menu" ? "justify-start" : ""}`}
             >
               {/* Header */}
               <div className="text-center space-y-2">
