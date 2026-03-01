@@ -273,6 +273,7 @@ function EditItemModal({
   const [name, setName] = useState(item.name);
   const [note, setNote] = useState(item.note ?? "");
   const [ingredients, setIngredients] = useState(item.ingredients.join(", "));
+  const [imageUrl, setImageUrl] = useState(item.imageUrl ?? "");
   const [tags, setTags] = useState<string[]>(item.tags ?? []);
   const [highlight, setHighlight] = useState(item.highlight);
   const [seasonal, setSeasonal] = useState(item.seasonal);
@@ -310,6 +311,7 @@ function EditItemModal({
       name: name.trim(),
       note: note.trim() || undefined,
       ingredients: ingredients.split(",").map((s) => s.trim()).filter(Boolean),
+      imageUrl: imageUrl.trim() || undefined,
       tags,
       highlight,
       seasonal,
@@ -364,6 +366,29 @@ function EditItemModal({
         <input className={inputCls} placeholder="Nombre *" value={name} onChange={(e) => setName(e.target.value)} />
         <input className={inputCls} placeholder="Ingredientes separados por coma" value={ingredients} onChange={(e) => setIngredients(e.target.value)} />
         <input className={inputCls} placeholder="Nota opcional" value={note} onChange={(e) => setNote(e.target.value)} />
+
+        {/* Imagen */}
+        <div className="space-y-2">
+          <p className="text-[10px] uppercase tracking-widest text-stone-600">Imagen (URL)</p>
+          <input
+            className={inputCls}
+            placeholder="https://…"
+            type="url"
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+          />
+          {imageUrl.trim() && (
+            <div className="w-full h-28 rounded-xl overflow-hidden border border-stone-800">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imageUrl.trim()}
+                alt="preview"
+                className="w-full h-full object-cover"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+              />
+            </div>
+          )}
+        </div>
 
         {/* ── Precio / Tamaños ── */}
         <div className="space-y-3">
@@ -834,12 +859,22 @@ export function MenuAdmin() {
                   onClick={() => setDrawerItem({ item, sectionId: section.id! })}
                   className="w-full flex items-center gap-4 px-5 py-4 hover:bg-stone-900/50 active:bg-stone-900 transition-colors duration-150 text-left group min-h-[56px]"
                 >
-                  {/* Indicador disponibilidad */}
-                  <span
-                    className={`w-2 h-2 rounded-full shrink-0 transition-colors mt-0.5 ${
-                      item.available ? "bg-stone-500" : "bg-stone-800"
-                    }`}
-                  />
+                  {/* Thumbnail imagen */}
+                  {item.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={item.imageUrl}
+                      alt=""
+                      className="w-8 h-8 rounded-lg object-cover shrink-0 opacity-80"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                    />
+                  ) : (
+                    <span
+                      className={`w-2 h-2 rounded-full shrink-0 transition-colors mt-0.5 ${
+                        item.available ? "bg-stone-500" : "bg-stone-800"
+                      }`}
+                    />
+                  )}
 
                   {/* Nombre + subtítulo */}
                   <span className="flex-1 min-w-0 space-y-0.5">

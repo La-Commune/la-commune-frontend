@@ -8,8 +8,11 @@ import { useFirestore, useFirestoreDocData } from "reactfire";
 import { Card } from "@/models/card.model";
 import { QrScanner } from "@/components/ui/QrScanner";
 import { MenuAdmin } from "@/components/ui/MenuAdmin";
+import { CustomerDirectory } from "@/components/ui/CustomerDirectory";
+import { AnalyticsDashboard } from "@/components/ui/AnalyticsDashboard";
 import { verifyAdminPin } from "@/app/actions/verifyAdminPin";
 import { addStamp, redeemCard } from "@/services/card.service";
+import { getFullMenu } from "@/services/menu.service";
 
 type Screen = "pin" | "stamp" | "success" | "redeemed";
 
@@ -125,6 +128,24 @@ function StampView({ onLogout }: { onLogout: () => void }) {
   const [stampHistory, setStampHistory] = useState<StampEntry[]>([]);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Bebida
+  const [selectedDrink, setSelectedDrink] = useState("");
+  const [customDrink, setCustomDrink] = useState("");
+  const [stampSize, setStampSize] = useState("");
+  const [menuDrinks, setMenuDrinks] = useState<string[]>([]);
+
+  // Cargar bebidas disponibles del menú
+  useEffect(() => {
+    getFullMenu(firestore).then((sections) => {
+      const drinks = sections
+        .filter((s) => s.type === "drink" && s.active)
+        .flatMap((s) => s.items ?? [])
+        .filter((item) => item.available !== false)
+        .map((item) => item.name);
+      setMenuDrinks(drinks);
+    });
+  }, [firestore]);
+
   // Cleanup del timer al desmontar el componente
   useEffect(() => {
     return () => {
@@ -179,9 +200,15 @@ function StampView({ onLogout }: { onLogout: () => void }) {
     setLoading(true);
     setError("");
     try {
+      const finalDrink = selectedDrink === "otro"
+        ? (customDrink.trim() || undefined)
+        : (selectedDrink || undefined);
+
       const result = await addStamp(firestore, card.id, {
         customerId: card.customerId ?? undefined,
         addedBy: "barista",
+        drinkType: finalDrink,
+        size: stampSize || undefined,
       });
       setCard({ ...card, stamps: result.stamps, status: result.status });
       setStampHistory((prev) => [
@@ -194,12 +221,15 @@ function StampView({ onLogout }: { onLogout: () => void }) {
         setScreen("stamp");
         setCardInput("");
         setCard(null);
+        setSelectedDrink("");
+        setCustomDrink("");
+        setStampSize("");
       }, 3000);
     } catch {
       setError("Error al añadir el sello. Intenta de nuevo.");
     }
     setLoading(false);
-  }, [card, firestore]);
+  }, [card, firestore, selectedDrink, customDrink, stampSize]);
 
   const handleRedeem = useCallback(async () => {
     if (!card) return;
@@ -357,6 +387,79 @@ function StampView({ onLogout }: { onLogout: () => void }) {
               )}
             </div>
 
+            {/* Selector de bebida — solo al agregar sello */}
+            {!isComplete && (
+              <div className="space-y-3 pt-1">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-stone-600">
+                  ¿Qué pidió?{" "}
+                  <span className="text-stone-800">· opcional</span>
+                </p>
+
+                {/* Chips de bebidas */}
+                <div className="flex flex-wrap gap-2">
+                  {menuDrinks.length === 0 && (
+                    <p className="text-[10px] text-stone-800 uppercase tracking-widest">
+                      Sin bebidas en el menú
+                    </p>
+                  )}
+                  {menuDrinks.map((drink) => (
+                    <button
+                      key={drink}
+                      onClick={() => setSelectedDrink((prev) => prev === drink ? "" : drink)}
+                      className={`px-3 py-1.5 rounded-full border text-[10px] uppercase tracking-widest transition-all duration-150 ${
+                        selectedDrink === drink
+                          ? "border-stone-400 text-stone-100 bg-stone-800"
+                          : "border-stone-800 text-stone-600 hover:border-stone-700 hover:text-stone-400"
+                      }`}
+                    >
+                      {drink}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setSelectedDrink((prev) => prev === "otro" ? "" : "otro")}
+                    className={`px-3 py-1.5 rounded-full border text-[10px] uppercase tracking-widest transition-all duration-150 ${
+                      selectedDrink === "otro"
+                        ? "border-stone-400 text-stone-100 bg-stone-800"
+                        : "border-stone-800 text-stone-600 hover:border-stone-700 hover:text-stone-400"
+                    }`}
+                  >
+                    Otro
+                  </button>
+                </div>
+
+                {/* Input libre para "Otro" */}
+                {selectedDrink === "otro" && (
+                  <input
+                    type="text"
+                    value={customDrink}
+                    onChange={(e) => setCustomDrink(e.target.value)}
+                    placeholder="Nombre de la bebida"
+                    autoFocus
+                    className="w-full bg-neutral-950 border border-stone-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-stone-700 focus:outline-none focus:border-stone-600 transition-colors"
+                  />
+                )}
+
+                {/* Tamaño — solo si hay bebida seleccionada */}
+                {selectedDrink && selectedDrink !== "otro" && (
+                  <div className="flex gap-2">
+                    {(["10oz", "12oz"] as const).map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => setStampSize((prev) => prev === s ? "" : s)}
+                        className={`px-4 py-1.5 rounded-full border text-[10px] uppercase tracking-widest transition-all duration-150 ${
+                          stampSize === s
+                            ? "border-stone-400 text-stone-100 bg-stone-800"
+                            : "border-stone-800 text-stone-600 hover:border-stone-700 hover:text-stone-400"
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Botón — sello o canje según estado */}
             {isComplete ? (
               <button
@@ -484,7 +587,7 @@ export default function AdminPage() {
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
   const [pinLoading, setPinLoading] = useState(false);
-  const [adminTab, setAdminTab] = useState<"stamps" | "menu">("stamps");
+  const [adminTab, setAdminTab] = useState<"stamps" | "menu" | "customers" | "analytics">("stamps");
 
   // Auto-auth si la sesión del barista sigue activa en sessionStorage
   useEffect(() => {
@@ -582,30 +685,36 @@ export default function AdminPage() {
                   className="text-4xl font-light tracking-wide text-stone-200"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
-                  {adminTab === "stamps" ? "Añadir sello" : "Gestionar menú"}
+                  {adminTab === "stamps" ? "Añadir sello"
+                    : adminTab === "menu" ? "Gestionar menú"
+                    : adminTab === "customers" ? "Clientes"
+                    : "Analytics"}
                 </h1>
               </div>
 
               {/* Tabs */}
-              <div className="flex gap-1 p-1 bg-neutral-900 border border-stone-800 rounded-xl">
-                {(["stamps", "menu"] as const).map((tab) => (
+              <div className="flex gap-1 p-1 bg-neutral-900 border border-stone-800 rounded-xl flex-wrap justify-center">
+                {(["stamps", "menu", "customers", "analytics"] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setAdminTab(tab)}
-                    className={`px-5 py-2 rounded-lg text-[10px] uppercase tracking-[0.3em] transition-all duration-200 ${
+                    className={`px-4 py-2 rounded-lg text-[10px] uppercase tracking-[0.3em] transition-all duration-200 ${
                       adminTab === tab
                         ? "bg-stone-200 text-neutral-900"
                         : "text-stone-600 hover:text-stone-300"
                     }`}
                   >
-                    {tab === "stamps" ? "Sellos" : "Menú"}
+                    {tab === "stamps" ? "Sellos"
+                      : tab === "menu" ? "Menú"
+                      : tab === "customers" ? "Clientes"
+                      : "Analytics"}
                   </button>
                 ))}
               </div>
 
               {/* Contenido */}
               <AnimatePresence mode="wait">
-                {adminTab === "stamps" ? (
+                {adminTab === "stamps" && (
                   <motion.div
                     key="stamps-view"
                     initial={{ opacity: 0, x: -8 }}
@@ -616,7 +725,8 @@ export default function AdminPage() {
                   >
                     <StampView onLogout={() => { sessionStorage.removeItem("barista-authed"); setAuthed(false); setPin(""); }} />
                   </motion.div>
-                ) : (
+                )}
+                {adminTab === "menu" && (
                   <motion.div
                     key="menu-view"
                     initial={{ opacity: 0, x: 8 }}
@@ -626,6 +736,30 @@ export default function AdminPage() {
                     className="w-full"
                   >
                     <MenuAdmin />
+                  </motion.div>
+                )}
+                {adminTab === "customers" && (
+                  <motion.div
+                    key="customers-view"
+                    initial={{ opacity: 0, x: 8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -8 }}
+                    transition={{ duration: 0.2 }}
+                    className="w-full"
+                  >
+                    <CustomerDirectory />
+                  </motion.div>
+                )}
+                {adminTab === "analytics" && (
+                  <motion.div
+                    key="analytics-view"
+                    initial={{ opacity: 0, x: 8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -8 }}
+                    transition={{ duration: 0.2 }}
+                    className="w-full"
+                  >
+                    <AnalyticsDashboard />
                   </motion.div>
                 )}
               </AnimatePresence>

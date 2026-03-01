@@ -200,7 +200,7 @@ function Card({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.5 }}
-          className="flex items-center gap-5"
+          className="flex items-center gap-5 flex-wrap justify-center"
         >
           <DownloadCardButton />
           {typeof navigator !== "undefined" && !!navigator.share && (
@@ -216,6 +216,16 @@ function Card({
               Compartir
             </button>
           )}
+          <Link
+            href={`/card/${cardId}/history`}
+            className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-stone-600 hover:text-stone-300 transition-colors duration-300"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            Historial
+          </Link>
         </motion.div>
 
       </div>

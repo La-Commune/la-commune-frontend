@@ -39,6 +39,7 @@
     "react-dom": "latest",
     "react-hook-form": "^7.50.1",
     "reactfire": "^4.2.3",
+    "recharts": "^3.7.0",
     "tailwind-merge": "^1.14.0",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.22.4"
