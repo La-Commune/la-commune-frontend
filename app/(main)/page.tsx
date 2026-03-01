@@ -59,6 +59,7 @@ interface SectionProps {
   secondaryCtaLink?: string;
   onSecondaryCtaClick?: () => void;
   align?: "center" | "left";
+  lazy?: boolean;
 }
 
 const PremiumSection: React.FC<SectionProps> = ({
@@ -72,9 +73,11 @@ const PremiumSection: React.FC<SectionProps> = ({
   secondaryCtaLink,
   onSecondaryCtaClick,
   align = "center",
+  lazy = false,
 }) => {
   const router = useRouter();
   const ref = useRef(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [videoFailed, setVideoFailed] = useState(false);
 
   const { scrollYProgress } = useScroll({
@@ -86,6 +89,30 @@ const PremiumSection: React.FC<SectionProps> = ({
   const y = useTransform(scrollYProgress, [0, 1], ["-8%", "8%"]);
   const smoothY = useSpring(y, { stiffness: 60, damping: 25 });
 
+  // Slow motion — 0.4x de velocidad para efecto cinematográfico
+  useEffect(() => {
+    if (!videoRef.current) return;
+    videoRef.current.playbackRate = 1;
+  }, []);
+
+  // Lazy-load: carga y reproduce el video solo cuando entra al viewport
+  useEffect(() => {
+    if (!lazy || !videoRef.current) return;
+    const video = videoRef.current;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          video.load();
+          video.play().catch(() => {});
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(video);
+    return () => observer.disconnect();
+  }, [lazy]);
+
   return (
     <section
       ref={ref}
@@ -96,13 +123,16 @@ const PremiumSection: React.FC<SectionProps> = ({
       {/* Background Video con parallax suave */}
       {!videoFailed ? (
         <motion.video
+          ref={videoRef}
           style={{ y: smoothY }}
-          autoPlay
+          autoPlay={!lazy}
           muted
           loop
           playsInline
+          preload={lazy ? "none" : "auto"}
           onError={() => setVideoFailed(true)}
           className="absolute inset-0 w-full h-[116%] object-cover"
+          style={{ filter: "saturate(0.6) hue-rotate(-15deg) contrast(1.15)" }}
         >
           <source src={videoSrc} type="video/mp4" />
         </motion.video>
@@ -113,19 +143,31 @@ const PremiumSection: React.FC<SectionProps> = ({
         >
           {/* Gradiente cálido — evoca café sin necesitar imagen */}
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_50%_80%,#2d1507_0%,#111111_65%)]" />
-          {/* Grano sutil para textura — sin assets externos */}
-          <div
-            className="absolute inset-0 opacity-[0.045]"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-              backgroundSize: "128px 128px",
-            }}
-          />
         </motion.div>
       )}
 
-      {/* Overlay limpio — sin blur para que el video respire */}
-      <div className="absolute inset-0 bg-black/40" />
+      {/* Film grain — siempre sobre el video, efecto película 35mm */}
+      <div
+        className="absolute inset-0 z-[1] pointer-events-none"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+          backgroundSize: "128px 128px",
+          opacity: 0.22,
+          mixBlendMode: "overlay",
+        }}
+      />
+
+      {/* Overlay gradiente — más profundidad que el flat bg-black/40 */}
+      <div className="absolute inset-0 z-[2] bg-gradient-to-t from-black/80 via-black/50 to-black/20" />
+
+      {/* Overlay radial — oscurece selectivamente la zona central del texto */}
+      <div
+        className="absolute inset-0 z-[3] pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse 80% 60% at 50% 60%, rgba(0,0,0,0.5) 0%, transparent 100%)",
+        }}
+      />
 
       {/* Content */}
       <div
@@ -231,23 +273,25 @@ export default function Home() {
         eyebrow="La Commune"
         title={`Café\nen común`}
         subtitle="No es solo café. Es el espacio que elegiste para estar."
-        videoSrc="/videos/coffee-slow.mp4"
+        videoSrc="/videos/coffee-free.mp4"
         ctaText="Ver menú"
         ctaLink="/menu"
       />
+    
 
       {/* Segunda sección — fidelidad, alineada a la izquierda */}
       <PremiumSection
         eyebrow="Para los que vuelven"
         title={`Lo que se da\nvuelve`}
         subtitle="Cada visita es un ladrillo. Después de cinco, la casa responde."
-        videoSrc="/videos/coffee-hero.mp4"
+        videoSrc="/videos/coffee-slow.mp4"
         ctaText={loyaltyCta.text}
         ctaLink={loyaltyCta.link}
         secondaryCtaText={cardId ? "No es mi tarjeta" : "Ver cómo funciona"}
         secondaryCtaLink={cardId ? undefined : "/card/preview"}
         onSecondaryCtaClick={cardId ? handleClearSession : undefined}
         align="left"
+        lazy
       />
 
       {/* Footer con horarios y ubicación */}
@@ -299,7 +343,7 @@ export default function Home() {
 
           {/* Divisor + copyright + links */}
           <div className="border-t border-stone-800 pt-6 flex flex-col items-center gap-3">
-            <p className="text-[10px] tracking-[0.3em] uppercase text-stone-600">
+            <p className="text-[10px] tracking-[0.3em] uppercase text-stone-600" suppressHydrationWarning>
               © {new Date().getFullYear()} · La Commune · En construcción permanente
             </p>
             <div className="flex items-center gap-6">
