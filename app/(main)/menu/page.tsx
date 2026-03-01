@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useFirestore } from "reactfire";
 import { MenuSection } from "@/models/menu.model";
 import { getFullMenu } from "@/services/menu.service";
@@ -130,12 +131,13 @@ export default function CafeMenu() {
 
                           {/* Imagen */}
                           {item.imageUrl && (
-                            <div className="w-full h-36 sm:h-44 rounded-xl overflow-hidden mb-3 print:hidden">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
+                            <div className="relative w-full h-36 sm:h-44 rounded-xl overflow-hidden mb-3 print:hidden">
+                              <Image
                                 src={item.imageUrl}
                                 alt={item.name}
-                                className="w-full h-full object-cover"
+                                fill
+                                unoptimized
+                                className="object-cover"
                                 onError={(e) => { (e.currentTarget as HTMLImageElement).parentElement!.style.display = "none"; }}
                               />
                             </div>

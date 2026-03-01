@@ -266,7 +266,6 @@ const PremiumSection: React.FC<SectionProps> = ({
 export default function Home() {
   const router = useRouter();
   const [cardId, setCardId] = useState<string | null>(null);
-  console.log("Card ID from localStorage:", cardId);
   
 
   useEffect(() => {

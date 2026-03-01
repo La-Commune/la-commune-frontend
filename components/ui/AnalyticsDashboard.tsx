@@ -13,7 +13,6 @@ import {
 } from "recharts";
 import {
   getStampEventsInRange,
-  getAllStampEvents,
   getTotalCustomers,
   getTotalRedemptions,
   StampEventRaw,
@@ -89,24 +88,21 @@ export function AnalyticsDashboard() {
   const [loading, setLoading] = useState(true);
   const [totalCustomers, setTotalCustomers] = useState(0);
   const [totalRedemptions, setTotalRedemptions] = useState(0);
-  const [weekEvents, setWeekEvents] = useState<StampEventRaw[]>([]);
-  const [allEvents, setAllEvents] = useState<StampEventRaw[]>([]);
+  const [events, setEvents] = useState<StampEventRaw[]>([]);
 
   useEffect(() => {
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     Promise.all([
       getTotalCustomers(firestore),
       getTotalRedemptions(firestore),
-      getStampEventsInRange(firestore, weekAgo),
-      getAllStampEvents(firestore),
+      getStampEventsInRange(firestore, thirtyDaysAgo),
     ])
-      .then(([customers, redemptions, week, all]) => {
+      .then(([customers, redemptions, evts]) => {
         setTotalCustomers(customers);
         setTotalRedemptions(redemptions);
-        setWeekEvents(week);
-        setAllEvents(all);
+        setEvents(evts);
         setLoading(false);
       })
       .catch(() => {
@@ -115,7 +111,10 @@ export function AnalyticsDashboard() {
       });
   }, [firestore]);
 
-  /* Sellos esta semana */
+  /* Sellos esta semana (filtrado del array de 30 días) */
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  const weekEvents = events.filter((e) => (e.createdAt?.toDate?.() ?? new Date()) >= weekAgo);
   const weekStamps = weekEvents.filter((e) => e.source !== "redemption").length;
 
   /* Gráfica 1: visitas por día (últimos 7 días) */
@@ -127,9 +126,9 @@ export function AnalyticsDashboard() {
     ).length,
   }));
 
-  /* Gráfica 2: bebidas más populares */
+  /* Gráfica 2: bebidas más populares (últimos 30 días) */
   const drinkCount: Record<string, number> = {};
-  allEvents.forEach((e) => {
+  events.forEach((e) => {
     if (e.drinkType) {
       drinkCount[e.drinkType] = (drinkCount[e.drinkType] ?? 0) + 1;
     }
@@ -202,7 +201,7 @@ export function AnalyticsDashboard() {
       {drinkData.length > 0 && (
         <div className="rounded-2xl border border-stone-800 bg-neutral-900 px-5 py-6 space-y-4">
           <p className="text-[10px] uppercase tracking-[0.35em] text-stone-600">
-            Bebidas más pedidas
+            Bebidas más pedidas · últimos 30 días
           </p>
           <ResponsiveContainer width="100%" height={Math.max(180, drinkData.length * 40)}>
             <BarChart

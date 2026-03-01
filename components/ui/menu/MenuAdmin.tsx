@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Image from "next/image";
 import { AnimatePresence } from "framer-motion";
 import { useFirestore } from "reactfire";
 import { MenuSection, MenuItem } from "@/models/menu.model";
@@ -135,10 +136,12 @@ export function MenuAdmin() {
                 >
                   {/* Thumbnail imagen */}
                   {item.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={item.imageUrl}
                       alt=""
+                      width={32}
+                      height={32}
+                      unoptimized
                       className="w-8 h-8 rounded-lg object-cover shrink-0 opacity-80"
                       onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                     />
