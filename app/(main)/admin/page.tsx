@@ -10,7 +10,7 @@ import { QrScanner } from "@/components/ui/QrScanner";
 import { MenuAdmin } from "@/components/ui/MenuAdmin";
 import { CustomerDirectory } from "@/components/ui/CustomerDirectory";
 import { AnalyticsDashboard } from "@/components/ui/AnalyticsDashboard";
-import { verifyAdminPin } from "@/app/actions/verifyAdminPin";
+import { verifyAdminPin, verifyBaristaSession } from "@/app/actions/verifyAdminPin";
 import { addStamp, redeemCard } from "@/services/card.service";
 import { getFullMenu } from "@/services/menu.service";
 import { timeAgo } from "@/lib/utils";
@@ -35,6 +35,7 @@ function PinPad({
   error,
   loading,
   pinLength = 4,
+  lockoutSeconds = 0,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -42,6 +43,7 @@ function PinPad({
   error: string;
   loading?: boolean;
   pinLength?: number;
+  lockoutSeconds?: number;
 }) {
   const press = (digit: string) => {
     if (value.length < pinLength) onChange(value + digit);
@@ -96,10 +98,14 @@ function PinPad({
 
       <button
         onClick={onSubmit}
-        disabled={value.length < pinLength || loading}
+        disabled={value.length < pinLength || loading || lockoutSeconds > 0}
         className="mt-2 w-full max-w-[220px] py-3 rounded-full bg-stone-200 text-neutral-900 text-[11px] uppercase tracking-[0.35em] hover:bg-white transition-colors duration-200 disabled:opacity-20 disabled:cursor-not-allowed"
       >
-        {loading ? "Verificando…" : "Entrar"}
+        {loading
+          ? "Verificando…"
+          : lockoutSeconds > 0
+          ? `Bloqueado ${String(Math.floor(lockoutSeconds / 60)).padStart(2, "0")}:${String(lockoutSeconds % 60).padStart(2, "0")}`
+          : "Entrar"}
       </button>
     </div>
   );
@@ -588,22 +594,42 @@ export default function AdminPage() {
   const [pinError, setPinError] = useState("");
   const [pinLoading, setPinLoading] = useState(false);
   const [adminTab, setAdminTab] = useState<"stamps" | "menu" | "customers" | "analytics">("stamps");
+  const [lockout, setLockout] = useState(0);
 
-  // Auto-auth si la sesión del barista sigue activa en sessionStorage
+  // Countdown del lockout
   useEffect(() => {
-    if (sessionStorage.getItem("barista-authed") === "1") {
-      setAuthed(true);
-    }
+    if (lockout <= 0) return;
+    const id = setInterval(() => {
+      setLockout((s) => (s <= 1 ? 0 : s - 1));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [lockout]);
+
+  // Auto-auth si el token de sesión sigue siendo válido
+  useEffect(() => {
+    const token = sessionStorage.getItem("barista-token");
+    if (!token) return;
+    verifyBaristaSession(token).then((valid) => {
+      if (valid) {
+        setAuthed(true);
+      } else {
+        sessionStorage.removeItem("barista-token");
+      }
+    });
   }, []);
 
   const handlePinSubmit = async () => {
     setPinLoading(true);
     try {
-      const ok = await verifyAdminPin(pin);
-      if (ok) {
-        sessionStorage.setItem("barista-authed", "1");
+      const result = await verifyAdminPin(pin);
+      if (result.ok) {
+        sessionStorage.setItem("barista-token", result.token);
         setAuthed(true);
         setPinError("");
+      } else if (result.blocked) {
+        setLockout(result.retryAfter);
+        setPinError("");
+        setPin("");
       } else {
         setPinError("PIN incorrecto");
         setPin("");
@@ -665,6 +691,7 @@ export default function AdminPage() {
                 error={pinError}
                 loading={pinLoading}
                 pinLength={pinLength}
+                lockoutSeconds={lockout}
               />
             </motion.div>
           ) : (
@@ -723,7 +750,7 @@ export default function AdminPage() {
                     transition={{ duration: 0.2 }}
                     className="w-full"
                   >
-                    <StampView onLogout={() => { sessionStorage.removeItem("barista-authed"); setAuthed(false); setPin(""); }} />
+                    <StampView onLogout={() => { sessionStorage.removeItem("barista-token"); setAuthed(false); setPin(""); }} />
                   </motion.div>
                 )}
                 {adminTab === "menu" && (
