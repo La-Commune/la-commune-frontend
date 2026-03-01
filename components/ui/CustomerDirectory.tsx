@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useFirestore } from "reactfire";
 import { Customer } from "@/models/customer.model";
-import { getAllCustomers, updateCustomerNotes } from "@/services/customer.service";
+import { getAllCustomers, updateCustomerNotes, deleteCustomer } from "@/services/customer.service";
 import { formatDate } from "@/lib/utils";
 
 type CustomerRow = Customer & { id: string };
@@ -15,15 +15,19 @@ function CustomerDrawer({
   customer,
   onClose,
   onNotesSaved,
+  onDeleted,
 }: {
   customer: CustomerRow;
   onClose: () => void;
   onNotesSaved: (id: string, notes: string) => void;
+  onDeleted: (id: string) => void;
 }) {
   const firestore = useFirestore();
   const [notes, setNotes] = useState(customer.notes ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
@@ -32,6 +36,12 @@ function CustomerDrawer({
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    await deleteCustomer(firestore, customer.id);
+    onDeleted(customer.id);
   };
 
   return (
@@ -118,6 +128,66 @@ function CustomerDrawer({
             </button>
           </div>
         </div>
+
+        {/* Separador + Eliminar */}
+        <div className="mt-8 pt-5 border-t border-stone-800/60">
+          <button
+            onClick={() => setConfirming(true)}
+            className="flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-red-800 hover:text-red-600 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+            </svg>
+            Eliminar cliente
+          </button>
+        </div>
+
+        {/* Overlay de confirmación destructiva */}
+        <AnimatePresence>
+          {confirming && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 rounded-t-3xl sm:rounded-3xl bg-neutral-900/95 backdrop-blur-sm flex flex-col items-center justify-center px-8 gap-6"
+            >
+              {/* Icono de advertencia */}
+              <div className="w-14 h-14 rounded-full border border-red-900/60 bg-red-950/40 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-7 h-7 text-red-600">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+              </div>
+
+              {/* Texto */}
+              <div className="text-center space-y-2">
+                <p className="text-base text-stone-100 font-light">
+                  ¿Eliminar a <span className="text-white font-normal">{customer.name || "este cliente"}</span>?
+                </p>
+                <p className="text-xs text-stone-500 leading-relaxed">
+                  Esta acción es irreversible. El cliente y sus datos serán eliminados del directorio permanentemente.
+                </p>
+              </div>
+
+              {/* Acciones */}
+              <div className="flex flex-col w-full gap-2.5">
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="w-full py-4 rounded-2xl bg-red-900 hover:bg-red-800 text-red-100 text-[11px] uppercase tracking-[0.35em] transition-colors disabled:opacity-50"
+                >
+                  {deleting ? "Eliminando…" : "Sí, eliminar"}
+                </button>
+                <button
+                  onClick={() => setConfirming(false)}
+                  disabled={deleting}
+                  className="w-full py-4 rounded-2xl border border-stone-800 text-stone-400 text-[11px] uppercase tracking-[0.35em] hover:text-stone-200 hover:border-stone-700 transition-colors disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </motion.div>
   );
@@ -152,6 +222,11 @@ export function CustomerDirectory() {
   const handleNotesSaved = (id: string, notes: string) => {
     setCustomers((prev) => prev.map((c) => c.id === id ? { ...c, notes } : c));
     setSelected((prev) => prev ? { ...prev, notes } : null);
+  };
+
+  const handleDeleted = (id: string) => {
+    setCustomers((prev) => prev.filter((c) => c.id !== id));
+    setSelected(null);
   };
 
   if (loading) {
@@ -241,6 +316,7 @@ export function CustomerDirectory() {
             customer={selected}
             onClose={() => setSelected(null)}
             onNotesSaved={handleNotesSaved}
+            onDeleted={handleDeleted}
           />
         )}
       </AnimatePresence>
