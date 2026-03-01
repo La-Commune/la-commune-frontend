@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { useFirestore } from "reactfire";
 import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
@@ -131,13 +132,14 @@ export function EditItemModal({
             onChange={(e) => setImageUrl(e.target.value)}
           />
           {imageUrl.trim() && (
-            <div className="w-full h-28 rounded-xl overflow-hidden border border-stone-800">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+            <div className="relative w-full h-28 rounded-xl overflow-hidden border border-stone-800">
+              <Image
                 src={imageUrl.trim()}
                 alt="preview"
-                className="w-full h-full object-cover"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                fill
+                unoptimized
+                className="object-cover"
+                onError={(e) => { (e.currentTarget as HTMLImageElement).parentElement!.style.display = "none"; }}
               />
             </div>
           )}
