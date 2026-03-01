@@ -15,6 +15,24 @@ import {
 } from "@/services/menu.service";
 import { toast } from "@/components/ui/use-toast";
 
+/* ── Hook: offset del teclado virtual ───────────────── */
+
+function useKeyboardOffset() {
+  const [offset, setOffset] = useState(0);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => setOffset(Math.max(0, window.innerHeight - vv.height));
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
+  return offset;
+}
+
 /* ── Constantes ──────────────────────────────────────── */
 
 const ITEM_TAGS = ["Fuerte", "Cremoso", "Dulce", "Gourmet", "Intenso", "Refrescante"];
@@ -271,6 +289,7 @@ function EditItemModal({
   onClose: () => void;
 }) {
   const firestore = useFirestore();
+  const keyboardOffset = useKeyboardOffset();
   const [name, setName] = useState(item.name);
   const [note, setNote] = useState(item.note ?? "");
   const [ingredients, setIngredients] = useState(item.ingredients.join(", "));
@@ -344,7 +363,8 @@ function EditItemModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/70 px-4 pb-4 sm:pb-0"
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/70 px-4"
+      style={{ paddingBottom: Math.max(keyboardOffset, 16), transition: "padding-bottom 0.15s ease" }}
       onClick={onClose}
     >
       <motion.div
@@ -516,6 +536,7 @@ function AddItemSheet({
   nextOrder: number;
 }) {
   const firestore = useFirestore();
+  const keyboardOffset = useKeyboardOffset();
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [ingredients, setIngredients] = useState("");
@@ -549,6 +570,7 @@ function AddItemSheet({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:px-4"
+      style={{ paddingBottom: keyboardOffset, transition: "padding-bottom 0.15s ease" }}
       onClick={onCancel}
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
@@ -598,6 +620,7 @@ function AddSectionSheet({
   nextOrder: number;
 }) {
   const firestore = useFirestore();
+  const keyboardOffset = useKeyboardOffset();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState<"drink" | "food" | "other">("drink");
@@ -626,6 +649,7 @@ function AddSectionSheet({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:px-4"
+      style={{ paddingBottom: keyboardOffset, transition: "padding-bottom 0.15s ease" }}
       onClick={onCancel}
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
