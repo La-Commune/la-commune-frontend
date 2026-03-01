@@ -7,6 +7,27 @@ import { CoffeeBean } from "./CoffeeBean";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 
+function useCountUp(target: number, duration = 500) {
+  const [count, setCount] = useState(target);
+  const prevRef = useRef(target);
+
+  useEffect(() => {
+    if (prevRef.current === target) return;
+    const start = prevRef.current;
+    prevRef.current = target;
+    const startTime = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setCount(Math.round(start + (target - start) * eased));
+      if (t < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, [target, duration]);
+
+  return count;
+}
+
 export function StampCardFront({
   cardId,
   onComplete,
@@ -25,6 +46,7 @@ export function StampCardFront({
   const [newStampIdx, setNewStampIdx] = useState<number | null>(null);
 
   const card = data as Card | undefined;
+  const animatedStamps = useCountUp(card?.stamps ?? 0);
   const isComplete = card ? card.stamps >= card.maxStamps : false;
   const remaining = card ? card.maxStamps - card.stamps : 0;
   const progress = card ? (card.stamps / card.maxStamps) * 100 : 0;
@@ -133,7 +155,7 @@ export function StampCardFront({
         </div>
         <div className="flex justify-between">
           <p className="text-[9px] tracking-widest uppercase text-[#A89E97]">
-            {card.stamps} de {card.maxStamps} visitas
+            {animatedStamps} de {card.maxStamps} visitas
           </p>
           <p className="text-[9px] text-[#A89E97]">
             {isComplete

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -101,6 +101,8 @@ function Card({
   const [isOnline, setIsOnline] = useState(
     typeof navigator !== "undefined" ? navigator.onLine : true
   );
+  const [refreshing, setRefreshing] = useState(false);
+  const touchStartY = useRef(0);
 
   useEffect(() => {
     const setOnline = () => setIsOnline(true);
@@ -112,6 +114,27 @@ function Card({
       window.removeEventListener("offline", setOffline);
     };
   }, []);
+
+  useEffect(() => {
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartY.current = e.touches[0].clientY;
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      const dy = e.changedTouches[0].clientY - touchStartY.current;
+      if (dy > 72 && window.scrollY === 0) {
+        if ("vibrate" in navigator) navigator.vibrate(30);
+        setRefreshing(true);
+        router.refresh();
+        setTimeout(() => setRefreshing(false), 1200);
+      }
+    };
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [router]);
 
   const handleShare = async () => {
     try {
@@ -152,6 +175,23 @@ function Card({
           Salir
         </button>
       </nav>
+
+      {/* Indicador pull-to-refresh */}
+      <AnimatePresence>
+        {refreshing && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="flex justify-center py-2"
+          >
+            <span className="text-[9px] uppercase tracking-[0.4em] text-stone-600">
+              Actualizando…
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Contenido */}
       <div className="flex-1 flex flex-col items-center justify-center gap-10 px-4 pb-16">
