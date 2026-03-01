@@ -1,7 +1,7 @@
 "use server";
 
 import { createHmac, timingSafeEqual } from "crypto";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 
 const MAX_ATTEMPTS = 10;
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
@@ -9,7 +9,7 @@ const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 const attemptMap = new Map<string, { count: number; resetAt: number }>();
 
 export type VerifyResult =
-  | { ok: true; token: string }
+  | { ok: true }
   | { ok: false; blocked?: false }
   | { ok: false; blocked: true; retryAfter: number };
 
@@ -74,32 +74,38 @@ export async function verifyAdminPin(pin: string): Promise<VerifyResult> {
     return { ok: false };
   }
 
-  // PIN correcto — resetear intentos y emitir token de sesión
+  // PIN correcto — resetear intentos y emitir token de sesión como httpOnly cookie
   attemptMap.delete(ip);
   const epochHour = Math.floor(now / 3600000);
   const token = createHmac("sha256", hmacKey)
     .update(`barista-session:${epochHour}`)
     .digest("hex");
-  return { ok: true, token };
+
+  const cookieStore = await cookies();
+  cookieStore.set("barista-session", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 7200, // 2 horas
+    path: "/admin",
+  });
+
+  return { ok: true };
 }
 
-export async function verifyBaristaSession(token: string): Promise<boolean> {
+function verifyToken(token: string, hmacKey: string): boolean {
   if (!token || token.length !== 64) return false;
-
-  const hmacKey = process.env.ADMIN_HMAC_KEY;
-  if (!hmacKey) return false;
 
   let tokenBuf: Buffer;
   try {
     tokenBuf = Buffer.from(token, "hex");
-    if (tokenBuf.length !== 32) return false; // SHA-256 = 32 bytes
+    if (tokenBuf.length !== 32) return false;
   } catch {
     return false;
   }
 
   const epochHour = Math.floor(Date.now() / 3600000);
 
-  // Verificar hora actual y hora anterior (para transiciones de hora)
   for (const hour of [epochHour, epochHour - 1]) {
     const expected = createHmac("sha256", hmacKey)
       .update(`barista-session:${hour}`)
@@ -109,4 +115,27 @@ export async function verifyBaristaSession(token: string): Promise<boolean> {
   }
 
   return false;
+}
+
+/** Verifica el token desde la cookie httpOnly. Usar en el cliente para auto-auth en mount. */
+export async function checkBaristaSession(): Promise<boolean> {
+  const hmacKey = process.env.ADMIN_HMAC_KEY;
+  if (!hmacKey) return false;
+
+  const cookieStore = await cookies();
+  const token = cookieStore.get("barista-session")?.value ?? "";
+  return verifyToken(token, hmacKey);
+}
+
+/** Cierra la sesión del barista eliminando la cookie. */
+export async function logoutBarista(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.delete("barista-session");
+}
+
+/** @deprecated Usar checkBaristaSession() — mantener por compatibilidad temporal */
+export async function verifyBaristaSession(token: string): Promise<boolean> {
+  const hmacKey = process.env.ADMIN_HMAC_KEY;
+  if (!hmacKey) return false;
+  return verifyToken(token, hmacKey);
 }
