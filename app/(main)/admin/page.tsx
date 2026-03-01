@@ -11,7 +11,7 @@ import { QrScanner } from "@/components/ui/QrScanner";
 import { MenuAdmin } from "@/components/ui/MenuAdmin";
 import { CustomerDirectory } from "@/components/ui/CustomerDirectory";
 import { AnalyticsDashboard } from "@/components/ui/AnalyticsDashboard";
-import { verifyAdminPin, verifyBaristaSession } from "@/app/actions/verifyAdminPin";
+import { verifyAdminPin, checkBaristaSession, logoutBarista } from "@/app/actions/verifyAdminPin";
 import { addStamp, redeemCard } from "@/services/card.service";
 import { getFullMenu } from "@/services/menu.service";
 import { timeAgo } from "@/lib/utils";
@@ -612,16 +612,10 @@ export default function AdminPage() {
     return () => clearInterval(id);
   }, [lockout]);
 
-  // Auto-auth si el token de sesión sigue siendo válido
+  // Auto-auth si la cookie de sesión sigue siendo válida
   useEffect(() => {
-    const token = sessionStorage.getItem("barista-token");
-    if (!token) return;
-    verifyBaristaSession(token).then((valid) => {
-      if (valid) {
-        setAuthed(true);
-      } else {
-        sessionStorage.removeItem("barista-token");
-      }
+    checkBaristaSession().then((valid) => {
+      if (valid) setAuthed(true);
     });
   }, []);
 
@@ -630,7 +624,6 @@ export default function AdminPage() {
     try {
       const result = await verifyAdminPin(pin);
       if (result.ok) {
-        sessionStorage.setItem("barista-token", result.token);
         setAuthed(true);
         setPinError("");
       } else if (result.blocked) {
@@ -757,7 +750,7 @@ export default function AdminPage() {
                     transition={{ duration: 0.2 }}
                     className="w-full"
                   >
-                    <StampView onLogout={() => { sessionStorage.removeItem("barista-token"); setAuthed(false); setPin(""); }} />
+                    <StampView onLogout={() => { logoutBarista(); setAuthed(false); setPin(""); }} />
                   </motion.div>
                 )}
                 {adminTab === "menu" && (

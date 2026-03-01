@@ -44,14 +44,23 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // menu-sections — lectura pública; escritura solo desde panel admin (PIN en UI)
+    // menu-sections — lectura pública; escritura requiere datos mínimamente válidos
     match /menu-sections/{sectionId} {
       allow read: if true;
-      allow create, update, delete: if true;
+      allow create, update: if request.resource.data.title is string
+                            && request.resource.data.title.size() > 0
+                            && request.resource.data.title.size() <= 100;
+      allow delete: if true;
     }
     match /menu-sections/{sectionId}/items/{itemId} {
       allow read: if true;
-      allow create, update, delete: if true;
+      allow create, update: if request.resource.data.name is string
+                            && request.resource.data.name.size() > 0
+                            && request.resource.data.name.size() <= 100
+                            && (!('imageUrl' in request.resource.data)
+                                || request.resource.data.imageUrl == null
+                                || request.resource.data.imageUrl.matches('https://.+'));
+      allow delete: if true;
     }
   }
 }

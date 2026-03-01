@@ -52,8 +52,18 @@ export function EditItemModal({
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     );
 
+  const imageUrlValid =
+    !imageUrl.trim() ||
+    (() => {
+      try {
+        return new URL(imageUrl.trim()).protocol === "https:";
+      } catch {
+        return false;
+      }
+    })();
+
   const handleSave = async () => {
-    if (!name.trim() || !item.id) return;
+    if (!name.trim() || !item.id || !imageUrlValid) return;
     setSaving(true);
 
     const validSizes = sizes
@@ -125,13 +135,18 @@ export function EditItemModal({
         <div className="space-y-2">
           <p className="text-[10px] uppercase tracking-widest text-stone-600">Imagen (URL)</p>
           <input
-            className={inputCls}
+            className={`${inputCls} ${!imageUrlValid ? "border-red-800 focus:border-red-600" : ""}`}
             placeholder="https://…"
             type="url"
             value={imageUrl}
             onChange={(e) => setImageUrl(e.target.value)}
           />
-          {imageUrl.trim() && (
+          {!imageUrlValid && (
+            <p className="text-[10px] uppercase tracking-widest text-red-500">
+              Solo se permiten URLs https://
+            </p>
+          )}
+          {imageUrl.trim() && imageUrlValid && (
             <div className="relative w-full h-28 rounded-xl overflow-hidden border border-stone-800">
               <Image
                 src={imageUrl.trim()}
@@ -245,7 +260,7 @@ export function EditItemModal({
 
         <button
           onClick={handleSave}
-          disabled={!name.trim() || saving}
+          disabled={!name.trim() || !imageUrlValid || saving}
           className="w-full py-3.5 rounded-2xl bg-stone-200 text-neutral-900 text-[11px] uppercase tracking-[0.35em] hover:bg-white transition-colors disabled:opacity-30 mt-2"
         >
           {saving ? "Guardando…" : "Guardar cambios"}
