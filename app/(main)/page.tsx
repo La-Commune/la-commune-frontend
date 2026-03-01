@@ -229,8 +229,8 @@ export default function Home() {
       {/* Hero — centrado, marca como eyebrow */}
       <PremiumSection
         eyebrow="La Commune"
-        title={`Café\nque despierta`}
-        subtitle="Explora nuestro menú y descubre sabores que cuentan historias."
+        title={`Café\nen común`}
+        subtitle="No es solo café. Es el espacio que elegiste para estar."
         videoSrc="/videos/coffee-slow.mp4"
         ctaText="Ver menú"
         ctaLink="/menu"
@@ -238,9 +238,9 @@ export default function Home() {
 
       {/* Segunda sección — fidelidad, alineada a la izquierda */}
       <PremiumSection
-        eyebrow="Programa de fidelidad"
-        title={`Cada visita\ncuenta`}
-        subtitle="Después de cinco bebidas, la siguiente es cortesía de la casa."
+        eyebrow="Para los que vuelven"
+        title={`Lo que se da\nvuelve`}
+        subtitle="Cada visita es un ladrillo. Después de cinco, la casa responde."
         videoSrc="/videos/coffee-hero.mp4"
         ctaText={loyaltyCta.text}
         ctaLink={loyaltyCta.link}
@@ -300,7 +300,7 @@ export default function Home() {
           {/* Divisor + copyright + links */}
           <div className="border-t border-stone-800 pt-6 flex flex-col items-center gap-3">
             <p className="text-[10px] tracking-[0.3em] uppercase text-stone-600">
-              © {new Date().getFullYear()} · La Commune · Hecho con amor
+              © {new Date().getFullYear()} · La Commune · En construcción permanente
             </p>
             <div className="flex items-center gap-6">
               <Link href="/menu" className="text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300">
