@@ -72,6 +72,13 @@ export async function updateCustomerNotes(
   await updateDoc(doc(firestore, "customers", customerId), { notes });
 }
 
+export async function deleteCustomer(
+  firestore: any,
+  customerId: string,
+): Promise<void> {
+  await updateDoc(doc(firestore, "customers", customerId), { active: false });
+}
+
 export async function getCardByCustomer(firestore: any, customerRef: any) {
   const q = query(
     collection(firestore, "cards"),
