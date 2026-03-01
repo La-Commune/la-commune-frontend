@@ -18,11 +18,18 @@ import {
   getTotalRedemptions,
   StampEventRaw,
 } from "@/services/analytics.service";
+import { Timestamp } from "firebase/firestore";
 import { toast } from "@/components/ui/use-toast";
 
 /* ── Helpers ─────────────────────────────────────────── */
 
-function dateKey(ts: any): string {
+interface ChartTooltipProps {
+  active?: boolean;
+  payload?: Array<{ value: number }>;
+  label?: string | number;
+}
+
+function dateKey(ts: Timestamp | null | undefined): string {
   const d = ts?.toDate?.() ?? new Date();
   return d.toISOString().slice(0, 10); // YYYY-MM-DD
 }
@@ -54,7 +61,7 @@ function StatCard({ label, value, sub }: { label: string; value: string | number
 
 /* ── Tooltip personalizado ───────────────────────────── */
 
-function CustomTooltip({ active, payload, label }: any) {
+function CustomTooltip({ active, payload, label }: ChartTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-neutral-800 border border-stone-700 rounded-xl px-3 py-2 text-[11px]">
@@ -64,7 +71,7 @@ function CustomTooltip({ active, payload, label }: any) {
   );
 }
 
-function CustomTooltipDrink({ active, payload, label }: any) {
+function CustomTooltipDrink({ active, payload, label }: ChartTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-neutral-800 border border-stone-700 rounded-xl px-3 py-2 text-[11px]">
