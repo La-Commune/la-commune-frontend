@@ -47,7 +47,7 @@ export async function updateMenuItem(
   clearFields?: (keyof MenuItem)[]
 ): Promise<void> {
   const ref = doc(firestore, "menu-sections", sectionId, "items", itemId);
-  const update: any = { ...data };
+  const update: Record<string, unknown> = { ...(data as Record<string, unknown>) };
   if (clearFields) {
     for (const field of clearFields) {
       update[field] = deleteField();
@@ -88,7 +88,7 @@ export async function updateMenuSection(
   data: Partial<MenuSection>
 ): Promise<void> {
   const { items: _items, ...rest } = data;
-  await updateDoc(doc(firestore, "menu-sections", sectionId), rest as any);
+  await updateDoc(doc(firestore, "menu-sections", sectionId), rest as Partial<Omit<MenuSection, "items">>);
 }
 
 export async function deleteMenuSection(

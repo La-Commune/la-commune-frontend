@@ -3,9 +3,10 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, DocumentReference } from "firebase/firestore";
 import { useFirestore, useFirestoreDocData } from "reactfire";
 import { Card } from "@/models/card.model";
+import { Customer } from "@/models/customer.model";
 import { QrScanner } from "@/components/ui/QrScanner";
 import { MenuAdmin } from "@/components/ui/MenuAdmin";
 import { CustomerDirectory } from "@/components/ui/CustomerDirectory";
@@ -18,12 +19,17 @@ import { toast } from "@/components/ui/use-toast";
 
 type Screen = "pin" | "stamp" | "success" | "redeemed";
 
+interface AdminConfig {
+  pinLength?: number;
+  pinHmac?: string;
+}
+
 interface LoadedCard {
   id: string;
   stamps: number;
   maxStamps: number;
   status: string;
-  customerId: any;
+  customerId: DocumentReference | undefined;
   customerName: string;
 }
 
@@ -179,7 +185,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
       let customerName = "";
       if (data.customerId) {
         const custSnap = await getDoc(data.customerId);
-        if (custSnap.exists()) customerName = (custSnap.data() as any).name || "";
+        if (custSnap.exists()) customerName = (custSnap.data() as Customer)?.name ?? "";
       }
       setCard({
         id: snap.id,
@@ -243,6 +249,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
     setError("");
     try {
       const rewardRef = doc(firestore, "rewards", "default");
+      if (!card.customerId) throw new Error("Cliente no encontrado");
       await redeemCard(firestore, {
         oldCardId: card.id,
         customerRef: card.customerId,
@@ -587,7 +594,7 @@ export default function AdminPage() {
   const firestore = useFirestore();
   const configRef = doc(firestore, "config", "admin");
   const { data: adminConfig } = useFirestoreDocData(configRef, { suspense: false });
-  const pinLength = (adminConfig as any)?.pinLength ?? 4;
+  const pinLength = (adminConfig as AdminConfig)?.pinLength ?? 4;
 
   const [authed, setAuthed] = useState(false);
   const [pin, setPin] = useState("");
