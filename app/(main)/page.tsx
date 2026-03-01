@@ -9,6 +9,7 @@ import {
   useSpring,
 } from "framer-motion";
 import React, { useRef, useState, useEffect } from "react";
+import { SplashScreen } from "@/components/ui/SplashScreen";
 
 /* ===============================
    Animated Text (línea por línea)
@@ -266,6 +267,7 @@ export default function Home() {
 
   return (
     <main className="h-[100dvh] overflow-y-scroll snap-y snap-mandatory bg-neutral-950">
+      <SplashScreen />
 
       {/* Hero — centrado, marca como eyebrow */}
       <PremiumSection
