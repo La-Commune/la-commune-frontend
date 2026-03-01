@@ -1,10 +1,18 @@
+"use client";
+
 import { ReactNode } from "react";
+import { motion } from "framer-motion";
+import { usePathname } from "next/navigation";
+import { CustomCursor } from "@/components/ui/CustomCursor";
 
 const WHATSAPP_NUMBER = "5217711006533";
 
 export default function MainLayout({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+
   return (
     <div className="flex flex-col min-h-screen">
+      <CustomCursor />
 
       {/* Textura de grano — overlay sutil para dar sensación analógica */}
       <div
@@ -17,8 +25,16 @@ export default function MainLayout({ children }: { children: ReactNode }) {
         aria-hidden="true"
       />
 
-      {/* Contenido */}
-      <div className="flex flex-col grow h-full">{children}</div>
+      {/* Contenido con fade-in al navegar entre rutas */}
+      <motion.div
+        key={pathname}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className="flex flex-col grow h-full"
+      >
+        {children}
+      </motion.div>
 
       {/* Botón flotante de WhatsApp */}
       <a
