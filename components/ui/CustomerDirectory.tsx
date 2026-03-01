@@ -6,6 +6,7 @@ import { useFirestore } from "reactfire";
 import { Customer } from "@/models/customer.model";
 import { getAllCustomers, updateCustomerNotes, deleteCustomer } from "@/services/customer.service";
 import { formatDate } from "@/lib/utils";
+import { toast } from "@/components/ui/use-toast";
 
 type CustomerRow = Customer & { id: string };
 
@@ -31,11 +32,22 @@ function CustomerDrawer({
 
   const handleSave = async () => {
     setSaving(true);
-    await updateCustomerNotes(firestore, customer.id, notes);
-    onNotesSaved(customer.id, notes);
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    try {
+      await updateCustomerNotes(firestore, customer.id, notes);
+      onNotesSaved(customer.id, notes);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e) {
+      console.error("Error al guardar nota:", e);
+      toast({
+        variant: "destructive",
+        title: "No se pudo guardar la nota",
+        description: "Revisa la conexión e intenta de nuevo.",
+        duration: 5000,
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = async () => {
@@ -45,6 +57,12 @@ function CustomerDrawer({
       onDeleted(customer.id);
     } catch (e) {
       console.error("Error al eliminar cliente:", e);
+      toast({
+        variant: "destructive",
+        title: "No se pudo eliminar el cliente",
+        description: "Revisa la conexión o los permisos de Firestore.",
+        duration: 5000,
+      });
       setDeleting(false);
     }
   };
@@ -211,6 +229,15 @@ export function CustomerDirectory() {
     setLoading(true);
     getAllCustomers(firestore)
       .then(setCustomers)
+      .catch((e) => {
+        console.error("Error al cargar clientes:", e);
+        toast({
+          variant: "destructive",
+          title: "No se pudo cargar el directorio",
+          description: "Revisa la conexión o los permisos de Firestore.",
+          duration: 6000,
+        });
+      })
       .finally(() => setLoading(false));
   }, [firestore]);
 
