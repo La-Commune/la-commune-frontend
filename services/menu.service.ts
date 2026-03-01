@@ -1,4 +1,5 @@
 import {
+  Firestore,
   collection,
   doc,
   getDocs,
@@ -11,7 +12,7 @@ import {
 } from "firebase/firestore";
 import { MenuSection, MenuItem } from "@/models/menu.model";
 
-export async function getFullMenu(firestore: any): Promise<MenuSection[]> {
+export async function getFullMenu(firestore: Firestore): Promise<MenuSection[]> {
   const sectionsSnap = await getDocs(
     query(collection(firestore, "menu-sections"), orderBy("order"))
   );
@@ -39,7 +40,7 @@ export async function getFullMenu(firestore: any): Promise<MenuSection[]> {
 }
 
 export async function updateMenuItem(
-  firestore: any,
+  firestore: Firestore,
   sectionId: string,
   itemId: string,
   data: Partial<MenuItem>,
@@ -56,7 +57,7 @@ export async function updateMenuItem(
 }
 
 export async function addMenuItem(
-  firestore: any,
+  firestore: Firestore,
   sectionId: string,
   data: Omit<MenuItem, "id">
 ): Promise<string> {
@@ -66,7 +67,7 @@ export async function addMenuItem(
 }
 
 export async function deleteMenuItem(
-  firestore: any,
+  firestore: Firestore,
   sectionId: string,
   itemId: string
 ): Promise<void> {
@@ -74,7 +75,7 @@ export async function deleteMenuItem(
 }
 
 export async function addMenuSection(
-  firestore: any,
+  firestore: Firestore,
   data: Omit<MenuSection, "id" | "items">
 ): Promise<string> {
   const ref = await addDoc(collection(firestore, "menu-sections"), data);
@@ -82,7 +83,7 @@ export async function addMenuSection(
 }
 
 export async function updateMenuSection(
-  firestore: any,
+  firestore: Firestore,
   sectionId: string,
   data: Partial<MenuSection>
 ): Promise<void> {
@@ -91,7 +92,7 @@ export async function updateMenuSection(
 }
 
 export async function deleteMenuSection(
-  firestore: any,
+  firestore: Firestore,
   sectionId: string
 ): Promise<void> {
   // Borrar todos los items primero, luego la sección

@@ -1,9 +1,9 @@
 import { Card } from "@/models/card.model";
 import { StampEvent } from "@/models/stamp-event.model";
-import { doc, runTransaction, Timestamp, collection, DocumentReference, addDoc, where, query, getDocs, updateDoc, orderBy } from "firebase/firestore";
+import { Firestore, doc, runTransaction, Timestamp, collection, DocumentReference, addDoc, where, query, getDocs, updateDoc, orderBy } from "firebase/firestore";
 
 export async function createCard(
-  firestore: any,
+  firestore: Firestore,
   params: {
     customerRef: DocumentReference;
     rewardRef: DocumentReference;
@@ -27,7 +27,7 @@ export type AddStampResult = {
 };
 
 export async function addStamp(
-  firestore: any,
+  firestore: Firestore,
   cardId: string,
   options?: {
     customerId?: DocumentReference;
@@ -77,7 +77,7 @@ export async function addStamp(
 }
 
 export async function redeemCard(
-  firestore: any,
+  firestore: Firestore,
   params: {
     oldCardId: string;
     customerRef: DocumentReference;
@@ -111,7 +111,7 @@ export async function redeemCard(
 }
 
 export async function getStampEventsByCard(
-  firestore: any,
+  firestore: Firestore,
   cardId: string,
 ): Promise<(StampEvent & { id: string })[]> {
   const cardRef = doc(firestore, "cards", cardId);
@@ -125,7 +125,7 @@ export async function getStampEventsByCard(
 }
 
 export async function getCardByCustomer(
-  firestore: any,
+  firestore: Firestore,
   customerRef: DocumentReference,
 ) {
   const q = query(

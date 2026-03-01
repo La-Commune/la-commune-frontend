@@ -18,6 +18,7 @@ import {
   getTotalRedemptions,
   StampEventRaw,
 } from "@/services/analytics.service";
+import { toast } from "@/components/ui/use-toast";
 
 /* ── Helpers ─────────────────────────────────────────── */
 
@@ -93,13 +94,18 @@ export function AnalyticsDashboard() {
       getTotalRedemptions(firestore),
       getStampEventsInRange(firestore, weekAgo),
       getAllStampEvents(firestore),
-    ]).then(([customers, redemptions, week, all]) => {
-      setTotalCustomers(customers);
-      setTotalRedemptions(redemptions);
-      setWeekEvents(week);
-      setAllEvents(all);
-      setLoading(false);
-    });
+    ])
+      .then(([customers, redemptions, week, all]) => {
+        setTotalCustomers(customers);
+        setTotalRedemptions(redemptions);
+        setWeekEvents(week);
+        setAllEvents(all);
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+        toast({ variant: "destructive", title: "Error al cargar analytics", description: "No se pudieron obtener los datos. Intenta recargar." });
+      });
   }, [firestore]);
 
   /* Sellos esta semana */
