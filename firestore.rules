@@ -36,10 +36,11 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // stamp-events — solo escritura desde el browser (addStamp), sin lectura pública
+    // stamp-events — escritura desde el browser (addStamp); lectura pública (cardId es el "token" implícito)
     match /stamp-events/{eventId} {
       allow create: if true;
-      allow read, update, delete: if false;
+      allow read:   if true;
+      allow update, delete: if false;
     }
 
     // menu-sections — lectura pública; escritura solo desde panel admin (PIN en UI)

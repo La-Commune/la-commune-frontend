@@ -11,6 +11,7 @@ export interface MenuItem {
   ingredients: string[];
   optional?: string[];
   note?: string;
+  imageUrl?: string;
   available: boolean;
   tags: string[];
   highlight: boolean;

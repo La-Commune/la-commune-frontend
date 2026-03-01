@@ -1,5 +1,6 @@
 import { Card } from "@/models/card.model";
-import { doc, runTransaction, Timestamp, collection, DocumentReference, addDoc, where, query, getDocs, updateDoc } from "firebase/firestore";
+import { StampEvent } from "@/models/stamp-event.model";
+import { doc, runTransaction, Timestamp, collection, DocumentReference, addDoc, where, query, getDocs, updateDoc, orderBy } from "firebase/firestore";
 
 export async function createCard(
   firestore: any,
@@ -28,7 +29,12 @@ export type AddStampResult = {
 export async function addStamp(
   firestore: any,
   cardId: string,
-  options?: { customerId?: DocumentReference; addedBy?: string },
+  options?: {
+    customerId?: DocumentReference;
+    addedBy?: string;
+    drinkType?: string;
+    size?: string;
+  },
 ): Promise<AddStampResult> {
   const cardRef = doc(firestore, "cards", cardId);
   const eventsRef = collection(firestore, "stamp-events");
@@ -60,6 +66,8 @@ export async function addStamp(
       createdAt: Timestamp.now(),
       addedBy: options?.addedBy ?? "system",
       source: "manual",
+      ...(options?.drinkType ? { drinkType: options.drinkType } : {}),
+      ...(options?.size ? { size: options.size } : {}),
     });
 
     result = { stamps: newStamps, maxStamps: card.maxStamps, status: newStatus };
@@ -100,6 +108,20 @@ export async function redeemCard(
   });
 
   return newCardRef;
+}
+
+export async function getStampEventsByCard(
+  firestore: any,
+  cardId: string,
+): Promise<(StampEvent & { id: string })[]> {
+  const cardRef = doc(firestore, "cards", cardId);
+  const q = query(
+    collection(firestore, "stamp-events"),
+    where("cardId", "==", cardRef),
+    orderBy("createdAt", "desc"),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as StampEvent) }));
 }
 
 export async function getCardByCustomer(

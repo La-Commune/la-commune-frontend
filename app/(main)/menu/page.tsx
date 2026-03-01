@@ -128,6 +128,19 @@ export default function CafeMenu() {
                       return (
                         <li key={item.id ?? item.name} className={`py-4 space-y-1.5 ${!isAvailable ? "opacity-40" : ""}`}>
 
+                          {/* Imagen */}
+                          {item.imageUrl && (
+                            <div className="w-full h-36 sm:h-44 rounded-xl overflow-hidden mb-3 print:hidden">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={item.imageUrl}
+                                alt={item.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => { (e.currentTarget as HTMLImageElement).parentElement!.style.display = "none"; }}
+                              />
+                            </div>
+                          )}
+
                           {/* Nombre + precio */}
                           <div className="flex items-start justify-between gap-3 mb-1.5">
                             <div className="space-y-1 min-w-0">
