@@ -12,13 +12,13 @@ export function PwaRegister() {
     // Registrar service worker
     if ("serviceWorker" in navigator) {
       const buildId = process.env.NEXT_PUBLIC_BUILD_ID || "v1";
-      navigator.serviceWorker.register(`/sw.js?v=${buildId}`).catch(() => {});
+      navigator.serviceWorker.register(`/sw.js?v=${buildId}`).catch((err) => console.warn("SW registration failed:", err));
     }
 
     const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
 
     // Android / Chrome — capturar evento de instalación
-    if (!isStandalone && !sessionStorage.getItem("pwa-install-dismissed")) {
+    if (!isStandalone && !localStorage.getItem("pwa-install-dismissed")) {
       const handler = (e: Event) => {
         e.preventDefault();
         deferredPrompt.current = e;
@@ -30,7 +30,7 @@ export function PwaRegister() {
 
     // iOS — mostrar hint si no está en standalone
     const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    const hintDismissed = sessionStorage.getItem("pwa-hint-dismissed");
+    const hintDismissed = localStorage.getItem("pwa-hint-dismissed");
 
     if (isIos && !isStandalone && !hintDismissed) {
       const timer = setTimeout(() => setShowIosHint(true), 3000);
@@ -39,7 +39,7 @@ export function PwaRegister() {
   }, []);
 
   const dismissAndroid = () => {
-    sessionStorage.setItem("pwa-install-dismissed", "1");
+    localStorage.setItem("pwa-install-dismissed", "1");
     setShowAndroidBanner(false);
   };
 
@@ -52,7 +52,7 @@ export function PwaRegister() {
   };
 
   const dismiss = () => {
-    sessionStorage.setItem("pwa-hint-dismissed", "1");
+    localStorage.setItem("pwa-hint-dismissed", "1");
     setShowIosHint(false);
   };
 

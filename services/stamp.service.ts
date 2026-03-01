@@ -1,4 +1,6 @@
 import {
+    Firestore,
+    DocumentReference,
     doc,
     runTransaction,
     Timestamp,
@@ -6,10 +8,10 @@ import {
   } from "firebase/firestore";
   
   export async function addStamp(
-    firestore: any,
+    firestore: Firestore,
     params: {
       cardId: string;
-      customerRef?: any;
+      customerRef?: DocumentReference;
       source?: "manual" | "promo";
     }
   ) {

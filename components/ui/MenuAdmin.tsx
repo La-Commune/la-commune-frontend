@@ -13,6 +13,7 @@ import {
   updateMenuSection,
   deleteMenuSection,
 } from "@/services/menu.service";
+import { toast } from "@/components/ui/use-toast";
 
 /* ── Constantes ──────────────────────────────────────── */
 
@@ -764,7 +765,12 @@ export function MenuAdmin() {
 
   const reload = useCallback(() => {
     setLoading(true);
-    getFullMenu(firestore).then((data) => { setSections(data); setLoading(false); });
+    getFullMenu(firestore)
+      .then((data) => { setSections(data); setLoading(false); })
+      .catch(() => {
+        setLoading(false);
+        toast({ variant: "destructive", title: "Error al cargar el menú", description: "Verifica tu conexión e intenta de nuevo." });
+      });
   }, [firestore]);
 
   useEffect(() => { reload(); }, [reload]);

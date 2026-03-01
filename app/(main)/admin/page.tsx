@@ -13,6 +13,8 @@ import { AnalyticsDashboard } from "@/components/ui/AnalyticsDashboard";
 import { verifyAdminPin } from "@/app/actions/verifyAdminPin";
 import { addStamp, redeemCard } from "@/services/card.service";
 import { getFullMenu } from "@/services/menu.service";
+import { timeAgo } from "@/lib/utils";
+import { toast } from "@/components/ui/use-toast";
 
 type Screen = "pin" | "stamp" | "success" | "redeemed";
 
@@ -110,12 +112,6 @@ interface StampEntry {
   time: Date;
 }
 
-function timeAgo(date: Date): string {
-  const mins = Math.floor((Date.now() - date.getTime()) / 60000);
-  if (mins < 1) return "ahora";
-  return `hace ${mins}m`;
-}
-
 /* ── Vista de añadir sello ────────────────────────────── */
 function StampView({ onLogout }: { onLogout: () => void }) {
   const firestore = useFirestore();
@@ -136,14 +132,18 @@ function StampView({ onLogout }: { onLogout: () => void }) {
 
   // Cargar bebidas disponibles del menú
   useEffect(() => {
-    getFullMenu(firestore).then((sections) => {
-      const drinks = sections
-        .filter((s) => s.type === "drink" && s.active)
-        .flatMap((s) => s.items ?? [])
-        .filter((item) => item.available !== false)
-        .map((item) => item.name);
-      setMenuDrinks(drinks);
-    });
+    getFullMenu(firestore)
+      .then((sections) => {
+        const drinks = sections
+          .filter((s) => s.type === "drink" && s.active)
+          .flatMap((s) => s.items ?? [])
+          .filter((item) => item.available !== false)
+          .map((item) => item.name);
+        setMenuDrinks(drinks);
+      })
+      .catch(() => {
+        toast({ variant: "destructive", title: "No se pudo cargar el menú de bebidas" });
+      });
   }, [firestore]);
 
   // Cleanup del timer al desmontar el componente

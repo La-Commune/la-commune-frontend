@@ -1,4 +1,6 @@
 import {
+  Firestore,
+  DocumentReference,
   collection,
   addDoc,
   Timestamp,
@@ -11,7 +13,7 @@ import {
 import { Customer } from "@/models/customer.model";
 
 export async function createCustomer(
-  firestore: any,
+  firestore: Firestore,
   data: {
     name?: string;
     phone: string;
@@ -33,7 +35,7 @@ export async function createCustomer(
   return addDoc(collection(firestore, "customers"), customerData);
 }
 
-export async function getCustomerByPhone(firestore: any, phone: string) {
+export async function getCustomerByPhone(firestore: Firestore, phone: string) {
   const q = query(
     collection(firestore, "customers"),
     where("phone", "==", phone),
@@ -48,7 +50,7 @@ export async function getCustomerByPhone(firestore: any, phone: string) {
 }
 
 export async function getAllCustomers(
-  firestore: any,
+  firestore: Firestore,
 ): Promise<(Customer & { id: string })[]> {
   const q = query(
     collection(firestore, "customers"),
@@ -65,7 +67,7 @@ export async function getAllCustomers(
 }
 
 export async function updateCustomerNotes(
-  firestore: any,
+  firestore: Firestore,
   customerId: string,
   notes: string,
 ): Promise<void> {
@@ -73,13 +75,13 @@ export async function updateCustomerNotes(
 }
 
 export async function deleteCustomer(
-  firestore: any,
+  firestore: Firestore,
   customerId: string,
 ): Promise<void> {
   await updateDoc(doc(firestore, "customers", customerId), { active: false });
 }
 
-export async function getCardByCustomer(firestore: any, customerRef: any) {
+export async function getCardByCustomer(firestore: Firestore, customerRef: DocumentReference) {
   const q = query(
     collection(firestore, "cards"),
     where("customerId", "==", customerRef),
