@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>La Commune — Brand Assets</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Work+Sans:wght@300;400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #141414;
+      color: #fff;
+      font-family: 'Work Sans', sans-serif;
+      padding: 48px 32px;
+      min-height: 100vh;
+    }
+    h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 300;
+      font-size: 26px;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: #d6d0c8;
+      margin-bottom: 6px;
+    }
+    .page-sub {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.4em;
+      color: #555;
+      margin-bottom: 56px;
+    }
+    .section { margin-bottom: 60px; }
+    .section-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.45em;
+      color: #4a4a4a;
+      margin-bottom: 16px;
+    }
+    canvas {
+      display: block;
+      border: 1px solid #222;
+    }
+    .canvas-note {
+      font-size: 9px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #383838;
+      margin-top: 8px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 20px;
+      padding: 11px 22px;
+      background: transparent;
+      border: 1px solid #2e2e2e;
+      color: #666;
+      font-family: 'Work Sans', sans-serif;
+      font-size: 10px;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: border-color .3s, color .3s;
+    }
+    .btn:hover { border-color: #666; color: #ccc; }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* Copy */
+    .copy-grid { display: flex; flex-direction: column; gap: 12px; max-width: 520px; }
+    .copy-block { border: 1px solid #222; padding: 18px 22px; }
+    .copy-lbl {
+      font-size: 9px; letter-spacing: .4em; text-transform: uppercase;
+      color: #4a4a4a; margin-bottom: 8px;
+    }
+    .copy-txt { font-size: 13px; color: #aaa; line-height: 1.75; }
+    .copy-meta { font-size: 9px; color: #383838; letter-spacing: .2em; margin-top: 6px; }
+  </style>
+</head>
+<body>
+
+  <h1>La Commune</h1>
+  <p class="page-sub">Brand Assets · WhatsApp Business</p>
+
+  <!-- ─── PERFIL 640×640 ─── -->
+  <div class="section">
+    <p class="section-label">Foto de perfil — 640 × 640 px (se recorta en círculo)</p>
+    <canvas id="c-profile" width="320" height="320"></canvas>
+    <p class="canvas-note">Vista previa al 50 % — se descarga en 640 × 640</p>
+    <br/>
+    <button class="btn" id="btn-profile" onclick="download('profile')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Descargar PNG 640 × 640
+    </button>
+  </div>
+
+  <!-- ─── CATÁLOGO 800×800 ─── -->
+  <div class="section">
+    <p class="section-label">Catálogo / Portada — 800 × 800 px</p>
+    <canvas id="c-catalog" width="320" height="320"></canvas>
+    <p class="canvas-note">Vista previa al 40 % — se descarga en 800 × 800</p>
+    <br/>
+    <button class="btn" id="btn-catalog" onclick="download('catalog')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Descargar PNG 800 × 800
+    </button>
+  </div>
+
+  <!-- ─── COPY ─── -->
+  <div class="section">
+    <p class="section-label">Copy · WhatsApp Business</p>
+    <div class="copy-grid">
+      <div class="copy-block">
+        <p class="copy-lbl">Nombre del negocio</p>
+        <p class="copy-txt">La Commune</p>
+      </div>
+      <div class="copy-block">
+        <p class="copy-lbl">Categoría recomendada</p>
+        <p class="copy-txt">Café / Restaurante y Cafetería</p>
+      </div>
+      <div class="copy-block">
+        <p class="copy-lbl">Descripción corta (máx 256 caracteres)</p>
+        <p class="copy-txt">Café de especialidad en Pachuca. Acumula visitas con tu tarjeta digital y desbloquea tu bebida de cortesía. Escríbenos aquí o regístra tu tarjeta en lacommune.mx</p>
+        <p class="copy-meta">↑ 172 caracteres</p>
+      </div>
+      <div class="copy-block">
+        <p class="copy-lbl">Mensaje de bienvenida automático</p>
+        <p class="copy-txt">¡Hola! Gracias por escribirnos a La Commune ☕<br/>En breve te atendemos.<br/><br/>¿Ya tienes tu tarjeta de fidelidad digital? Regístrate en:<br/>lacommune.mx/onboarding</p>
+      </div>
+      <div class="copy-block">
+        <p class="copy-lbl">Respuesta rápida — Horarios</p>
+        <p class="copy-txt">Lunes a viernes: 8:00 – 20:00<br/>Sábado y domingo: 9:00 – 19:00<br/>📍 Pachuca, Hidalgo</p>
+      </div>
+      <div class="copy-block">
+        <p class="copy-lbl">Respuesta rápida — Tarjeta de fidelidad</p>
+        <p class="copy-txt">Tu tarjeta digital está en: lacommune.mx<br/>Acumula 5 visitas y tu 6ª bebida es cortesía 🎁<br/>El barista escanea tu QR en cada visita.</p>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ── helpers ──────────────────────────────────────────────
+
+  function addGrain(ctx, w, h, alpha) {
+    const img = ctx.createImageData(w, h);
+    const d   = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+      const v = Math.random() * 255 | 0;
+      d[i] = d[i+1] = d[i+2] = v;
+      d[i+3] = alpha;
+    }
+    // overlay blend manually: darken or lighten based on noise value
+    ctx.save();
+    ctx.globalCompositeOperation = 'overlay';
+    const tmp = document.createElement('canvas');
+    tmp.width = w; tmp.height = h;
+    tmp.getContext('2d').putImageData(img, 0, 0);
+    ctx.globalAlpha = 0.18;
+    ctx.drawImage(tmp, 0, 0);
+    ctx.restore();
+  }
+
+  function spaced(ctx, text, cx, y, spacing) {
+    // Draw text character by character for precise letter-spacing
+    const chars = [...text];
+    const widths = chars.map(c => ctx.measureText(c).width);
+    const total  = widths.reduce((s, w) => s + w, 0) + spacing * (chars.length - 1);
+    let x = cx - total / 2;
+    chars.forEach((c, i) => {
+      ctx.fillText(c, x, y);
+      x += widths[i] + spacing;
+    });
+  }
+
+  // ── drawProfile ──────────────────────────────────────────
+  function drawProfile(ctx, W, H) {
+    const cx = W / 2;
+
+    // Background
+    ctx.fillStyle = '#0d0d0d';
+    ctx.fillRect(0, 0, W, H);
+
+    // Grain
+    addGrain(ctx, W, H, 60);
+
+    // "La Commune"
+    ctx.fillStyle = '#f0ece6';
+    ctx.font = `300 ${W * 0.083}px 'Cormorant Garamond', serif`;
+    ctx.textBaseline = 'middle';
+    spaced(ctx, 'LA COMMUNE', cx, H * 0.455, W * 0.022);
+
+    // Divider
+    ctx.fillStyle = '#4a4540';
+    ctx.fillRect(cx - W * 0.038, H * 0.515, W * 0.075, 1);
+
+    // Tagline
+    ctx.fillStyle = '#575250';
+    ctx.font = `300 ${W * 0.028}px 'Work Sans', sans-serif`;
+    spaced(ctx, 'PACHUCA · HIDALGO', cx, H * 0.565, W * 0.013);
+  }
+
+  // ── drawCatalog ──────────────────────────────────────────
+  function drawCatalog(ctx, W, H) {
+    const cx = W / 2;
+
+    // Background
+    ctx.fillStyle = '#0d0d0d';
+    ctx.fillRect(0, 0, W, H);
+
+    // Subtle radial vignette
+    const grad = ctx.createRadialGradient(cx, H * 0.55, 0, cx, H * 0.55, W * 0.72);
+    grad.addColorStop(0,   'rgba(18,10,4,0.55)');
+    grad.addColorStop(1,   'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Grain
+    addGrain(ctx, W, H, 55);
+
+    // Eyebrow
+    ctx.fillStyle = '#3e3b38';
+    ctx.font = `300 ${W * 0.022}px 'Work Sans', sans-serif`;
+    ctx.textBaseline = 'middle';
+    spaced(ctx, 'CAFÉ DE ESPECIALIDAD', cx, H * 0.36, W * 0.016);
+
+    // Wordmark
+    ctx.fillStyle = '#f0ece6';
+    ctx.font = `300 ${W * 0.098}px 'Cormorant Garamond', serif`;
+    spaced(ctx, 'LA COMMUNE', cx, H * 0.472, W * 0.026);
+
+    // Divider
+    ctx.fillStyle = '#3a3530';
+    ctx.fillRect(cx - W * 0.042, H * 0.527, W * 0.084, 1);
+
+    // Sub
+    ctx.fillStyle = '#525050';
+    ctx.font = `300 ${W * 0.024}px 'Work Sans', sans-serif`;
+    spaced(ctx, 'PACHUCA · HIDALGO · MÉXICO', cx, H * 0.572, W * 0.012);
+
+    // Badge border
+    const bW = W * 0.5, bH = H * 0.072;
+    const bX = cx - bW / 2, bY = H * 0.624;
+    ctx.strokeStyle = '#2e2b28';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(bX, bY, bW, bH);
+
+    // Badge text
+    ctx.fillStyle = '#4a4745';
+    ctx.font = `300 ${W * 0.02}px 'Work Sans', sans-serif`;
+    spaced(ctx, 'TARJETA DE FIDELIDAD DIGITAL', cx, bY + bH / 2, W * 0.013);
+  }
+
+  // ── render previews ──────────────────────────────────────
+  async function renderAll() {
+    await document.fonts.ready;
+
+    const cProfile  = document.getElementById('c-profile');
+    const cCatalog  = document.getElementById('c-catalog');
+
+    drawProfile(cProfile.getContext('2d'), 320, 320);
+    drawCatalog(cCatalog.getContext('2d'), 320, 320);
+  }
+
+  // ── download at full resolution ──────────────────────────
+  async function download(type) {
+    await document.fonts.ready;
+
+    const isProfile = type === 'profile';
+    const W = isProfile ? 640 : 800;
+    const H = isProfile ? 640 : 800;
+    const name = isProfile
+      ? 'lacommune-perfil-640.png'
+      : 'lacommune-catalogo-800.png';
+
+    const btn = document.getElementById(`btn-${type}`);
+    btn.textContent = 'Generando…';
+    btn.disabled = true;
+
+    const canvas = document.createElement('canvas');
+    canvas.width  = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    if (isProfile) drawProfile(ctx, W, H);
+    else           drawCatalog(ctx, W, H);
+
+    canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a   = document.createElement('a');
+      a.href     = url;
+      a.download = name;
+      a.click();
+      URL.revokeObjectURL(url);
+      btn.textContent = `Descargar PNG ${W} × ${H}`;
+      btn.disabled = false;
+    }, 'image/png');
+  }
+
+  renderAll();
+</script>
+</body>
+</html>
