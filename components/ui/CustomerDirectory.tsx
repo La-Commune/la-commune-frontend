@@ -40,8 +40,13 @@ function CustomerDrawer({
 
   const handleDelete = async () => {
     setDeleting(true);
-    await deleteCustomer(firestore, customer.id);
-    onDeleted(customer.id);
+    try {
+      await deleteCustomer(firestore, customer.id);
+      onDeleted(customer.id);
+    } catch (e) {
+      console.error("Error al eliminar cliente:", e);
+      setDeleting(false);
+    }
   };
 
   return (

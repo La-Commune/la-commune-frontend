@@ -20,11 +20,12 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // customers — cualquiera puede crear (onboarding), solo lectura propia
+    // customers — cualquiera puede crear (onboarding), lectura y actualización públicas (admin panel)
     match /customers/{customerId} {
       allow create: if true;
       allow read:   if true;
-      allow update, delete: if false;
+      allow update: if true;   // necesario para notas del barista y soft-delete (active: false)
+      allow delete: if false;
     }
 
     // cards — lectura pública (cliente accede por URL con su cardId)
