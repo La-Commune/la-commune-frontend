@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
 import { motion, AnimatePresence } from "framer-motion";
 import { useFirestore } from "reactfire";
 import { MenuSection, MenuItem } from "@/models/menu.model";
@@ -14,24 +15,6 @@ import {
   deleteMenuSection,
 } from "@/services/menu.service";
 import { toast } from "@/components/ui/use-toast";
-
-/* ── Hook: offset del teclado virtual ───────────────── */
-
-function useKeyboardOffset() {
-  const [offset, setOffset] = useState(0);
-  useEffect(() => {
-    const vv = window.visualViewport;
-    if (!vv) return;
-    const update = () => setOffset(Math.max(0, window.innerHeight - vv.height));
-    vv.addEventListener("resize", update);
-    vv.addEventListener("scroll", update);
-    return () => {
-      vv.removeEventListener("resize", update);
-      vv.removeEventListener("scroll", update);
-    };
-  }, []);
-  return offset;
-}
 
 /* ── Constantes ──────────────────────────────────────── */
 
