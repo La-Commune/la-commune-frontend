@@ -124,7 +124,6 @@ const PremiumSection: React.FC<SectionProps> = ({
       {!videoFailed ? (
         <motion.video
           ref={videoRef}
-          style={{ y: smoothY }}
           autoPlay={!lazy}
           muted
           loop
@@ -132,7 +131,7 @@ const PremiumSection: React.FC<SectionProps> = ({
           preload={lazy ? "none" : "auto"}
           onError={() => setVideoFailed(true)}
           className="absolute inset-0 w-full h-[116%] object-cover"
-          style={{ filter: "saturate(0.6) hue-rotate(-15deg) contrast(1.15)" }}
+          style={{ y: smoothY, filter: "saturate(0.6) hue-rotate(-15deg) contrast(1.15)" }}
         >
           <source src={videoSrc} type="video/mp4" />
         </motion.video>
