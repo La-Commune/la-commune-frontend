@@ -80,6 +80,7 @@ const PremiumSection: React.FC<SectionProps> = ({
   const ref = useRef(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoFailed, setVideoFailed] = useState(false);
+  const stalledTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -89,6 +90,17 @@ const PremiumSection: React.FC<SectionProps> = ({
   // Parallax suave — reducido para no saturar
   const y = useTransform(scrollYProgress, [0, 1], ["-8%", "8%"]);
   const smoothY = useSpring(y, { stiffness: 60, damping: 25 });
+
+  // Mostrar fallback inmediatamente si no hay red al montar o si se pierde
+  useEffect(() => {
+    if (!navigator.onLine) setVideoFailed(true);
+    const handleOffline = () => setVideoFailed(true);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("offline", handleOffline);
+      if (stalledTimer.current) clearTimeout(stalledTimer.current);
+    };
+  }, []);
 
   // Slow motion — 0.4x de velocidad para efecto cinematográfico
   useEffect(() => {
@@ -131,6 +143,12 @@ const PremiumSection: React.FC<SectionProps> = ({
           playsInline
           preload={lazy ? "none" : "auto"}
           onError={() => setVideoFailed(true)}
+          onStalled={() => {
+            stalledTimer.current = setTimeout(() => setVideoFailed(true), 3000);
+          }}
+          onCanPlay={() => {
+            if (stalledTimer.current) clearTimeout(stalledTimer.current);
+          }}
           className="absolute inset-0 w-full h-[116%] object-cover"
           style={{ y: smoothY, filter: "saturate(0.6) hue-rotate(-15deg) contrast(1.15)" }}
         >
