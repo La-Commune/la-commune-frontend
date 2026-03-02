@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "La Commune",
     description:
       "Tu tarjeta de fidelidad digital. Acumula visitas y desbloquea tu bebida de cortesía.",
-    start_url: "/",
+    start_url: "/card/preview",
     display: "standalone",
     orientation: "portrait",
     background_color: "#111111",
