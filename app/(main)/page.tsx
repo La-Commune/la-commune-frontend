@@ -86,6 +86,44 @@ const PremiumSection: React.FC<SectionProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoFailed, setVideoFailed] = useState(false);
   const stalledTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loopOverlayRef = useRef<HTMLDivElement>(null);
+  const loopFadingOut = useRef(false);
+  const rafRef = useRef<number | null>(null);
+  const FADE_SECS = 1.8;
+
+  // rAF a 60 fps — lee currentTime cada frame para opacidad perfectamente continua
+  useEffect(() => {
+    const tick = () => {
+      const video = videoRef.current;
+      const overlay = loopOverlayRef.current;
+      if (video && overlay && !loopFadingOut.current && video.duration) {
+        const timeLeft = video.duration - video.currentTime;
+        if (timeLeft <= FADE_SECS) {
+          overlay.style.opacity = String(Math.min(1, 1 - timeLeft / FADE_SECS));
+        }
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleVideoEnded = () => {
+    const video = videoRef.current;
+    const overlay = loopOverlayRef.current;
+    if (!video || !overlay) return;
+    loopFadingOut.current = true;
+    overlay.style.transition = "none";
+    overlay.style.opacity = "1";
+    setTimeout(() => {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+      overlay.style.transition = "opacity 1.1s cubic-bezier(0.4, 0, 0.2, 1)";
+      overlay.style.opacity = "0";
+      setTimeout(() => { loopFadingOut.current = false; }, 1200);
+    }, 80);
+  };
 
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -144,7 +182,6 @@ const PremiumSection: React.FC<SectionProps> = ({
           ref={videoRef}
           autoPlay={!lazy}
           muted
-          loop
           playsInline
           preload={lazy ? "none" : "auto"}
           poster={videoPoster}
@@ -155,6 +192,7 @@ const PremiumSection: React.FC<SectionProps> = ({
           onCanPlay={() => {
             if (stalledTimer.current) clearTimeout(stalledTimer.current);
           }}
+          onEnded={handleVideoEnded}
           className="absolute inset-0 w-full h-[116%] object-cover"
           style={{ y: smoothY, filter: "saturate(0.6) hue-rotate(-15deg) contrast(1.15)" }}
         >
@@ -179,6 +217,13 @@ const PremiumSection: React.FC<SectionProps> = ({
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_50%_80%,#2d1507_0%,#111111_65%)] opacity-60" />
         </motion.div>
       )}
+
+      {/* Loop fade — negro suave a 60fps vía rAF, invisible durante reproducción normal */}
+      <div
+        ref={loopOverlayRef}
+        className="absolute inset-0 z-[4] bg-black pointer-events-none"
+        style={{ opacity: 0 }}
+      />
 
       {/* Film grain — siempre sobre el video, efecto película 35mm */}
       <div
@@ -321,7 +366,7 @@ export default function Home() {
       <PremiumSection
         eyebrow="La Commune"
         title={`Café\nen común`}
-        subtitle="No es solo café. Es el espacio que elegiste para estar."
+        subtitle="Un espacio que pertenece a los que están."
         videoSrc="/videos/coffee-free.mp4"
         videoPoster="/images/poster-hero.jpg"
         ctaText="Ver menú"
@@ -331,14 +376,14 @@ export default function Home() {
 
       {/* Segunda sección — fidelidad, alineada a la izquierda */}
       <PremiumSection
-        eyebrow="Para los que vuelven"
+        eyebrow="Para los que construyen"
         title={`Lo que se da\nvuelve`}
-        subtitle="Cada visita es un ladrillo. Después de cinco, la casa responde."
+        subtitle="Cada visita es un ladrillo. A la quinta, la casa te devuelve algo."
         videoSrc="/videos/coffee-slow.mp4"
         videoPoster="/images/poster-loyalty.jpg"
         ctaText={loyaltyCta.text}
         ctaLink={loyaltyCta.link}
-        secondaryCtaText={cardId ? "No es mi tarjeta" : "Ver cómo funciona"}
+        secondaryCtaText={cardId ? "No es mi tarjeta" : ""}
         secondaryCtaLink={cardId ? undefined : "/card/preview"}
         onSecondaryCtaClick={cardId ? handleClearSession : undefined}
         align="left"
@@ -348,8 +393,8 @@ export default function Home() {
       {/* Storytelling — identidad de marca. Opción 1: todo en sección */}
       <PremiumSection
         eyebrow="La Commune"
-        title={`Trabajo honesto.\nTaza honesta.`}
-        subtitle="Detrás de cada taza hay alguien que madrugó, que ajustó cada variable, que no se conformó con lo suficiente. La Commune es el nombre que le ponemos a ese esfuerzo compartido."
+        title={`Sin trucos.\nSolo oficio.`}
+        subtitle="La Commune es el nombre que le ponemos al esfuerzo compartido detrás de cada taza."
         manifesto="El café es el pretexto. La comunidad, el punto."
         videoSrc="/videos/coffee-black-white.mp4"
         videoPoster="/images/poster-storytelling.jpg"
@@ -385,11 +430,11 @@ export default function Home() {
               <div className="space-y-3">
                 <div>
                   <p className="text-[11px] text-stone-500 uppercase tracking-wider">Lun – Vie</p>
-                  <p className="text-sm text-stone-200 mt-0.5">7:00 – 20:00</p>
+                  <p className="text-sm text-stone-200 mt-0.5">10:00 – 20:00</p>
                 </div>
                 <div>
                   <p className="text-[11px] text-stone-500 uppercase tracking-wider">Sáb – Dom</p>
-                  <p className="text-sm text-stone-200 mt-0.5">8:00 – 20:00</p>
+                  <p className="text-sm text-stone-200 mt-0.5">10:00 – 20:00</p>
                 </div>
               </div>
             </div>
@@ -408,7 +453,7 @@ export default function Home() {
 
           {/* Divisor + copyright + links */}
           <div className="border-t border-stone-800 pt-6 flex flex-col items-center gap-3">
-            <p className="text-[10px] tracking-[0.3em] uppercase text-stone-600" suppressHydrationWarning>
+            <p className="text-[10px] tracking-[0.3em] uppercase text-stone-600 text-center" suppressHydrationWarning>
               © {new Date().getFullYear()} · La Commune · En construcción permanente
             </p>
             <div className="flex items-center gap-6">

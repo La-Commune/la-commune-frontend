@@ -667,6 +667,7 @@ export default function AdminPage() {
   const [pinLoading, setPinLoading] = useState(false);
   const [adminTab, setAdminTab] = useState<"stamps" | "menu" | "customers" | "analytics">("stamps");
   const [lockout, setLockout] = useState(0);
+  const pinLoadingRef = useRef(false);
 
   // Countdown del lockout
   useEffect(() => {
@@ -684,10 +685,12 @@ export default function AdminPage() {
     });
   }, []);
 
-  const handlePinSubmit = async () => {
+  const handlePinSubmit = useCallback(async (pinValue: string) => {
+    if (pinLoadingRef.current) return;
+    pinLoadingRef.current = true;
     setPinLoading(true);
     try {
-      const result = await verifyAdminPin(pin);
+      const result = await verifyAdminPin(pinValue);
       if (result.ok) {
         setAuthed(true);
         setPinError("");
@@ -704,7 +707,15 @@ export default function AdminPage() {
       setPin("");
     }
     setPinLoading(false);
-  };
+    pinLoadingRef.current = false;
+  }, []);
+
+  // Auto-submit al completar todos los dígitos
+  useEffect(() => {
+    if (pin.length === pinLength && !authed && lockout <= 0) {
+      handlePinSubmit(pin);
+    }
+  }, [pin, pinLength, authed, lockout, handlePinSubmit]);
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white flex flex-col">
@@ -752,7 +763,7 @@ export default function AdminPage() {
               <PinPad
                 value={pin}
                 onChange={(v) => { setPin(v); setPinError(""); }}
-                onSubmit={handlePinSubmit}
+                onSubmit={() => handlePinSubmit(pin)}
                 error={pinError}
                 loading={pinLoading}
                 pinLength={pinLength}
