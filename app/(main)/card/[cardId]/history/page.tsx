@@ -71,10 +71,15 @@ export default function HistoryPage() {
 
         {/* Header */}
         <div className="mb-10 space-y-1">
-          <p className="text-[10px] uppercase tracking-[0.4em] text-stone-600">Tarjeta</p>
+          <p className="text-[10px] uppercase tracking-[0.4em] text-stone-600">Mi tarjeta</p>
           <h1 className="font-display text-4xl font-light tracking-wide text-stone-200">
-            Historial
+            Mis visitas
           </h1>
+          {!loading && !error && events.length > 0 && (
+            <p className="text-[11px] text-stone-600 tracking-wide pt-1">
+              {events.filter(e => e.source !== "redemption").length} visitas · {events.filter(e => e.source === "redemption").length} canjes
+            </p>
+          )}
         </div>
 
         {loading && (
@@ -90,9 +95,13 @@ export default function HistoryPage() {
         )}
 
         {!loading && !error && events.length === 0 && (
-          <div className="text-center mt-16 space-y-2">
-            <p className="text-stone-600 text-sm">Sin visitas registradas todavía</p>
-            <p className="text-[10px] uppercase tracking-widest text-stone-800">Vuelve pronto</p>
+          <div className="text-center mt-20 space-y-3">
+            <p className="text-stone-500 text-sm leading-relaxed">
+              Aún no hay visitas registradas.
+            </p>
+            <p className="text-[10px] uppercase tracking-widest text-stone-800">
+              Cada café cuenta — te esperamos
+            </p>
           </div>
         )}
 
@@ -136,7 +145,7 @@ export default function HistoryPage() {
                       </p>
 
                       {event.drinkType && (
-                        <p className="text-[11px] text-stone-500">
+                        <p className={`text-[11px] ${isRedemption ? "text-amber-700/70" : "text-stone-500"}`}>
                           {event.drinkType}
                           {event.size ? ` · ${event.size}` : ""}
                         </p>

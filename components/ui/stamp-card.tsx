@@ -11,7 +11,6 @@ type ConfettiInstance = (opts: any) => void;
 export function StampCardView({ cardId }: { cardId: string }) {
   const [flipped, setFlipped] = useState(false);
   const [completed, setCompleted] = useState(false);
-  const [hintDismissed, setHintDismissed] = useState(false);
   const [stampNotification, setStampNotification] = useState(false);
 
   const confettiRef = useRef<ConfettiInstance | null>(null);
@@ -60,7 +59,6 @@ export function StampCardView({ cardId }: { cardId: string }) {
 
   const handleFlip = () => {
     setFlipped((f) => !f);
-    setHintDismissed(true);
   };
 
   return (
@@ -115,18 +113,29 @@ export function StampCardView({ cardId }: { cardId: string }) {
           >
             Sello añadido ✓
           </motion.p>
-        ) : !hintDismissed ? (
+        ) : !flipped ? (
           <motion.p
             key="hint"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.4, delay: 1 }}
+            transition={{ duration: 0.4, delay: 0.6 }}
             className="text-[10px] uppercase tracking-[0.3em] text-stone-600"
           >
             Toca para ver tu QR
           </motion.p>
-        ) : null}
+        ) : (
+          <motion.p
+            key="hint-back"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="text-[10px] uppercase tracking-[0.3em] text-stone-600"
+          >
+            Toca para volver
+          </motion.p>
+        )}
       </AnimatePresence>
     </div>
   );

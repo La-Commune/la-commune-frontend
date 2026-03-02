@@ -51,6 +51,11 @@ function OnboardingForm() {
           router.replace("/card/" + existingCard.id);
           return;
         }
+
+        // Cliente existe pero sin tarjeta — caso raro, avisar
+        setError("Encontramos tu cuenta pero no tu tarjeta. Visítanos en barra para que te ayudemos.");
+        setLoading(false);
+        return;
       }
 
       // Cliente nuevo — registrar
@@ -71,8 +76,15 @@ function OnboardingForm() {
       localStorage.setItem("cardId", cardRef.id);
 
       router.replace("/card/" + cardRef.id);
-    } catch {
-      setError("Algo salió mal. Intenta de nuevo.");
+    } catch (e: any) {
+      const offline = typeof navigator !== "undefined" && !navigator.onLine;
+      if (offline) {
+        setError("Sin conexión a internet. Verifica tu red e intenta de nuevo.");
+      } else if (e?.code === "permission-denied") {
+        setError("No se pudo acceder al servicio. Intenta más tarde.");
+      } else {
+        setError("Algo salió mal. Intenta de nuevo o visítanos en barra.");
+      }
       setLoading(false);
     }
   };
