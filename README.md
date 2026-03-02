@@ -1,6 +1,6 @@
 # La Commune — Tarjeta de Fidelidad Digital
 
-PWA de programa de sellos digitales para el café **La Commune** (Pachuca, MX).
+PWA de programa de sellos digitales para el café **La Commune** (Mineral de la Reforma, MX).
 Los clientes acumulan sellos; el barista los agrega escaneando el QR de la tarjeta del cliente.
 
 **Creado por [⬡ David San Luis Aguirre](https://davidsanluisaguirre.com/)**
