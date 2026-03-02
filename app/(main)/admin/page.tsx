@@ -16,8 +16,17 @@ import { addStamp, redeemCard, undoStamp } from "@/services/card.service";
 import { getFullMenu } from "@/services/menu.service";
 import { timeAgo } from "@/lib/utils";
 import { toast } from "@/components/ui/use-toast";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import {
+  enqueue,
+  removeFromQueue,
+  markFailed,
+  getQueue,
+  resetFailed,
+  QueuedStamp,
+} from "@/lib/offlineQueue";
 
-type Screen = "pin" | "stamp" | "success" | "redeemed";
+type Screen = "pin" | "stamp" | "success" | "redeemed" | "queued";
 
 interface AdminConfig {
   pinLength?: number;
@@ -147,6 +156,11 @@ function StampView({ onLogout }: { onLogout: () => void }) {
   const [stampSize, setStampSize] = useState("");
   const [menuDrinks, setMenuDrinks] = useState<string[]>([]);
 
+  // Offline queue
+  const { isOnline } = useNetworkStatus();
+  const [pendingQueue, setPendingQueue] = useState<QueuedStamp[]>([]);
+  const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "error">("idle");
+
   // Cargar bebidas disponibles del menú
   useEffect(() => {
     getFullMenu(firestore)
@@ -170,6 +184,47 @@ function StampView({ onLogout }: { onLogout: () => void }) {
       if (undoIntervalRef.current) clearInterval(undoIntervalRef.current);
     };
   }, []);
+
+  // Cargar queue al montar
+  useEffect(() => {
+    setPendingQueue(getQueue());
+  }, []);
+
+  const syncQueue = useCallback(async () => {
+    const pending = getQueue().filter((q) => q.status === "pending");
+    if (pending.length === 0) return;
+    setSyncStatus("syncing");
+    let hasError = false;
+    for (const item of pending) {
+      try {
+        const customerIdRef = item.customerId
+          ? doc(firestore, item.customerId)
+          : undefined;
+        await addStamp(firestore, item.cardId, {
+          customerId: customerIdRef,
+          addedBy: "barista",
+          drinkType: item.drinkType,
+          size: item.size,
+        });
+        removeFromQueue(item.id);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Error desconocido";
+        markFailed(item.id, msg);
+        hasError = true;
+      }
+    }
+    setPendingQueue(getQueue());
+    setSyncStatus(hasError ? "error" : "idle");
+  }, [firestore]);
+
+  // Auto-sync al recuperar conexión
+  useEffect(() => {
+    if (isOnline) {
+      const pending = getQueue().filter((q) => q.status === "pending");
+      if (pending.length > 0) syncQueue();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOnline]);
 
   const clearUndoCountdown = useCallback(() => {
     if (undoIntervalRef.current) {
@@ -211,7 +266,11 @@ function StampView({ onLogout }: { onLogout: () => void }) {
         customerName,
       });
     } catch {
-      setError("Error al cargar la tarjeta");
+      setError(
+        !navigator.onLine
+          ? "Sin conexión. Si ya cargaste esta tarjeta antes, inténtalo de nuevo."
+          : "Error al cargar la tarjeta",
+      );
     }
     setLoading(false);
   }, [firestore]);
@@ -222,17 +281,48 @@ function StampView({ onLogout }: { onLogout: () => void }) {
     loadCard(value);
   }, [loadCard]);
 
+  const resetStampForm = useCallback(() => {
+    setScreen("stamp");
+    setCardInput("");
+    setCard(null);
+    setSelectedDrink("");
+    setCustomDrink("");
+    setStampSize("");
+  }, []);
+
   const handleAddStamp = useCallback(async () => {
     if (!card) return;
     clearUndoCountdown();
     if (resetTimer.current) clearTimeout(resetTimer.current);
+
+    const finalDrink = selectedDrink === "otro"
+      ? (customDrink.trim() || undefined)
+      : (selectedDrink || undefined);
+
+    // Offline path: enqueue and show queued screen
+    if (!isOnline) {
+      const optimisticStamps = Math.min(card.stamps + 1, card.maxStamps);
+      enqueue({
+        cardId: card.id,
+        customerId: card.customerId?.path,
+        customerName: card.customerName,
+        drinkType: finalDrink,
+        size: stampSize || undefined,
+      });
+      setCard({ ...card, stamps: optimisticStamps });
+      setStampHistory((prev) => [
+        { customerName: card.customerName || "Cliente", stamps: optimisticStamps, maxStamps: card.maxStamps, time: new Date() },
+        ...prev,
+      ].slice(0, 5));
+      setPendingQueue(getQueue());
+      setScreen("queued");
+      resetTimer.current = setTimeout(() => resetStampForm(), 3000);
+      return;
+    }
+
     setLoading(true);
     setError("");
     try {
-      const finalDrink = selectedDrink === "otro"
-        ? (customDrink.trim() || undefined)
-        : (selectedDrink || undefined);
-
       const result = await addStamp(firestore, card.id, {
         customerId: card.customerId ?? undefined,
         addedBy: "barista",
@@ -256,12 +346,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
             undoIntervalRef.current = null;
             setLastEventId(null);
             // Auto-reset al terminar el countdown
-            setScreen("stamp");
-            setCardInput("");
-            setCard(null);
-            setSelectedDrink("");
-            setCustomDrink("");
-            setStampSize("");
+            resetStampForm();
             return null;
           }
           return prev - 1;
@@ -271,7 +356,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
       setError("Error al añadir el sello. Intenta de nuevo.");
     }
     setLoading(false);
-  }, [card, firestore, selectedDrink, customDrink, stampSize, clearUndoCountdown]);
+  }, [card, firestore, selectedDrink, customDrink, stampSize, clearUndoCountdown, isOnline, resetStampForm]);
 
   const handleUndo = useCallback(async () => {
     if (!card || !lastEventId) return;
@@ -317,8 +402,73 @@ function StampView({ onLogout }: { onLogout: () => void }) {
   const isComplete = card ? card.stamps >= card.maxStamps : false;
   const progress = card ? (card.stamps / card.maxStamps) * 100 : 0;
 
+  const pendingCount = pendingQueue.filter((q) => q.status === "pending").length;
+  const failedCount = pendingQueue.filter((q) => q.status === "failed").length;
+
   return (
     <div className="flex flex-col gap-8 w-full max-w-sm mx-auto">
+
+      {/* Banner offline */}
+      <AnimatePresence>
+        {!isOnline && (
+          <motion.div
+            key="offline-banner"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="flex items-center gap-2 px-4 py-3 rounded-xl border border-amber-800/40 bg-amber-900/10"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-amber-500 shrink-0">
+              <line x1="1" y1="1" x2="23" y2="23"/>
+              <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
+              <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+              <path d="M10.71 5.05A16 16 0 0 1 22.56 9"/>
+              <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
+              <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+              <circle cx="12" cy="20" r="1" fill="currentColor"/>
+            </svg>
+            <span className="text-[11px] uppercase tracking-[0.2em] text-amber-400">
+              Sin conexión
+              {pendingCount > 0 && ` · ${pendingCount} pendiente${pendingCount !== 1 ? "s" : ""}`}
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Barra de sincronización */}
+      <AnimatePresence>
+        {isOnline && pendingQueue.length > 0 && (
+          <motion.div
+            key="sync-bar"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className={`flex items-center justify-between gap-2 px-4 py-3 rounded-xl border ${
+              syncStatus === "error"
+                ? "border-red-800/40 bg-red-900/10"
+                : "border-stone-800 bg-stone-900/50"
+            }`}
+          >
+            <span className={`text-[11px] uppercase tracking-[0.2em] ${
+              syncStatus === "error" ? "text-red-400" : "text-stone-400"
+            }`}>
+              {syncStatus === "syncing"
+                ? "Sincronizando…"
+                : syncStatus === "error"
+                ? `Error al sincronizar ${failedCount}`
+                : "Todo sincronizado"}
+            </span>
+            {syncStatus === "error" && (
+              <button
+                onClick={() => { resetFailed(); setPendingQueue(getQueue()); syncQueue(); }}
+                className="text-[10px] uppercase tracking-widest text-stone-400 hover:text-white transition-colors"
+              >
+                Reintentar
+              </button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Buscador de tarjeta */}
       <div className="space-y-3">
@@ -612,6 +762,42 @@ function StampView({ onLogout }: { onLogout: () => void }) {
                 Deshacer ({undoSecondsLeft}s)
               </button>
             )}
+          </motion.div>
+        )}
+
+        {screen === "queued" && (
+          <motion.div
+            key="queued"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            className="rounded-2xl border border-amber-800/40 bg-amber-900/10 p-8 text-center space-y-3"
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              className="text-4xl"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10 text-amber-400 mx-auto">
+                <line x1="1" y1="1" x2="23" y2="23"/>
+                <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
+                <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+                <path d="M10.71 5.05A16 16 0 0 1 22.56 9"/>
+                <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
+                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                <circle cx="12" cy="20" r="1" fill="currentColor"/>
+              </svg>
+            </motion.div>
+            <p
+              className="text-xl font-light text-amber-300"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Guardado sin conexión
+            </p>
+            <p className="text-[10px] uppercase tracking-widest text-amber-700">
+              {card?.customerName || "Cliente"} · Se sincronizará al recuperar conexión
+            </p>
           </motion.div>
         )}
       </AnimatePresence>
