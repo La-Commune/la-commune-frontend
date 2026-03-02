@@ -406,7 +406,7 @@ export default function Home() {
               </Link>
               <span className="w-px h-3 bg-stone-800" />
               <Link href="/card/preview" className="text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300">
-                Mi tarjeta
+                Simulador de tarjeta
               </Link>
               <span className="w-px h-3 bg-stone-800" />
               <Link href="/onboarding" className="text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300">
