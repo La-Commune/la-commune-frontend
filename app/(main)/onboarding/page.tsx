@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useFirestore } from "reactfire";
 import { createCustomer, getCustomerByPhone } from "@/services/customer.service";
-import { doc } from "firebase/firestore";
+import { doc, getDoc, DocumentReference } from "firebase/firestore";
 import { createCard, getCardByCustomer } from "@/services/card.service";
 
 export default function OnboardingPage() {
@@ -58,11 +58,26 @@ function OnboardingForm() {
         return;
       }
 
+      // Resolver referrerCustomerId desde el cardId de la URL (si existe)
+      let referrerCustomerId: string | undefined;
+      if (cardId) {
+        try {
+          const referrerCardSnap = await getDoc(doc(firestore, "cards", cardId));
+          if (referrerCardSnap.exists()) {
+            const ref = referrerCardSnap.data().customerId as DocumentReference | undefined;
+            referrerCustomerId = ref?.id;
+          }
+        } catch {
+          // No bloquear el registro si el lookup falla
+        }
+      }
+
       // Cliente nuevo — registrar
       const customerRef = await createCustomer(firestore, {
         name,
         phone,
         consentWhatsApp,
+        ...(referrerCustomerId ? { referrerCustomerId } : {}),
       });
 
       const rewardRef = doc(firestore, "rewards", "default");

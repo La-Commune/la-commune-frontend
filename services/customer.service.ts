@@ -18,6 +18,7 @@ export async function createCustomer(
     name?: string;
     phone: string;
     consentWhatsApp: boolean;
+    referrerCustomerId?: string;
   },
 ) {
   const customerData: Customer = {
@@ -31,6 +32,7 @@ export async function createCustomer(
     lastVisitAt: Timestamp.now(),
     notes: "",
     schemaVersion: 1,
+    ...(data.referrerCustomerId ? { referrerCustomerId: data.referrerCustomerId } : {}),
   };
   return addDoc(collection(firestore, "customers"), customerData);
 }

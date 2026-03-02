@@ -53,11 +53,15 @@ function exportCSV(customers: CustomerRow[]) {
 
 function CustomerDrawer({
   customer,
+  referredBy,
+  referralCount,
   onClose,
   onNotesSaved,
   onDeleted,
 }: {
   customer: CustomerRow;
+  referredBy?: string;
+  referralCount: number;
   onClose: () => void;
   onNotesSaved: (id: string, notes: string) => void;
   onDeleted: (id: string) => void;
@@ -172,6 +176,29 @@ function CustomerDrawer({
               <div>
                 <p className="text-[10px] uppercase tracking-[0.35em] text-stone-600 mb-0.5">Miembro desde</p>
                 <p className="text-sm text-stone-400">{formatDate(customer.createdAt)}</p>
+              </div>
+            )}
+
+            {/* Referidos */}
+            {(referredBy || referralCount > 0) && (
+              <div className="space-y-1.5">
+                <p className="text-[10px] uppercase tracking-[0.35em] text-stone-600">Referidos</p>
+                {referredBy && (
+                  <p className="text-[11px] text-stone-500">
+                    Vino referido por{" "}
+                    <span className="text-stone-300">{referredBy}</span>
+                    {customer.referralBonusGiven && (
+                      <span className="ml-1.5 text-amber-600/70">· bono dado</span>
+                    )}
+                  </p>
+                )}
+                {referralCount > 0 && (
+                  <p className="text-[11px] text-stone-500">
+                    Ha referido a{" "}
+                    <span className="text-stone-300">{referralCount}</span>{" "}
+                    {referralCount === 1 ? "persona" : "personas"}
+                  </p>
+                )}
               </div>
             )}
 
@@ -360,6 +387,17 @@ export function CustomerDirectory() {
     setSelected(null);
   };
 
+  // Mapa de referidos: cuántas personas ha referido cada cliente
+  const referralCountById = new Map<string, number>();
+  customers.forEach((c) => {
+    if (c.referrerCustomerId) {
+      referralCountById.set(c.referrerCustomerId, (referralCountById.get(c.referrerCustomerId) ?? 0) + 1);
+    }
+  });
+
+  // Mapa de nombre de referidor: customerId → nombre
+  const customerById = new Map(customers.map((c) => [c.id, c]));
+
   if (loading) {
     return (
       <div className="w-full max-w-2xl mx-auto space-y-2">
@@ -447,9 +485,16 @@ export function CustomerDirectory() {
 
             {/* Stats */}
             <div className="text-right shrink-0 space-y-0.5">
-              <p className="text-[12px] tabular-nums text-stone-500">
-                {customer.totalVisits ?? 0} visitas
-              </p>
+              <div className="flex items-center justify-end gap-1.5">
+                {(referralCountById.get(customer.id) ?? 0) > 0 && (
+                  <span className="text-[9px] uppercase tracking-widest text-amber-600/80 border border-amber-800/40 rounded-full px-1.5 py-0.5">
+                    ×{referralCountById.get(customer.id)} ref
+                  </span>
+                )}
+                <p className="text-[12px] tabular-nums text-stone-500">
+                  {customer.totalVisits ?? 0} visitas
+                </p>
+              </div>
               {customer.lastVisitAt && (
                 <p className="text-[10px] text-stone-700">{formatDate(customer.lastVisitAt)}</p>
               )}
@@ -473,6 +518,12 @@ export function CustomerDirectory() {
           <CustomerDrawer
             key={selected.id}
             customer={selected}
+            referredBy={
+              selected.referrerCustomerId
+                ? (customerById.get(selected.referrerCustomerId)?.name ?? "Cliente desconocido")
+                : undefined
+            }
+            referralCount={referralCountById.get(selected.id) ?? 0}
             onClose={() => setSelected(null)}
             onNotesSaved={handleNotesSaved}
             onDeleted={handleDeleted}

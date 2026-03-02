@@ -23,5 +23,9 @@ export interface Customer {
 
   notes?: string;
 
+  /** Referidos */
+  referrerCustomerId?: string;
+  referralBonusGiven?: boolean;
+
   schemaVersion: number;
 }

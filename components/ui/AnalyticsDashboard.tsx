@@ -17,6 +17,8 @@ import {
   getTotalRedemptions,
   StampEventRaw,
 } from "@/services/analytics.service";
+import { getAllCustomers } from "@/services/customer.service";
+import { Customer } from "@/models/customer.model";
 import { Timestamp } from "firebase/firestore";
 import { toast } from "@/components/ui/use-toast";
 
@@ -150,6 +152,7 @@ export function AnalyticsDashboard() {
   const [totalRedemptions, setTotalRedemptions] = useState(0);
   const [allEvents, setAllEvents] = useState<StampEventRaw[]>([]);
   const [range, setRange] = useState<Range>(30);
+  const [customers, setCustomers] = useState<(Customer & { id: string })[]>([]);
 
   useEffect(() => {
     const ninetyDaysAgo = new Date();
@@ -159,11 +162,13 @@ export function AnalyticsDashboard() {
       getTotalCustomers(firestore),
       getTotalRedemptions(firestore),
       getStampEventsInRange(firestore, ninetyDaysAgo),
+      getAllCustomers(firestore),
     ])
-      .then(([customers, redemptions, evts]) => {
-        setTotalCustomers(customers);
+      .then(([total, redemptions, evts, allCustomers]) => {
+        setTotalCustomers(total);
         setTotalRedemptions(redemptions);
         setAllEvents(evts);
+        setCustomers(allCustomers);
         setLoading(false);
       })
       .catch(() => {
@@ -181,6 +186,19 @@ export function AnalyticsDashboard() {
   const chartData = buildChartData(events, range);
   const drinkData = buildDrinkData(events);
   const topDrink = drinkData[0]?.name ?? "—";
+
+  // Top referidores: contar cuántas personas ha referido cada cliente
+  const customerById = new Map(customers.map((c) => [c.id, c]));
+  const referralCountById = new Map<string, number>();
+  customers.forEach((c) => {
+    if (c.referrerCustomerId) {
+      referralCountById.set(c.referrerCustomerId, (referralCountById.get(c.referrerCustomerId) ?? 0) + 1);
+    }
+  });
+  const topReferrers = Array.from(referralCountById.entries())
+    .map(([id, count]) => ({ id, count, name: customerById.get(id)?.name ?? "Sin nombre" }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
 
   const rangeLabel = range === 7 ? "7 días" : range === 30 ? "30 días" : "90 días";
 
@@ -306,6 +324,28 @@ export function AnalyticsDashboard() {
             <p className="text-[10px] uppercase tracking-widest text-stone-800 mt-1">
               Los sellos registran la bebida al agregarlos
             </p>
+          </div>
+        )}
+      </div>
+
+      {/* Top referidores */}
+      <div className="rounded-2xl border border-stone-800 bg-neutral-900 px-5 py-6 space-y-4">
+        <p className="text-[10px] uppercase tracking-[0.35em] text-stone-600">Top referidores</p>
+        {topReferrers.length === 0 ? (
+          <p className="text-stone-700 text-sm">Sin referidos registrados aún</p>
+        ) : (
+          <div className="space-y-2.5">
+            {topReferrers.map(({ id, name, count }) => (
+              <div key={id} className="flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full border border-stone-700 bg-neutral-950 flex items-center justify-center shrink-0">
+                  <span className="text-[10px] text-stone-400">{name[0]?.toUpperCase() ?? "?"}</span>
+                </div>
+                <span className="flex-1 text-sm text-stone-300 truncate">{name}</span>
+                <span className="text-[11px] tabular-nums text-amber-600/80">
+                  {count} {count === 1 ? "referido" : "referidos"}
+                </span>
+              </div>
+            ))}
           </div>
         )}
       </div>
