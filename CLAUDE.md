@@ -22,6 +22,10 @@ npm run lint     # linter
 node scripts/seed.mjs        # crea rewards/default en Firestore
 node scripts/seedMenu.mjs    # siembra el menú inicial en Firestore (idempotente)
 firebase deploy --only firestore:rules  # despliega reglas
+
+# Extraer frame de video para usar como poster (evita flash de pantalla negra)
+ffmpeg -ss 00:00:05 -i public/videos/MI_VIDEO.mp4 -vframes 1 -vf "scale=1920:-1" -q:v 3 public/images/poster-MI_VIDEO.jpg -y
+# Ajustar -ss (segundos) para elegir el frame más representativo del video
 ```
 
 > Si hay errores raros de compilación, borrar `.next/` y reiniciar el servidor.

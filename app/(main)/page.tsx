@@ -53,6 +53,7 @@ interface SectionProps {
   eyebrow?: string;
   title: string;
   subtitle?: string;
+  manifesto?: string;
   videoSrc: string;
   videoPoster?: string;
   ctaText?: string;
@@ -68,6 +69,7 @@ const PremiumSection: React.FC<SectionProps> = ({
   eyebrow,
   title,
   subtitle,
+  manifesto,
   videoSrc,
   videoPoster,
   ctaText,
@@ -222,6 +224,21 @@ const PremiumSection: React.FC<SectionProps> = ({
           </motion.p>
         )}
 
+        {manifesto && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1.2, delay: 0.75 }}
+            className={`mt-10 ${align === "center" ? "mx-auto" : ""} max-w-sm`}
+          >
+            <div className="w-6 h-px bg-stone-700 mb-4" />
+            <p className="text-[13px] italic font-light text-stone-500 leading-relaxed tracking-wide">
+              &ldquo;{manifesto}&rdquo;
+            </p>
+          </motion.div>
+        )}
+
         {ctaText && ctaLink && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -314,6 +331,20 @@ export default function Home() {
         secondaryCtaLink={cardId ? undefined : "/card/preview"}
         onSecondaryCtaClick={cardId ? handleClearSession : undefined}
         align="left"
+        lazy
+      />
+
+      {/* Storytelling — identidad de marca. Opción 1: todo en sección */}
+      <PremiumSection
+        eyebrow="La Commune"
+        title={`Trabajo honesto.\nTaza honesta.`}
+        subtitle="Detrás de cada taza hay alguien que madrugó, que ajustó cada variable, que no se conformó con lo suficiente. La Commune es el nombre que le ponemos a ese esfuerzo compartido."
+        manifesto="El café es el pretexto. La comunidad, el punto."
+        videoSrc="/videos/coffe-commune.mp4"
+        videoPoster="/images/poster-storytelling.jpg"
+        ctaText="Nuestra historia"
+        ctaLink="/nosotros"
+        align="center"
         lazy
       />
 
