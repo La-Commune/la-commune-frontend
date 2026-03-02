@@ -26,6 +26,47 @@ function sourceLabel(source: string): string {
   return "Visita";
 }
 
+interface EventGroup {
+  dateLabel: string;
+  events: EventRow[];
+}
+
+function groupEventsByDate(events: EventRow[]): EventGroup[] {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const groups = new Map<string, EventGroup>();
+
+  for (const event of events) {
+    const date = event.createdAt?.toDate?.() ?? new Date();
+    const day = new Date(date);
+    day.setHours(0, 0, 0, 0);
+
+    let dateLabel: string;
+    if (day.getTime() === today.getTime()) {
+      dateLabel = "Hoy";
+    } else if (day.getTime() === yesterday.getTime()) {
+      dateLabel = "Ayer";
+    } else {
+      dateLabel = new Intl.DateTimeFormat("es-MX", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }).format(date);
+    }
+
+    const key = day.toISOString();
+    if (!groups.has(key)) {
+      groups.set(key, { dateLabel, events: [] });
+    }
+    groups.get(key)!.events.push(event);
+  }
+
+  return Array.from(groups.values());
+}
+
 export default function HistoryPage() {
   const { cardId } = useParams<{ cardId: string }>();
   const router = useRouter();
@@ -48,6 +89,8 @@ export default function HistoryPage() {
       .catch(() => setError("No se pudo cargar el historial"))
       .finally(() => setLoading(false));
   }, [cardId, firestore, router]);
+
+  const groups = groupEventsByDate(events);
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white flex flex-col">
@@ -106,55 +149,67 @@ export default function HistoryPage() {
         )}
 
         {!loading && events.length > 0 && (
-          <div className="relative">
-            {/* Línea vertical */}
-            <div className="absolute left-[7px] top-2 bottom-2 w-px bg-stone-800" />
+          <div className="space-y-8">
+            {groups.map((group) => (
+              <div key={group.dateLabel}>
+                {/* Encabezado de grupo */}
+                <div className="flex items-center gap-3 mb-4 pl-6">
+                  <span className="text-[10px] uppercase tracking-widest text-stone-500 shrink-0">
+                    {group.dateLabel}
+                  </span>
+                  <div className="flex-1 h-px bg-stone-800/60" />
+                </div>
 
-            <ul className="space-y-4 pl-6">
-              {events.map((event) => {
-                const date = event.createdAt?.toDate?.() ?? new Date();
-                const isRedemption = event.source === "redemption";
+                {/* Eventos del grupo */}
+                <div className="relative">
+                  <div className="absolute left-[7px] top-2 bottom-2 w-px bg-stone-800" />
+                  <ul className="space-y-4 pl-6">
+                    {group.events.map((event) => {
+                      const date = event.createdAt?.toDate?.() ?? new Date();
+                      const isRedemption = event.source === "redemption";
 
-                return (
-                  <li key={event.id} className="relative">
-                    {/* Dot en la línea */}
-                    <span
-                      className={`absolute -left-[22px] top-4 w-3 h-3 rounded-full border-2 ${
-                        isRedemption
-                          ? "border-amber-500 bg-amber-900/40"
-                          : "border-stone-600 bg-neutral-950"
-                      }`}
-                    />
+                      return (
+                        <li key={event.id} className="relative">
+                          <span
+                            className={`absolute -left-[22px] top-4 w-3 h-3 rounded-full border-2 ${
+                              isRedemption
+                                ? "border-amber-500 bg-amber-900/40"
+                                : "border-stone-600 bg-neutral-950"
+                            }`}
+                          />
 
-                    <div className={`rounded-2xl border px-5 py-4 space-y-1.5 ${
-                      isRedemption
-                        ? "border-amber-800/40 bg-amber-900/10"
-                        : "border-stone-800 bg-neutral-900"
-                    }`}>
-                      <div className="flex items-start justify-between gap-3">
-                        <p className={`text-sm font-medium ${isRedemption ? "text-amber-300" : "text-stone-200"}`}>
-                          {sourceLabel(event.source)}
-                        </p>
-                        <span className="text-[10px] uppercase tracking-widest text-stone-700 shrink-0 pt-0.5">
-                          {timeAgo(date)}
-                        </span>
-                      </div>
+                          <div className={`rounded-2xl border px-5 py-4 space-y-1.5 ${
+                            isRedemption
+                              ? "border-amber-800/40 bg-amber-900/10"
+                              : "border-stone-800 bg-neutral-900"
+                          }`}>
+                            <div className="flex items-start justify-between gap-3">
+                              <p className={`text-sm font-medium ${isRedemption ? "text-amber-300" : "text-stone-200"}`}>
+                                {sourceLabel(event.source)}
+                              </p>
+                              <span className="text-[10px] uppercase tracking-widest text-stone-700 shrink-0 pt-0.5">
+                                {timeAgo(date)}
+                              </span>
+                            </div>
 
-                      <p className="text-[11px] text-stone-600">
-                        {formatFullDate(date)}
-                      </p>
+                            <p className="text-[11px] text-stone-600">
+                              {formatFullDate(date)}
+                            </p>
 
-                      {event.drinkType && (
-                        <p className={`text-[11px] ${isRedemption ? "text-amber-700/70" : "text-stone-500"}`}>
-                          {event.drinkType}
-                          {event.size ? ` · ${event.size}` : ""}
-                        </p>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+                            {event.drinkType && (
+                              <p className={`text-[11px] ${isRedemption ? "text-amber-700/70" : "text-stone-500"}`}>
+                                {event.drinkType}
+                                {event.size ? ` · ${event.size}` : ""}
+                              </p>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

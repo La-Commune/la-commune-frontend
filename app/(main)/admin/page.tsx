@@ -12,7 +12,7 @@ import { MenuAdmin } from "@/components/ui/MenuAdmin";
 import { CustomerDirectory } from "@/components/ui/CustomerDirectory";
 import { AnalyticsDashboard } from "@/components/ui/AnalyticsDashboard";
 import { verifyAdminPin, checkBaristaSession, logoutBarista } from "@/app/actions/verifyAdminPin";
-import { addStamp, redeemCard } from "@/services/card.service";
+import { addStamp, redeemCard, undoStamp } from "@/services/card.service";
 import { getFullMenu } from "@/services/menu.service";
 import { timeAgo } from "@/lib/utils";
 import { toast } from "@/components/ui/use-toast";
@@ -136,6 +136,11 @@ function StampView({ onLogout }: { onLogout: () => void }) {
   const [stampHistory, setStampHistory] = useState<StampEntry[]>([]);
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Undo countdown
+  const [lastEventId, setLastEventId] = useState<string | null>(null);
+  const [undoSecondsLeft, setUndoSecondsLeft] = useState<number | null>(null);
+  const undoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   // Bebida
   const [selectedDrink, setSelectedDrink] = useState("");
   const [customDrink, setCustomDrink] = useState("");
@@ -158,11 +163,21 @@ function StampView({ onLogout }: { onLogout: () => void }) {
       });
   }, [firestore]);
 
-  // Cleanup del timer al desmontar el componente
+  // Cleanup al desmontar
   useEffect(() => {
     return () => {
       if (resetTimer.current) clearTimeout(resetTimer.current);
+      if (undoIntervalRef.current) clearInterval(undoIntervalRef.current);
     };
+  }, []);
+
+  const clearUndoCountdown = useCallback(() => {
+    if (undoIntervalRef.current) {
+      clearInterval(undoIntervalRef.current);
+      undoIntervalRef.current = null;
+    }
+    setLastEventId(null);
+    setUndoSecondsLeft(null);
   }, []);
 
   const resolveCardId = (raw: string) =>
@@ -209,6 +224,8 @@ function StampView({ onLogout }: { onLogout: () => void }) {
 
   const handleAddStamp = useCallback(async () => {
     if (!card) return;
+    clearUndoCountdown();
+    if (resetTimer.current) clearTimeout(resetTimer.current);
     setLoading(true);
     setError("");
     try {
@@ -228,23 +245,53 @@ function StampView({ onLogout }: { onLogout: () => void }) {
         ...prev,
       ].slice(0, 5));
       setScreen("success");
-      if (resetTimer.current) clearTimeout(resetTimer.current);
-      resetTimer.current = setTimeout(() => {
-        setScreen("stamp");
-        setCardInput("");
-        setCard(null);
-        setSelectedDrink("");
-        setCustomDrink("");
-        setStampSize("");
-      }, 3000);
+
+      // Iniciar countdown de undo (30s)
+      setLastEventId(result.eventId);
+      setUndoSecondsLeft(30);
+      undoIntervalRef.current = setInterval(() => {
+        setUndoSecondsLeft((prev) => {
+          if (prev === null || prev <= 1) {
+            clearInterval(undoIntervalRef.current!);
+            undoIntervalRef.current = null;
+            setLastEventId(null);
+            // Auto-reset al terminar el countdown
+            setScreen("stamp");
+            setCardInput("");
+            setCard(null);
+            setSelectedDrink("");
+            setCustomDrink("");
+            setStampSize("");
+            return null;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     } catch {
       setError("Error al añadir el sello. Intenta de nuevo.");
     }
     setLoading(false);
-  }, [card, firestore, selectedDrink, customDrink, stampSize]);
+  }, [card, firestore, selectedDrink, customDrink, stampSize, clearUndoCountdown]);
+
+  const handleUndo = useCallback(async () => {
+    if (!card || !lastEventId) return;
+    setLoading(true);
+    try {
+      await undoStamp(firestore, card.id, lastEventId);
+      clearUndoCountdown();
+      setCard({ ...card, stamps: Math.max(0, card.stamps - 1), status: "active" });
+      setScreen("stamp");
+      if (resetTimer.current) clearTimeout(resetTimer.current);
+    } catch {
+      setError("Error al deshacer el sello.");
+    }
+    setLoading(false);
+  }, [card, lastEventId, firestore, clearUndoCountdown]);
 
   const handleRedeem = useCallback(async () => {
     if (!card) return;
+    clearUndoCountdown();
+    if (resetTimer.current) clearTimeout(resetTimer.current);
     setLoading(true);
     setError("");
     try {
@@ -256,7 +303,6 @@ function StampView({ onLogout }: { onLogout: () => void }) {
         rewardRef,
       });
       setScreen("redeemed");
-      if (resetTimer.current) clearTimeout(resetTimer.current);
       resetTimer.current = setTimeout(() => {
         setScreen("stamp");
         setCardInput("");
@@ -266,7 +312,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
       setError("Error al canjear. Intenta de nuevo.");
     }
     setLoading(false);
-  }, [card, firestore]);
+  }, [card, firestore, clearUndoCountdown]);
 
   const isComplete = card ? card.stamps >= card.maxStamps : false;
   const progress = card ? (card.stamps / card.maxStamps) * 100 : 0;
@@ -473,6 +519,16 @@ function StampView({ onLogout }: { onLogout: () => void }) {
               </div>
             )}
 
+            {/* Banner umbral: a 1 sello de la cortesía */}
+            {!isComplete && card.stamps === card.maxStamps - 1 && (
+              <div className="px-4 py-3 rounded-xl border border-amber-800/40 bg-amber-900/10 flex items-center gap-2">
+                <span className="text-base leading-none">⚡</span>
+                <span className="text-[11px] uppercase tracking-[0.2em] text-amber-400">
+                  ¡Este cliente está a 1 sello de su bebida gratis!
+                </span>
+              </div>
+            )}
+
             {/* Botón — sello o canje según estado */}
             {isComplete ? (
               <button
@@ -547,6 +603,15 @@ function StampView({ onLogout }: { onLogout: () => void }) {
             <p className="text-[10px] uppercase tracking-widest text-emerald-600">
               {card?.customerName || "Cliente"} · {card?.stamps} / {card?.maxStamps} visitas
             </p>
+            {undoSecondsLeft !== null && lastEventId && (
+              <button
+                onClick={handleUndo}
+                disabled={loading}
+                className="mt-1 text-[10px] uppercase tracking-[0.3em] text-stone-600 hover:text-stone-400 transition-colors disabled:opacity-40"
+              >
+                Deshacer ({undoSecondsLeft}s)
+              </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

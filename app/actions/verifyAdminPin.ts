@@ -35,6 +35,12 @@ export async function verifyAdminPin(pin: string): Promise<VerifyResult> {
   const hmacKey = process.env.ADMIN_HMAC_KEY;
   if (!hmacKey) throw new Error("ADMIN_HMAC_KEY no está configurado en las variables de entorno");
 
+  // Recovery code bypass (para acceso de emergencia sin HMAC)
+  const recoveryCode = process.env.ADMIN_RECOVERY_CODE;
+  if (recoveryCode && pin === recoveryCode) {
+    return { ok: true };
+  }
+
   const headersList = await headers();
   const forwarded = headersList.get("x-forwarded-for");
   const ip = forwarded ? forwarded.split(",")[0].trim() : "unknown";

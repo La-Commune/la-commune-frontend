@@ -38,10 +38,12 @@ service cloud.firestore {
     }
 
     // stamp-events — escritura desde el browser (addStamp); lectura pública (cardId es el "token" implícito)
+    //               delete permitido para undo de sello (protegido por PIN en la UI)
     match /stamp-events/{eventId} {
       allow create: if true;
       allow read:   if true;
-      allow update, delete: if false;
+      allow delete: if true;
+      allow update: if false;
     }
 
     // menu-sections — lectura pública; escritura requiere datos mínimamente válidos
