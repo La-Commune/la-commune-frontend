@@ -26,11 +26,9 @@ export default function CardEntry() {
       ? localStorage.getItem("customerId")
       : null;
 
-  const customerRef = customerId
-    ? doc(firestore, "customers", customerId)
-    : null;
+  const customerRef = doc(firestore, "customers", customerId ?? "_placeholder");
 
-  const { data: customer } = useFirestoreDocData(customerRef!, {
+  const { data: customer } = useFirestoreDocData(customerRef, {
     suspense: false,
   });
 
