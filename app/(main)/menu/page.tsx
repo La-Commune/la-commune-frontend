@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useFirestore } from "reactfire";
@@ -11,12 +11,28 @@ export default function CafeMenu() {
   const firestore = useFirestore();
   const [sections, setSections] = useState<MenuSection[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
   useEffect(() => {
     getFullMenu(firestore)
       .then((data) => setSections(data.filter((s) => s.active)))
       .finally(() => setLoading(false));
   }, [firestore]);
+
+  const hasFood = sections.some((s) => s.type === "food");
+  const hasDrinks = sections.some((s) => s.type === "drink");
+
+  const visibleSections = useMemo(() => {
+    if (!activeFilter) return sections;
+    return sections.filter((s) => s.type === activeFilter);
+  }, [sections, activeFilter]);
+
+  const tabs = useMemo(() => {
+    const t: { label: string; value: string | null }[] = [{ label: "Todo", value: null }];
+    if (hasDrinks) t.push({ label: "Bebidas", value: "drink" });
+    if (hasFood) t.push({ label: "Alimentos", value: "food" });
+    return t;
+  }, [hasDrinks, hasFood]);
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white print:min-h-0 print:bg-white print:text-neutral-900">
@@ -55,6 +71,27 @@ export default function CafeMenu() {
           </div>
         </header>
 
+        {/* Segmented control — oculto al imprimir, solo si hay más de una categoría */}
+        {!loading && tabs.length > 1 && (
+          <div className="flex justify-center mb-12 print:hidden">
+            <div className="inline-flex border border-stone-800 rounded-full p-1 gap-0.5">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.label}
+                  onClick={() => setActiveFilter(tab.value)}
+                  className={`text-[10px] uppercase tracking-[0.3em] px-5 py-1.5 rounded-full transition-all duration-200 ${
+                    activeFilter === tab.value
+                      ? "bg-stone-800 text-stone-200"
+                      : "text-stone-600 hover:text-stone-400"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Skeleton */}
         {loading && (
           <div className="flex flex-wrap gap-px bg-stone-800">
@@ -81,10 +118,23 @@ export default function CafeMenu() {
           </div>
         )}
 
+        {/* Sin resultados */}
+        {!loading && visibleSections.length === 0 && (
+          <div className="text-center py-20 space-y-2 print:hidden">
+            <p className="text-stone-500 text-sm">Sin items con ese filtro</p>
+            <button
+              onClick={() => setActiveFilter(null)}
+              className="text-[10px] uppercase tracking-widest text-stone-700 hover:text-stone-400 transition-colors duration-200 underline underline-offset-4"
+            >
+              Ver todo
+            </button>
+          </div>
+        )}
+
         {/* Secciones */}
-        {!loading && (
+        {!loading && visibleSections.length > 0 && (
           <div className="flex flex-wrap gap-px bg-stone-800 print:grid print:grid-cols-3 print:gap-6 print:bg-white print:items-start">
-            {sections.map((section) => {
+            {visibleSections.map((section) => {
               const isFood = section.type === "food";
 
               return (
