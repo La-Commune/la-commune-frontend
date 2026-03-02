@@ -1,6 +1,6 @@
 import { Card } from "@/models/card.model";
 import { StampEvent } from "@/models/stamp-event.model";
-import { Firestore, doc, runTransaction, Timestamp, collection, DocumentReference, addDoc, where, query, getDocs, updateDoc, orderBy } from "firebase/firestore";
+import { Firestore, doc, runTransaction, Timestamp, collection, DocumentReference, addDoc, where, query, getDocs, updateDoc, orderBy, deleteField } from "firebase/firestore";
 
 export async function createCard(
   firestore: Firestore,
@@ -24,6 +24,7 @@ export type AddStampResult = {
   stamps: number;
   maxStamps: number;
   status: string;
+  eventId: string;
 };
 
 export async function addStamp(
@@ -38,6 +39,7 @@ export async function addStamp(
 ): Promise<AddStampResult> {
   const cardRef = doc(firestore, "cards", cardId);
   const eventsRef = collection(firestore, "stamp-events");
+  const eventRef = doc(eventsRef); // Create ref with auto-ID before transaction
   let result: AddStampResult | null = null;
 
   await runTransaction(firestore, async (tx) => {
@@ -46,7 +48,7 @@ export async function addStamp(
 
     const card = snap.data();
     if (card.stamps >= card.maxStamps) {
-      result = { stamps: card.stamps, maxStamps: card.maxStamps, status: card.status };
+      result = { stamps: card.stamps, maxStamps: card.maxStamps, status: card.status, eventId: "" };
       return;
     }
 
@@ -60,7 +62,7 @@ export async function addStamp(
       ...(isComplete ? { status: "completed", completedAt: Timestamp.now() } : {}),
     });
 
-    tx.set(doc(eventsRef), {
+    tx.set(eventRef, {
       cardId: cardRef,
       customerId: options?.customerId ?? null,
       createdAt: Timestamp.now(),
@@ -70,10 +72,34 @@ export async function addStamp(
       ...(options?.size ? { size: options.size } : {}),
     });
 
-    result = { stamps: newStamps, maxStamps: card.maxStamps, status: newStatus };
+    result = { stamps: newStamps, maxStamps: card.maxStamps, status: newStatus, eventId: eventRef.id };
   });
 
   return result!;
+}
+
+export async function undoStamp(
+  firestore: Firestore,
+  cardId: string,
+  eventId: string,
+): Promise<void> {
+  const cardRef = doc(firestore, "cards", cardId);
+  const eventRef = doc(firestore, "stamp-events", eventId);
+
+  await runTransaction(firestore, async (tx) => {
+    const snap = await tx.get(cardRef);
+    if (!snap.exists()) throw new Error("Card not found");
+
+    const card = snap.data();
+    const newStamps = Math.max(0, card.stamps - 1);
+    const wasCompleted = card.status === "completed";
+
+    tx.update(cardRef, {
+      stamps: newStamps,
+      ...(wasCompleted ? { status: "active", completedAt: deleteField() } : {}),
+    });
+    tx.delete(eventRef);
+  });
 }
 
 export async function redeemCard(

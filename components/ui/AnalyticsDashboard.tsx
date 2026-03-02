@@ -20,6 +20,8 @@ import {
 import { Timestamp } from "firebase/firestore";
 import { toast } from "@/components/ui/use-toast";
 
+type Range = 7 | 30 | 90;
+
 /* ── Helpers ─────────────────────────────────────────── */
 
 interface ChartTooltipProps {
@@ -28,14 +30,19 @@ interface ChartTooltipProps {
   label?: string | number;
 }
 
+interface ChartPoint {
+  label: string;
+  sellos: number;
+}
+
 function dateKey(ts: Timestamp | null | undefined): string {
   const d = ts?.toDate?.() ?? new Date();
   return d.toISOString().slice(0, 10); // YYYY-MM-DD
 }
 
-function last7Days(): { key: string; label: string }[] {
+function lastNDays(n: number): { key: string; label: string }[] {
   const result: { key: string; label: string }[] = [];
-  for (let i = 6; i >= 0; i--) {
+  for (let i = n - 1; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     result.push({
@@ -44,6 +51,59 @@ function last7Days(): { key: string; label: string }[] {
     });
   }
   return result;
+}
+
+function buildChartData(events: StampEventRaw[], range: Range): ChartPoint[] {
+  const stamps = events.filter((e) => e.source !== "redemption");
+
+  if (range === 7) {
+    return lastNDays(7).map(({ key, label }) => ({
+      label,
+      sellos: stamps.filter((e) => dateKey(e.createdAt) === key).length,
+    }));
+  }
+
+  if (range === 30) {
+    // 4 grupos semanales
+    return Array.from({ length: 4 }, (_, i) => {
+      const weekEnd = new Date();
+      weekEnd.setDate(weekEnd.getDate() - i * 7);
+      const weekStart = new Date(weekEnd);
+      weekStart.setDate(weekStart.getDate() - 6);
+      const label = new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short" }).format(weekStart);
+      const sellos = stamps.filter((e) => {
+        const d = e.createdAt?.toDate?.() ?? new Date();
+        return d >= weekStart && d <= weekEnd;
+      }).length;
+      return { label, sellos };
+    }).reverse();
+  }
+
+  // range === 90: 3 grupos mensuales
+  return Array.from({ length: 3 }, (_, i) => {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
+    const label = new Intl.DateTimeFormat("es-MX", { month: "short" }).format(monthStart);
+    const sellos = stamps.filter((e) => {
+      const d = e.createdAt?.toDate?.() ?? new Date();
+      return d >= monthStart && d <= monthEnd;
+    }).length;
+    return { label, sellos };
+  }).reverse();
+}
+
+function buildDrinkData(events: StampEventRaw[], topN = 8): { name: string; count: number }[] {
+  const drinkCount: Record<string, number> = {};
+  events.forEach((e) => {
+    if (e.drinkType && e.source !== "redemption") {
+      drinkCount[e.drinkType] = (drinkCount[e.drinkType] ?? 0) + 1;
+    }
+  });
+  return Object.entries(drinkCount)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, topN);
 }
 
 /* ── Tarjeta de stat ─────────────────────────────────── */
@@ -58,7 +118,7 @@ function StatCard({ label, value, sub }: { label: string; value: string | number
   );
 }
 
-/* ── Tooltip personalizado ───────────────────────────── */
+/* ── Tooltips ────────────────────────────────────────── */
 
 function CustomTooltip({ active, payload, label }: ChartTooltipProps) {
   if (!active || !payload?.length) return null;
@@ -88,21 +148,22 @@ export function AnalyticsDashboard() {
   const [loading, setLoading] = useState(true);
   const [totalCustomers, setTotalCustomers] = useState(0);
   const [totalRedemptions, setTotalRedemptions] = useState(0);
-  const [events, setEvents] = useState<StampEventRaw[]>([]);
+  const [allEvents, setAllEvents] = useState<StampEventRaw[]>([]);
+  const [range, setRange] = useState<Range>(30);
 
   useEffect(() => {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
     Promise.all([
       getTotalCustomers(firestore),
       getTotalRedemptions(firestore),
-      getStampEventsInRange(firestore, thirtyDaysAgo),
+      getStampEventsInRange(firestore, ninetyDaysAgo),
     ])
       .then(([customers, redemptions, evts]) => {
         setTotalCustomers(customers);
         setTotalRedemptions(redemptions);
-        setEvents(evts);
+        setAllEvents(evts);
         setLoading(false);
       })
       .catch(() => {
@@ -111,34 +172,17 @@ export function AnalyticsDashboard() {
       });
   }, [firestore]);
 
-  /* Sellos esta semana (filtrado del array de 30 días) */
-  const weekAgo = new Date();
-  weekAgo.setDate(weekAgo.getDate() - 7);
-  const weekEvents = events.filter((e) => (e.createdAt?.toDate?.() ?? new Date()) >= weekAgo);
-  const weekStamps = weekEvents.filter((e) => e.source !== "redemption").length;
+  // Filtrar eventos según el rango seleccionado
+  const rangeDate = new Date();
+  rangeDate.setDate(rangeDate.getDate() - range);
+  const events = allEvents.filter((e) => (e.createdAt?.toDate?.() ?? new Date()) >= rangeDate);
 
-  /* Gráfica 1: visitas por día (últimos 7 días) */
-  const days = last7Days();
-  const stampsByDay = days.map(({ key, label }) => ({
-    label,
-    sellos: weekEvents.filter(
-      (e) => e.source !== "redemption" && dateKey(e.createdAt) === key
-    ).length,
-  }));
-
-  /* Gráfica 2: bebidas más populares (últimos 30 días) */
-  const drinkCount: Record<string, number> = {};
-  events.forEach((e) => {
-    if (e.drinkType) {
-      drinkCount[e.drinkType] = (drinkCount[e.drinkType] ?? 0) + 1;
-    }
-  });
-  const drinkData = Object.entries(drinkCount)
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 8);
-
+  const rangeStamps = events.filter((e) => e.source !== "redemption").length;
+  const chartData = buildChartData(events, range);
+  const drinkData = buildDrinkData(events);
   const topDrink = drinkData[0]?.name ?? "—";
+
+  const rangeLabel = range === 7 ? "7 días" : range === 30 ? "30 días" : "90 días";
 
   const BAR_COLOR = "#A8956E";
   const BAR_DIM = "#3D3632";
@@ -163,83 +207,108 @@ export function AnalyticsDashboard() {
       {/* Tarjetas de resumen */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard label="Clientes activos" value={totalCustomers} />
-        <StatCard label="Sellos esta semana" value={weekStamps} />
+        <StatCard label={`Sellos · ${rangeLabel}`} value={rangeStamps} />
         <StatCard label="Canjes totales" value={totalRedemptions} />
         <StatCard label="Bebida top" value={topDrink} />
       </div>
 
-      {/* Gráfica 1 — Sellos por día */}
-      <div className="rounded-2xl border border-stone-800 bg-neutral-900 px-5 py-6 space-y-4">
-        <p className="text-[10px] uppercase tracking-[0.35em] text-stone-600">
-          Sellos · últimos 7 días
-        </p>
-        <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={stampsByDay} barSize={22} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
-            <XAxis
-              dataKey="label"
-              tick={{ fontSize: 10, fill: "#57534E" }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <YAxis
-              tick={{ fontSize: 10, fill: "#57534E" }}
-              axisLine={false}
-              tickLine={false}
-              allowDecimals={false}
-            />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
-            <Bar dataKey="sellos" radius={[6, 6, 0, 0]}>
-              {stampsByDay.map((entry, i) => (
-                <Cell key={i} fill={entry.sellos > 0 ? BAR_COLOR : BAR_DIM} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+      {/* Toggle de rango + gráficas */}
+      <div className="space-y-4">
+        {/* Header con toggle */}
+        <div className="flex items-center justify-between">
+          <p className="text-[10px] uppercase tracking-[0.35em] text-stone-600">
+            Actividad
+          </p>
+          <div className="flex gap-1 p-0.5 bg-neutral-900 border border-stone-800 rounded-lg">
+            {([7, 30, 90] as Range[]).map((r) => (
+              <button
+                key={r}
+                onClick={() => setRange(r)}
+                className={`px-3 py-1 rounded-md text-[10px] uppercase tracking-[0.25em] transition-all duration-150 ${
+                  range === r
+                    ? "bg-stone-700 text-stone-100"
+                    : "text-stone-600 hover:text-stone-400"
+                }`}
+              >
+                {r}d
+              </button>
+            ))}
+          </div>
+        </div>
 
-      {/* Gráfica 2 — Bebidas más populares */}
-      {drinkData.length > 0 && (
+        {/* Gráfica 1 — Sellos por período */}
         <div className="rounded-2xl border border-stone-800 bg-neutral-900 px-5 py-6 space-y-4">
           <p className="text-[10px] uppercase tracking-[0.35em] text-stone-600">
-            Bebidas más pedidas · últimos 30 días
+            Sellos · {rangeLabel === "7 días" ? "por día" : rangeLabel === "30 días" ? "por semana" : "por mes"}
           </p>
-          <ResponsiveContainer width="100%" height={Math.max(180, drinkData.length * 40)}>
-            <BarChart
-              data={drinkData}
-              layout="vertical"
-              barSize={16}
-              margin={{ top: 4, right: 8, left: 4, bottom: 0 }}
-            >
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={chartData} barSize={22} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
               <XAxis
-                type="number"
+                dataKey="label"
+                tick={{ fontSize: 10, fill: "#57534E" }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
                 tick={{ fontSize: 10, fill: "#57534E" }}
                 axisLine={false}
                 tickLine={false}
                 allowDecimals={false}
               />
-              <YAxis
-                type="category"
-                dataKey="name"
-                width={100}
-                tick={{ fontSize: 11, fill: "#A8A29E" }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <Tooltip content={<CustomTooltipDrink />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
-              <Bar dataKey="count" radius={[0, 6, 6, 0]} fill={BAR_COLOR} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
+              <Bar dataKey="sellos" radius={[6, 6, 0, 0]}>
+                {chartData.map((entry, i) => (
+                  <Cell key={i} fill={entry.sellos > 0 ? BAR_COLOR : BAR_DIM} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
-      )}
 
-      {drinkData.length === 0 && (
-        <div className="rounded-2xl border border-stone-800 bg-neutral-900 px-5 py-8 text-center">
-          <p className="text-stone-700 text-sm">Sin datos de bebidas todavía</p>
-          <p className="text-[10px] uppercase tracking-widest text-stone-800 mt-1">
-            Los sellos registran la bebida al agregarlos
-          </p>
-        </div>
-      )}
+        {/* Gráfica 2 — Bebidas más populares */}
+        {drinkData.length > 0 && (
+          <div className="rounded-2xl border border-stone-800 bg-neutral-900 px-5 py-6 space-y-4">
+            <p className="text-[10px] uppercase tracking-[0.35em] text-stone-600">
+              Bebidas más pedidas · {rangeLabel}
+            </p>
+            <ResponsiveContainer width="100%" height={Math.max(180, drinkData.length * 40)}>
+              <BarChart
+                data={drinkData}
+                layout="vertical"
+                barSize={16}
+                margin={{ top: 4, right: 8, left: 4, bottom: 0 }}
+              >
+                <XAxis
+                  type="number"
+                  tick={{ fontSize: 10, fill: "#57534E" }}
+                  axisLine={false}
+                  tickLine={false}
+                  allowDecimals={false}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  width={100}
+                  tick={{ fontSize: 11, fill: "#A8A29E" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip content={<CustomTooltipDrink />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
+                <Bar dataKey="count" radius={[0, 6, 6, 0]} fill={BAR_COLOR} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        {drinkData.length === 0 && (
+          <div className="rounded-2xl border border-stone-800 bg-neutral-900 px-5 py-8 text-center">
+            <p className="text-stone-700 text-sm">Sin datos de bebidas en este período</p>
+            <p className="text-[10px] uppercase tracking-widest text-stone-800 mt-1">
+              Los sellos registran la bebida al agregarlos
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

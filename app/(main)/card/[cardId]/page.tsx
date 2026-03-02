@@ -143,7 +143,7 @@ function Card({
         text: name
           ? `${name} ya tiene su tarjeta de fidelidad en La Commune ☕ Cada visita suma — a las 5 te invitan una bebida. ¡Pásate!`
           : "Ya tengo mi tarjeta de fidelidad en La Commune ☕ Cada visita suma — a las 5 te invitan una bebida. ¡Pásate!",
-        url: window.location.origin,
+        url: window.location.href,
       });
     } catch {
       // User cancelled or API not supported

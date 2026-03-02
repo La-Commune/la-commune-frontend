@@ -7,6 +7,7 @@ import {
   orderBy,
   limit,
   Timestamp,
+  DocumentReference,
 } from "firebase/firestore";
 
 export interface StampEventRaw {
@@ -57,4 +58,27 @@ export async function getTotalRedemptions(firestore: Firestore): Promise<number>
   );
   const snap = await getDocs(q);
   return snap.size;
+}
+
+export async function getCustomerTopDrinks(
+  firestore: Firestore,
+  customerId: DocumentReference,
+  limitN = 3,
+): Promise<{ drink: string; count: number }[]> {
+  const q = query(
+    collection(firestore, "stamp-events"),
+    where("customerId", "==", customerId),
+  );
+  const snap = await getDocs(q);
+  const drinkCount: Record<string, number> = {};
+  snap.docs.forEach((d) => {
+    const data = d.data();
+    if (data.drinkType && data.source !== "redemption") {
+      drinkCount[data.drinkType] = (drinkCount[data.drinkType] ?? 0) + 1;
+    }
+  });
+  return Object.entries(drinkCount)
+    .map(([drink, count]) => ({ drink, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limitN);
 }

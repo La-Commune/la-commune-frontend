@@ -3,12 +3,51 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useFirestore } from "reactfire";
+import { doc } from "firebase/firestore";
 import { Customer } from "@/models/customer.model";
 import { getAllCustomers, updateCustomerNotes, deleteCustomer } from "@/services/customer.service";
+import { getCustomerTopDrinks } from "@/services/analytics.service";
 import { formatDate } from "@/lib/utils";
 import { toast } from "@/components/ui/use-toast";
 
 type CustomerRow = Customer & { id: string };
+type Segment = "all" | "inactive" | "top" | "new";
+
+/* ── CSV export ─────────────────────────────────────── */
+
+function toDateStr(val: unknown): string {
+  if (!val) return "";
+  if (typeof (val as { toDate?: () => Date }).toDate === "function") {
+    return (val as { toDate: () => Date }).toDate().toISOString().slice(0, 10);
+  }
+  return "";
+}
+
+function exportCSV(customers: CustomerRow[]) {
+  const headers = ["Nombre", "Teléfono", "Visitas", "Sellos", "Última visita", "Miembro desde"];
+  const rows = customers.map((c) => [
+    c.name ?? "",
+    c.phone ?? "",
+    c.totalVisits ?? 0,
+    c.totalStamps ?? 0,
+    toDateStr(c.lastVisitAt),
+    toDateStr(c.createdAt),
+  ]);
+  const csvContent = [headers, ...rows]
+    .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+
+  const BOM = "\uFEFF";
+  const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `clientes-la-commune-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
 /* ── Drawer de cliente ──────────────────────────────── */
 
@@ -29,6 +68,14 @@ function CustomerDrawer({
   const [saved, setSaved] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [topDrinks, setTopDrinks] = useState<{ drink: string; count: number }[] | null>(null);
+
+  useEffect(() => {
+    const customerRef = doc(firestore, "customers", customer.id);
+    getCustomerTopDrinks(firestore, customerRef)
+      .then(setTopDrinks)
+      .catch(() => setTopDrinks([]));
+  }, [customer.id, firestore]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -127,6 +174,31 @@ function CustomerDrawer({
                 <p className="text-sm text-stone-400">{formatDate(customer.createdAt)}</p>
               </div>
             )}
+
+            {/* Bebidas favoritas */}
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.35em] text-stone-600 mb-2">Bebidas favoritas</p>
+              {topDrinks === null ? (
+                <div className="flex gap-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-6 w-16 rounded-full bg-stone-800 animate-pulse" />
+                  ))}
+                </div>
+              ) : topDrinks.length === 0 ? (
+                <p className="text-[11px] text-stone-700">Sin datos aún</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {topDrinks.map(({ drink, count }) => (
+                    <span
+                      key={drink}
+                      className="px-3 py-1 rounded-full border border-stone-700 bg-neutral-900 text-[10px] uppercase tracking-widest text-stone-400"
+                    >
+                      {drink} · {count}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Separador desktop */}
@@ -174,14 +246,12 @@ function CustomerDrawer({
               exit={{ opacity: 0 }}
               className="absolute inset-0 rounded-t-3xl sm:rounded-3xl bg-neutral-900/95 backdrop-blur-sm flex flex-col items-center justify-center px-8 gap-6"
             >
-              {/* Icono de advertencia */}
               <div className="w-14 h-14 rounded-full border border-red-900/60 bg-red-950/40 flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-7 h-7 text-red-600">
                   <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
                 </svg>
               </div>
 
-              {/* Texto */}
               <div className="text-center space-y-2">
                 <p className="text-base text-stone-100 font-light">
                   ¿Eliminar a <span className="text-white font-normal">{customer.name || "este cliente"}</span>?
@@ -191,7 +261,6 @@ function CustomerDrawer({
                 </p>
               </div>
 
-              {/* Acciones */}
               <div className="flex flex-col w-full gap-2.5">
                 <button
                   onClick={handleDelete}
@@ -216,6 +285,15 @@ function CustomerDrawer({
   );
 }
 
+/* ── Chips de segmento ──────────────────────────────── */
+
+const SEGMENTS: { id: Segment; label: string }[] = [
+  { id: "all", label: "Todos" },
+  { id: "inactive", label: "Sin visitar (30d)" },
+  { id: "top", label: "Top clientes" },
+  { id: "new", label: "Nuevos este mes" },
+];
+
 /* ── Componente principal ───────────────────────────── */
 
 export function CustomerDirectory() {
@@ -223,6 +301,7 @@ export function CustomerDirectory() {
   const [customers, setCustomers] = useState<CustomerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [segment, setSegment] = useState<Segment>("all");
   const [selected, setSelected] = useState<CustomerRow | null>(null);
 
   const load = useCallback(() => {
@@ -243,7 +322,27 @@ export function CustomerDirectory() {
 
   useEffect(() => { load(); }, [load]);
 
-  const filtered = customers.filter((c) => {
+  // Filtro de segmento
+  const now = new Date();
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const segmented = customers.filter((c) => {
+    if (segment === "all") return true;
+    if (segment === "inactive") {
+      if (!c.lastVisitAt) return true;
+      return (c.lastVisitAt as { toDate: () => Date }).toDate() < thirtyDaysAgo;
+    }
+    if (segment === "top") return (c.totalVisits ?? 0) >= 5;
+    if (segment === "new") {
+      if (!c.createdAt) return false;
+      return (c.createdAt as { toDate: () => Date }).toDate() >= startOfMonth;
+    }
+    return true;
+  });
+
+  // Filtro de búsqueda
+  const filtered = segmented.filter((c) => {
     const q = search.toLowerCase();
     return (
       (c.name ?? "").toLowerCase().includes(q) ||
@@ -274,6 +373,23 @@ export function CustomerDirectory() {
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4">
 
+      {/* Chips de segmento */}
+      <div className="flex gap-2 flex-wrap">
+        {SEGMENTS.map(({ id, label }) => (
+          <button
+            key={id}
+            onClick={() => setSegment(id)}
+            className={`px-3 py-1.5 rounded-full border text-[10px] uppercase tracking-widest transition-all duration-150 ${
+              segment === id
+                ? "border-stone-400 text-stone-100 bg-stone-800"
+                : "border-stone-800 text-stone-600 hover:border-stone-700 hover:text-stone-400"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {/* Buscador */}
       <div className="relative">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-600 pointer-events-none">
@@ -288,10 +404,21 @@ export function CustomerDirectory() {
         />
       </div>
 
-      {/* Conteo */}
-      <p className="text-[10px] uppercase tracking-widest text-stone-700 text-right">
-        {filtered.length} {filtered.length === 1 ? "cliente" : "clientes"}
-      </p>
+      {/* Conteo + exportar */}
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] uppercase tracking-widest text-stone-700">
+          {filtered.length} {filtered.length === 1 ? "cliente" : "clientes"}
+          {segment !== "all" && ` · ${SEGMENTS.find(s => s.id === segment)?.label}`}
+        </p>
+        {customers.length > 0 && (
+          <button
+            onClick={() => exportCSV(customers)}
+            className="text-[10px] uppercase tracking-[0.3em] text-stone-600 hover:text-stone-300 transition-colors duration-200"
+          >
+            Exportar CSV
+          </button>
+        )}
+      </div>
 
       {/* Lista */}
       <div className="space-y-1.5">
