@@ -54,6 +54,7 @@ export function EditItemModal({
 
   const imageUrlValid =
     !imageUrl.trim() ||
+    imageUrl.trim().startsWith("/") ||
     (() => {
       try {
         return new URL(imageUrl.trim()).protocol === "https:";
