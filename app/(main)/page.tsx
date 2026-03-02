@@ -351,7 +351,7 @@ export default function Home() {
         title={`Trabajo honesto.\nTaza honesta.`}
         subtitle="Detrás de cada taza hay alguien que madrugó, que ajustó cada variable, que no se conformó con lo suficiente. La Commune es el nombre que le ponemos a ese esfuerzo compartido."
         manifesto="El café es el pretexto. La comunidad, el punto."
-        videoSrc="/videos/coffe-commune.mp4"
+        videoSrc="/videos/coffee-black-white.mp4"
         videoPoster="/images/poster-storytelling.jpg"
         ctaText="Nuestra historia"
         ctaLink="/nosotros"
