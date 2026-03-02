@@ -139,8 +139,11 @@ function Card({
   const handleShare = async () => {
     try {
       await navigator.share({
-        title: "Mi tarjeta · La Commune",
-        url: window.location.href,
+        title: "La Commune · Tarjeta de fidelidad",
+        text: name
+          ? `${name} ya tiene su tarjeta de fidelidad en La Commune ☕ Cada visita suma — a las 5 te invitan una bebida. ¡Pásate!`
+          : "Ya tengo mi tarjeta de fidelidad en La Commune ☕ Cada visita suma — a las 5 te invitan una bebida. ¡Pásate!",
+        url: window.location.origin,
       });
     } catch {
       // User cancelled or API not supported
@@ -235,7 +238,7 @@ function Card({
           <StampCardView cardId={cardId} />
         </motion.div>
 
-        {/* Botones */}
+        {/* Acciones secundarias */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -243,19 +246,6 @@ function Card({
           className="flex items-center gap-5 flex-wrap justify-center"
         >
           <DownloadCardButton />
-          {typeof navigator !== "undefined" && !!navigator.share && (
-            <button
-              onClick={handleShare}
-              className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-stone-600 hover:text-stone-300 transition-colors duration-300"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-                <polyline points="16 6 12 2 8 6"/>
-                <line x1="12" y1="2" x2="12" y2="15"/>
-              </svg>
-              Compartir
-            </button>
-          )}
           <Link
             href={`/card/${cardId}/history`}
             className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-stone-600 hover:text-stone-300 transition-colors duration-300"
@@ -267,6 +257,26 @@ function Card({
             Historial
           </Link>
         </motion.div>
+
+        {/* CTA de compartir */}
+        {typeof navigator !== "undefined" && !!navigator.share && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.7 }}
+            className="w-[320px] border border-stone-800 rounded-2xl px-6 py-5 text-center space-y-3"
+          >
+            <p className="text-[10px] uppercase tracking-[0.35em] text-stone-700">
+              ¿Conoces a alguien que lo merece?
+            </p>
+            <button
+              onClick={handleShare}
+              className="w-full py-2.5 rounded-xl border border-stone-700 text-[11px] uppercase tracking-[0.3em] text-stone-400 hover:border-stone-500 hover:text-stone-200 transition-colors duration-300"
+            >
+              Invitar a La Commune
+            </button>
+          </motion.div>
+        )}
 
       </div>
 
