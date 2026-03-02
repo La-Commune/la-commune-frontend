@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   motion,
   useScroll,
@@ -164,8 +165,18 @@ const PremiumSection: React.FC<SectionProps> = ({
           style={{ y: smoothY }}
           className="absolute inset-0 w-full h-[116%]"
         >
-          {/* Gradiente cálido — evoca café sin necesitar imagen */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_50%_80%,#2d1507_0%,#111111_65%)]" />
+          {videoPoster && (
+            <Image
+              src={videoPoster}
+              alt=""
+              fill
+              unoptimized
+              className="object-cover"
+              style={{ filter: "saturate(0.6) hue-rotate(-15deg) contrast(1.15)" }}
+            />
+          )}
+          {/* Gradiente cálido como base o cuando no hay poster */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_90%_70%_at_50%_80%,#2d1507_0%,#111111_65%)] opacity-60" />
         </motion.div>
       )}
 
