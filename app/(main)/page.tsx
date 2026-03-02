@@ -389,8 +389,8 @@ export default function Home() {
               </p>
               <div className="space-y-1">
                 <p className="text-sm text-stone-200">Santa Natividad 135</p>
-                <p className="text-[11px] text-stone-500">Col. Mineral de la Reforma</p>
-                <p className="text-[11px] text-stone-500">Pachuca</p>
+                <p className="text-[11px] text-stone-500">Col. La Providencia</p>
+                <p className="text-[11px] text-stone-500">Mineral de la Reforma, Hidalgo</p>
               </div>
             </div>
           </div>

@@ -21,7 +21,7 @@ const display = Cormorant_Garamond({
 export const metadata: Metadata = {
   title: "La Commune",
   description:
-    "Tu tarjeta de fidelidad digital. Acumula visitas y desbloquea tu bebida de cortesía en La Commune, Pachuca.",
+    "Tu tarjeta de fidelidad digital. Acumula visitas y desbloquea tu bebida de cortesía en La Commune.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,

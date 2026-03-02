@@ -87,7 +87,7 @@ export default function Nosotros() {
           transition={{ duration: 1, delay: 0.9 }}
           className="mt-10 text-sm text-stone-600 font-light tracking-wide max-w-xs leading-relaxed"
         >
-          Una cafetería de especialidad en Pachuca construida sobre trabajo colectivo, técnica y respeto al origen.
+          Una cafetería de especialidad en Mineral de la Reforma construida sobre trabajo colectivo, técnica y respeto al origen.
         </motion.p>
       </section>
 
@@ -154,7 +154,7 @@ export default function Nosotros() {
               &ldquo;El café es el pretexto.<br />La comunidad, el punto.&rdquo;
             </p>
             <footer className="mt-6 text-[10px] uppercase tracking-[0.4em] text-stone-700">
-              — La Commune, Pachuca
+              — La Commune, Mineral de la Reforma
             </footer>
           </blockquote>
         </Reveal>

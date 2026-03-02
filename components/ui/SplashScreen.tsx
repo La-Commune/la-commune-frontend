@@ -47,7 +47,7 @@ export function SplashScreen() {
             </p>
             <div className="w-6 h-px bg-stone-700 mx-auto mt-4" />
             <p className="text-[10px] uppercase tracking-[0.4em] text-stone-500 mt-4">
-              Pachuca · Hidalgo
+              Mineral de la Reforma, Hidalgo
             </p>
           </motion.div>
         </motion.div>
