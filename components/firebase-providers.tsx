@@ -9,7 +9,11 @@ import {
   useFirebaseApp,
 } from "reactfire";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import {
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+} from "firebase/firestore";
 import { isBrowser } from "@/lib/utils";
 import { getAnalytics } from "firebase/analytics";
 import { FirebaseOptions } from "firebase/app";
@@ -27,7 +31,16 @@ const FirebaseProviderSDKs: FC<{ children: ReactNode }> = ({ children }) => {
   const firebase = useFirebaseApp();
   // we have to use getters to pass to providers, children should use hooks
   const auth = useMemo(() => getAuth(), []);
-  const firestore = useMemo(() => getFirestore(firebase), []);
+  const firestore = useMemo(() => {
+    try {
+      return initializeFirestore(firebase, {
+        localCache: persistentLocalCache(),
+      });
+    } catch {
+      // Ya inicializado (hot reload / strict mode) — devolver instancia existente
+      return getFirestore(firebase);
+    }
+  }, []);
   const analytics = useMemo(() => isBrowser() && getAnalytics(firebase), []);
 
   return (

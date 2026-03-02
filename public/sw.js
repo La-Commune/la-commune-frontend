@@ -2,7 +2,17 @@
 // Así cada deploy genera un CACHE distinto y el browser descarga el SW actualizado
 const CACHE_VERSION = new URL(location.href).searchParams.get("v") || "v1";
 const CACHE = `la-commune-${CACHE_VERSION}`;
-const PRECACHE = ["/", "/menu", "/card/preview", "/onboarding", "/offline.html"];
+const PRECACHE = [
+  "/",
+  "/menu",
+  "/card/preview",
+  "/onboarding",
+  "/offline.html",
+  // Posters de video — disponibles offline desde el primer install
+  "/images/poster-hero.jpg",
+  "/images/poster-loyalty.jpg",
+  "/images/poster-storytelling.jpg",
+];
 
 // Instalación: precachear rutas clave
 self.addEventListener("install", (event) => {
