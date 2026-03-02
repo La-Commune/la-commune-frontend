@@ -61,7 +61,8 @@ service cloud.firestore {
                             && request.resource.data.name.size() <= 100
                             && (!('imageUrl' in request.resource.data)
                                 || request.resource.data.imageUrl == null
-                                || request.resource.data.imageUrl.matches('https://.+'));
+                                || request.resource.data.imageUrl.matches('https://.+')
+                                || request.resource.data.imageUrl.matches('/.+'));
       allow delete: if true;
     }
   }
