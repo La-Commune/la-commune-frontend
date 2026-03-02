@@ -54,6 +54,7 @@ interface SectionProps {
   title: string;
   subtitle?: string;
   videoSrc: string;
+  videoPoster?: string;
   ctaText?: string;
   ctaLink?: string;
   secondaryCtaText?: string;
@@ -68,6 +69,7 @@ const PremiumSection: React.FC<SectionProps> = ({
   title,
   subtitle,
   videoSrc,
+  videoPoster,
   ctaText,
   ctaLink,
   secondaryCtaText,
@@ -142,6 +144,7 @@ const PremiumSection: React.FC<SectionProps> = ({
           loop
           playsInline
           preload={lazy ? "none" : "auto"}
+          poster={videoPoster}
           onError={() => setVideoFailed(true)}
           onStalled={() => {
             stalledTimer.current = setTimeout(() => setVideoFailed(true), 3000);
@@ -292,6 +295,7 @@ export default function Home() {
         title={`Café\nen común`}
         subtitle="No es solo café. Es el espacio que elegiste para estar."
         videoSrc="/videos/coffee-free.mp4"
+        videoPoster="/images/poster-hero.jpg"
         ctaText="Ver menú"
         ctaLink="/menu"
       />
@@ -303,6 +307,7 @@ export default function Home() {
         title={`Lo que se da\nvuelve`}
         subtitle="Cada visita es un ladrillo. Después de cinco, la casa responde."
         videoSrc="/videos/coffee-slow.mp4"
+        videoPoster="/images/poster-loyalty.jpg"
         ctaText={loyaltyCta.text}
         ctaLink={loyaltyCta.link}
         secondaryCtaText={cardId ? "No es mi tarjeta" : "Ver cómo funciona"}
