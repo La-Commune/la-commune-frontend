@@ -3,6 +3,7 @@
 import { doc } from "firebase/firestore";
 import { useFirestore, useFirestoreDocData } from "reactfire";
 import { Card } from "@/models/card.model";
+import { Reward } from "@/models/reward.model";
 import { CoffeeBean } from "./CoffeeBean";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
@@ -40,6 +41,10 @@ export function StampCardFront({
   const firestore = useFirestore();
   const ref = doc(firestore, "cards", cardId);
   const { data } = useFirestoreDocData(ref);
+  const rewardRef = doc(firestore, "rewards", "default");
+  const { data: rewardData } = useFirestoreDocData(rewardRef, { suspense: false });
+  const reward = rewardData as Reward | undefined;
+  const rewardName = reward?.name ?? "Bebida de cortesía";
 
   const hasCompletedRef = useRef(false);
   const prevStampsRef = useRef<number | undefined>(undefined);
@@ -53,7 +58,7 @@ export function StampCardFront({
 
   const progressMessage = card
     ? card.stamps >= card.maxStamps
-      ? "¡Bebida de cortesía lista!"
+      ? `¡${rewardName} lista!`
       : card.stamps === card.maxStamps - 1
         ? "¡Solo falta uno!"
         : card.stamps === Math.floor(card.maxStamps / 2)
@@ -62,7 +67,7 @@ export function StampCardFront({
             ? "¡Primer sello!"
             : card.stamps > 1
               ? "¡Vas avanzando!"
-              : "Empieza tu aventura"
+              : "Pide tu café y pide tu sello en barra"
     : null;
 
   // Detectar sello nuevo
@@ -114,7 +119,7 @@ export function StampCardFront({
             className="text-[17px] font-light leading-tight"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            {isComplete ? "¡Bebida de cortesía!" : "Café de la casa"}
+            {isComplete ? `¡${rewardName}!` : "Café de la casa"}
           </h2>
           <p className="text-[10px] tracking-wide text-[#8A817A] mt-0.5">
             {isComplete ? "Preséntala en barra" : "Cliente frecuente"}
