@@ -7,7 +7,7 @@ export interface Card {
   stamps: number;
   maxStamps: number;
 
-  status: "active" | "completed" | "expired";
+  status: "active" | "completed" | "redeemed" | "expired";
 
   /** Control */
   createdAt: Timestamp;
