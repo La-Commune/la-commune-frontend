@@ -65,6 +65,21 @@ function PinPad({
   };
   const del = () => onChange(value.slice(0, -1));
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (lockoutSeconds > 0 || loading) return;
+      if (e.key >= "0" && e.key <= "9") {
+        if (value.length < pinLength) onChange(value + e.key);
+      } else if (e.key === "Backspace") {
+        onChange(value.slice(0, -1));
+      } else if (e.key === "Enter" && value.length >= pinLength) {
+        onSubmit();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [value, pinLength, onChange, onSubmit, loading, lockoutSeconds]);
+
   return (
     <div className="flex flex-col items-center gap-8">
       {/* Indicadores dinámicos */}
