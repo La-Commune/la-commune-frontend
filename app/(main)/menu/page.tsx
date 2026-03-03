@@ -7,6 +7,23 @@ import { useFirestore } from "reactfire";
 import { MenuSection } from "@/models/menu.model";
 import { getFullMenu } from "@/services/menu.service";
 
+function MenuItemImage({ src, alt }: { src: string; alt: string }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div className="relative w-full h-36 sm:h-44 rounded-xl overflow-hidden mb-3 print:hidden bg-stone-900">
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        unoptimized
+        className={`object-cover transition-opacity duration-700 ${loaded ? "opacity-100" : "opacity-0"}`}
+        onLoad={() => setLoaded(true)}
+        onError={(e) => { (e.currentTarget as HTMLImageElement).parentElement!.style.display = "none"; }}
+      />
+    </div>
+  );
+}
+
 export default function CafeMenu() {
   const firestore = useFirestore();
   const [sections, setSections] = useState<MenuSection[]>([]);
@@ -180,18 +197,7 @@ export default function CafeMenu() {
                         <li key={item.id ?? item.name} className={`py-4 space-y-1.5 ${!isAvailable ? "opacity-40" : ""}`}>
 
                           {/* Imagen */}
-                          {item.imageUrl && (
-                            <div className="relative w-full h-36 sm:h-44 rounded-xl overflow-hidden mb-3 print:hidden">
-                              <Image
-                                src={item.imageUrl}
-                                alt={item.name}
-                                fill
-                                unoptimized
-                                className="object-cover"
-                                onError={(e) => { (e.currentTarget as HTMLImageElement).parentElement!.style.display = "none"; }}
-                              />
-                            </div>
-                          )}
+                          {item.imageUrl && <MenuItemImage src={item.imageUrl} alt={item.name} />}
 
                           {/* Nombre + precio */}
                           <div className="flex items-start justify-between gap-3 mb-1.5">
