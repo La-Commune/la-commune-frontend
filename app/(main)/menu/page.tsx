@@ -28,11 +28,52 @@ export default function CafeMenu() {
   const firestore = useFirestore();
   const [sections, setSections] = useState<MenuSection[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+  const [activeFilter, setActiveFilterState] = useState<string | null>(null);
+
+  useEffect(() => {
+    const saved = sessionStorage.getItem("menu-tab-filter");
+    if (saved) setActiveFilterState(saved);
+  }, []);
+
+  function setActiveFilter(value: string | null) {
+    console.log("setActiveFilter", value);
+    
+    setActiveFilterState(value);
+    if (value) {
+      sessionStorage.setItem("menu-tab-filter", value);
+    } else {
+      sessionStorage.removeItem("menu-tab-filter");
+    }
+  }
+
+  useEffect(() => {
+    setIsOnline(navigator.onLine);
+    const handleOnline = () => {
+      setIsOnline(true);
+      if (error) {
+        setError(false);
+        setLoading(true);
+        getFullMenu(firestore)
+          .then((data) => setSections(data.filter((s) => s.active)))
+          .catch(() => setError(true))
+          .finally(() => setLoading(false));
+      }
+    };
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [error, firestore]);
 
   useEffect(() => {
     getFullMenu(firestore)
       .then((data) => setSections(data.filter((s) => s.active)))
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [firestore]);
 
@@ -109,6 +150,47 @@ export default function CafeMenu() {
           </div>
         )}
 
+        {/* Sin conexión */}
+        {!loading && error && (
+          <div className="flex flex-col items-center justify-center py-32 gap-6 text-center print:hidden">
+            <p className="text-[10px] uppercase tracking-[0.4em] text-stone-600">
+              {isOnline ? "Error al cargar" : "Sin conexión"}
+            </p>
+            <p className="font-display text-3xl font-light tracking-[0.1em] text-stone-400">
+              {isOnline ? "Algo salió mal" : "Sin internet"}
+            </p>
+            <div className="flex items-center gap-4">
+              <span className="w-8 h-px bg-stone-800" />
+              <p className="text-sm text-stone-600 max-w-[22ch] leading-relaxed">
+                {isOnline
+                  ? "No pudimos cargar el menú. Intenta de nuevo."
+                  : "Conéctate a internet para ver el menú."}
+              </p>
+              <span className="w-8 h-px bg-stone-800" />
+            </div>
+            {isOnline && (
+              <button
+                onClick={() => {
+                  setError(false);
+                  setLoading(true);
+                  getFullMenu(firestore)
+                    .then((data) => setSections(data.filter((s) => s.active)))
+                    .catch(() => setError(true))
+                    .finally(() => setLoading(false));
+                }}
+                className="text-[10px] uppercase tracking-[0.35em] text-stone-500 hover:text-white transition-colors duration-300"
+              >
+                Reintentar
+              </button>
+            )}
+            {!isOnline && (
+              <p className="text-[10px] uppercase tracking-[0.3em] text-stone-700">
+                Se actualizará automáticamente al reconectarte
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Skeleton */}
         {loading && (
           <div className="flex flex-wrap gap-px bg-stone-800">
@@ -136,7 +218,7 @@ export default function CafeMenu() {
         )}
 
         {/* Sin resultados */}
-        {!loading && visibleSections.length === 0 && (
+        {!loading && !error && visibleSections.length === 0 && (
           <div className="text-center py-20 space-y-2 print:hidden">
             <p className="text-stone-500 text-sm">Sin items con ese filtro</p>
             <button
@@ -149,7 +231,7 @@ export default function CafeMenu() {
         )}
 
         {/* Secciones */}
-        {!loading && visibleSections.length > 0 && (
+        {!loading && !error && visibleSections.length > 0 && (
           <div className="flex flex-wrap gap-px bg-stone-800 print:grid print:grid-cols-3 print:gap-6 print:bg-white print:items-start">
             {visibleSections.map((section) => {
               const isFood = section.type === "food";
@@ -287,7 +369,7 @@ export default function CafeMenu() {
         )}
 
         {/* Botón de descarga — oculto al imprimir */}
-        {!loading && (
+        {!loading && !error && (
           <div className="mt-16 flex justify-center print:hidden">
             <button
               onClick={() => window.print()}
