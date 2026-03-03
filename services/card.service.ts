@@ -56,11 +56,23 @@ export async function addStamp(
     const isComplete = newStamps >= card.maxStamps;
     const newStatus = isComplete ? "completed" : card.status;
 
+    const now = Timestamp.now();
+
     tx.update(cardRef, {
       stamps: newStamps,
-      lastStampAt: Timestamp.now(),
-      ...(isComplete ? { status: "completed", completedAt: Timestamp.now() } : {}),
+      lastStampAt: now,
+      ...(isComplete ? { status: "completed", completedAt: now } : {}),
     });
+
+    if (options?.customerId) {
+      const customerSnap = await tx.get(options.customerId);
+      const customer = customerSnap.exists() ? customerSnap.data() : {};
+      tx.update(options.customerId, {
+        lastVisitAt: now,
+        totalStamps: (customer.totalStamps ?? 0) + 1,
+        totalVisits: (customer.totalVisits ?? 0) + 1,
+      });
+    }
 
     tx.set(eventRef, {
       cardId: cardRef,
