@@ -60,6 +60,12 @@ self.addEventListener("fetch", (event) => {
   // Ignorar videos — siempre devuelven 206 (range request) y no se pueden cachear
   if (UNCACHEABLE_EXTENSIONS.test(url.pathname)) return;
 
+  // Ignorar RSC requests de Next.js App Router (devuelven flight data, no HTML).
+  // Si el SW cachea estos payloads y luego los sirve como respuesta a una navegación
+  // completa, el browser recibe datos en vez de HTML → pantalla blanca.
+  if (request.headers.get("RSC") === "1") return;
+  if (request.headers.get("Next-Router-Prefetch") === "1") return;
+
   // Cache-first para assets estáticos de Next.js (_next/static)
   if (url.pathname.startsWith("/_next/static/")) {
     event.respondWith(

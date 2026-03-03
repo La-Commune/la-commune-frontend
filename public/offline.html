@@ -29,15 +29,18 @@
     h1 { font-size: 2.5rem; font-weight: 300; letter-spacing: 0.05em; line-height: 1.1; }
     p { font-size: 0.875rem; color: #78716c; max-width: 22ch; line-height: 1.6; font-family: system-ui, sans-serif; }
     .line { width: 2rem; height: 1px; background: #44403c; }
-    a {
+    button {
       font-family: system-ui, sans-serif;
       font-size: 10px;
       letter-spacing: 0.35em;
       text-transform: uppercase;
       color: #a8a29e;
-      text-decoration: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
     }
-    a:hover { color: #fff; }
+    button:hover { color: #fff; }
   </style>
 </head>
 <body>
@@ -45,6 +48,6 @@
   <h1>La Commune</h1>
   <div class="line"></div>
   <p>Parece que no tienes internet en este momento. Conéctate para ver tu tarjeta.</p>
-  <a href="/">Reintentar</a>
+  <button onclick="window.location.reload()">Reintentar</button>
 </body>
 </html>
