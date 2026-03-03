@@ -289,7 +289,8 @@ function Card({
         </motion.div> */}
 
         {/* CTA de compartir */}
-        {typeof navigator !== "undefined" && !!navigator.share && (
+        {/* TODO: Reactivar cuando se tenga el contenido en instagram y algo consolidado */}
+        {/* {typeof navigator !== "undefined" && !!navigator.share && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -306,7 +307,7 @@ function Card({
               Invitar a La Commune
             </button>
           </motion.div>
-        )}
+        )} */}
 
       </div>
 
