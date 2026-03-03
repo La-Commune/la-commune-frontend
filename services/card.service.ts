@@ -1,6 +1,6 @@
 import { Card } from "@/models/card.model";
 import { StampEvent } from "@/models/stamp-event.model";
-import { Firestore, doc, runTransaction, Timestamp, collection, DocumentReference, addDoc, where, query, getDocs, updateDoc, deleteField, getDoc } from "firebase/firestore";
+import { Firestore, doc, runTransaction, Timestamp, collection, DocumentReference, addDoc, where, query, getDocs, updateDoc, deleteField, getDoc, increment } from "firebase/firestore";
 
 export async function createCard(
   firestore: Firestore,
@@ -65,12 +65,10 @@ export async function addStamp(
     });
 
     if (options?.customerId) {
-      const customerSnap = await tx.get(options.customerId);
-      const customer = customerSnap.exists() ? customerSnap.data() : {};
       tx.update(options.customerId, {
         lastVisitAt: now,
-        totalStamps: (customer.totalStamps ?? 0) + 1,
-        totalVisits: (customer.totalVisits ?? 0) + 1,
+        totalStamps: increment(1),
+        totalVisits: increment(1),
       });
     }
 
