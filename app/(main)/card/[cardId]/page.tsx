@@ -289,7 +289,7 @@ function Card({
             className="w-[320px] border border-stone-800 rounded-2xl px-6 py-5 text-center space-y-3"
           >
             <p className="text-[10px] uppercase tracking-[0.35em] text-stone-700">
-              ¿Conoces a alguien que lo merece?
+              El café sabe mejor en compañía
             </p>
             <button
               onClick={handleShare}
