@@ -36,6 +36,13 @@ export default function CardEntry() {
   const cardDocRef = doc(firestore, "cards", cardIdParam);
   const { data: cardDoc } = useFirestoreDocData(cardDocRef, { suspense: false });
 
+  // Auto-redirect a la página de canje cuando la tarjeta se completa
+  useEffect(() => {
+    if (!cardId) return; // Esperar a que la sesión esté verificada
+    if ((cardDoc as any)?.status !== "completed") return;
+    router.replace(`/card/${cardIdParam}/redeem`);
+  }, [(cardDoc as any)?.status, cardId, cardIdParam, router]);
+
   // Si la tarjeta fue canjeada, buscar la nueva tarjeta activa y redirigir
   useEffect(() => {
     if (!cardDoc || (cardDoc as any).status !== "redeemed") return;
