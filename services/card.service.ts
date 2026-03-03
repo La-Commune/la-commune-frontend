@@ -1,6 +1,6 @@
 import { Card } from "@/models/card.model";
 import { StampEvent } from "@/models/stamp-event.model";
-import { Firestore, doc, runTransaction, Timestamp, collection, DocumentReference, addDoc, where, query, getDocs, updateDoc, orderBy, deleteField, getDoc } from "firebase/firestore";
+import { Firestore, doc, runTransaction, Timestamp, collection, DocumentReference, addDoc, where, query, getDocs, updateDoc, deleteField, getDoc } from "firebase/firestore";
 
 export async function createCard(
   firestore: Firestore,
@@ -212,10 +212,15 @@ export async function getStampEventsByCard(
   const q = query(
     collection(firestore, "stamp-events"),
     where("cardId", "==", cardRef),
-    orderBy("createdAt", "desc"),
   );
   const snap = await getDocs(q);
-  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as StampEvent) }));
+  return snap.docs
+    .map((d) => ({ id: d.id, ...(d.data() as StampEvent) }))
+    .sort((a, b) => {
+      const aMs = a.createdAt?.toMillis?.() ?? 0;
+      const bMs = b.createdAt?.toMillis?.() ?? 0;
+      return bMs - aMs;
+    });
 }
 
 export async function getCardByCustomer(
