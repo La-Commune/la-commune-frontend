@@ -337,15 +337,41 @@ const PremiumSection: React.FC<SectionProps> = ({
 };
 
 /* ===============================
+   Helpers
+================================= */
+function getOpenStatus(): { open: boolean; label: string } {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat("es-MX", {
+    timeZone: "America/Mexico_City",
+    hour: "numeric",
+    minute: "numeric",
+    hour12: false,
+  }).formatToParts(now);
+  const h = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0");
+  const m = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0");
+  const total = h * 60 + m;
+  const open = total >= 600 && total < 1200;
+  return {
+    open,
+    label: open
+      ? "Abierto · cierra a las 20:00"
+      : total < 600
+      ? "Cerrado · abre a las 10:00"
+      : "Cerrado · abre mañana a las 10:00",
+  };
+}
+
+/* ===============================
    MAIN
 ================================= */
 export default function Home() {
   const router = useRouter();
   const [cardId, setCardId] = useState<string | null>(null);
-  
+  const [openStatus, setOpenStatus] = useState<{ open: boolean; label: string } | null>(null);
 
   useEffect(() => {
     setCardId(localStorage.getItem("cardId"));
+    setOpenStatus(getOpenStatus());
   }, []);
 
   const handleClearSession = () => {
@@ -391,7 +417,8 @@ export default function Home() {
       />
 
       {/* Storytelling — identidad de marca. Opción 1: todo en sección */}
-      <PremiumSection
+      {/* TODO: Reactivar cuando se tenga el contenido en instagram y algo consolidado */}
+      {/* <PremiumSection
         eyebrow="La Commune"
         title={`Sin trucos.\nSolo oficio.`}
         subtitle="La Commune es el nombre que le ponemos al esfuerzo compartido detrás de cada taza."
@@ -402,7 +429,7 @@ export default function Home() {
         ctaLink="/nosotros"
         align="center"
         lazy
-      />
+      /> */}
 
       {/* Footer con horarios y ubicación */}
       <footer className="snap-start h-[100dvh] flex flex-col items-center justify-center bg-neutral-950 px-8">
@@ -437,16 +464,57 @@ export default function Home() {
                   <p className="text-sm text-stone-200 mt-0.5">10:00 – 20:00</p>
                 </div>
               </div>
+              {openStatus && (
+                <div className="flex items-center gap-2 mt-5">
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                      openStatus.open ? "bg-emerald-400" : "bg-red-500"
+                    }`}
+                  />
+                  <p className="text-[10px] tracking-wide text-stone-500">
+                    {openStatus.label}
+                  </p>
+                </div>
+              )}
             </div>
 
             <div>
               <p className="text-[10px] uppercase tracking-[0.35em] text-stone-500 mb-5">
                 Encuéntranos
               </p>
-              <div className="space-y-1">
-                <p className="text-sm text-stone-200">Santa Natividad 135</p>
+              <a
+                href="https://maps.google.com/?q=Santa+Natividad+135,+La+Providencia,+Mineral+de+la+Reforma,+Hidalgo"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group block space-y-1"
+              >
+                <p className="text-sm text-stone-200 group-hover:text-white transition-colors duration-300">
+                  Santa Natividad 135
+                </p>
                 <p className="text-[11px] text-stone-500">Col. La Providencia</p>
                 <p className="text-[11px] text-stone-500">Mineral de la Reforma, Hidalgo</p>
+                <p className="text-[10px] uppercase tracking-[0.25em] text-stone-600 group-hover:text-stone-400 transition-colors duration-300 mt-2">
+                  Cómo llegar →
+                </p>
+              </a>
+            </div>
+          </div>
+
+          {/* Métodos de pago */}
+          <div className="mb-10">
+            <p className="text-[10px] uppercase tracking-[0.35em] text-stone-500 mb-5">
+              Pagos
+            </p>
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-stone-500"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                <span className="text-sm text-stone-200">Efectivo</span>
+              </div>
+              <span className="w-px h-3 bg-stone-800" />
+              <div className="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-stone-500"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                <span className="text-sm text-stone-200">Tarjeta</span>
+                <span className="text-[10px] uppercase tracking-wider text-stone-500">vía Mercado Pago</span>
               </div>
             </div>
           </div>
@@ -468,6 +536,15 @@ export default function Home() {
               <Link href="/onboarding" className="text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300">
                 Registrarse
               </Link>
+              <span className="w-px h-3 bg-stone-800" />
+              <a
+                href="https://wa.me/527711006533"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300"
+              >
+                WhatsApp
+              </a>
             </div>
             {/* Acceso discreto para personal */}
             <Link

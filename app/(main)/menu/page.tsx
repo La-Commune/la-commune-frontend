@@ -368,9 +368,21 @@ export default function CafeMenu() {
           </div>
         )}
 
-        {/* Botón de descarga — oculto al imprimir */}
+        {/* Métodos de pago — oculto al imprimir */}
         {!loading && !error && (
           <div className="mt-16 flex justify-center print:hidden">
+            <div className="flex items-center gap-5 text-[10px] uppercase tracking-[0.3em] text-stone-600">
+              <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+              <span>Efectivo</span>
+              <span className="w-px h-3 bg-stone-800" />
+              <span>Tarjeta vía Mercado Pago</span>
+            </div>
+          </div>
+        )}
+
+        {/* Botón de descarga — oculto al imprimir */}
+        {!loading && !error && (
+          <div className="mt-8 flex justify-center print:hidden">
             <button
               onClick={() => window.print()}
               className="inline-flex items-center gap-4 text-[11px] uppercase tracking-[0.35em] text-stone-500 hover:text-white transition-colors duration-300 group"
@@ -383,12 +395,17 @@ export default function CafeMenu() {
         )}
 
         {/* Pie de página para impresión */}
-        <div className="hidden print:flex items-center justify-center mt-12 pt-6 border-t border-neutral-200 gap-4">
-          <span className="w-8 h-px bg-neutral-300" />
-          <p className="text-[10px] uppercase tracking-[0.4em] text-neutral-400">
-            La Commune · {new Date().getFullYear()}
+        <div className="hidden print:flex flex-col items-center justify-center mt-12 pt-6 border-t border-neutral-200 gap-3">
+          <div className="flex items-center gap-4">
+            <span className="w-8 h-px bg-neutral-300" />
+            <p className="text-[10px] uppercase tracking-[0.4em] text-neutral-400">
+              La Commune · {new Date().getFullYear()}
+            </p>
+            <span className="w-8 h-px bg-neutral-300" />
+          </div>
+          <p className="text-[9px] uppercase tracking-[0.3em] text-neutral-400">
+            Efectivo · Tarjeta vía Mercado Pago
           </p>
-          <span className="w-8 h-px bg-neutral-300" />
         </div>
 
       </div>
