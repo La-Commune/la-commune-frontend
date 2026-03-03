@@ -79,16 +79,20 @@ if (loading || !cardId) {
     );
   }
 
-  return <Card cardId={cardId} customer={customer as Customer} />;
+  const isCompleted = (cardDoc as any)?.status === "completed";
+
+  return <Card cardId={cardId} customer={customer as Customer} isCompleted={isCompleted} />;
 }
 
 
 function Card({
   cardId,
   customer,
+  isCompleted,
 }: {
   cardId: string;
   customer?: Customer;
+  isCompleted?: boolean;
 }) {
   const router = useRouter();
   const name = customer?.name?.trim();
@@ -235,6 +239,26 @@ function Card({
         >
           <StampCardView cardId={cardId} />
         </motion.div>
+
+        {/* CTA de canje cuando tarjeta completa */}
+        <AnimatePresence>
+          {isCompleted && (
+            <motion.div
+              key="redeem-cta"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 12 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+            >
+              <Link
+                href={`/card/${cardId}/redeem`}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-amber-900/30 border border-amber-700/50 text-amber-300 text-[11px] uppercase tracking-[0.3em] hover:bg-amber-900/50 hover:border-amber-600 transition-colors duration-300"
+              >
+                Canjear bebida gratis →
+              </Link>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Acciones secundarias */}
         <motion.div
