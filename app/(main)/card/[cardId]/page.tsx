@@ -180,12 +180,13 @@ function Card({
         <span className="text-[10px] uppercase tracking-[0.45em] text-stone-500">
           La Commune
         </span>
-        <button
-          onClick={handleLogout}
-          className="text-[10px] uppercase tracking-[0.3em] text-stone-700 hover:text-stone-400 transition-colors duration-300 text-stone-400 hover:text-white"
+        <Link
+          href="/menu"
+          className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-400 hover:text-white transition-colors duration-300 group"
         >
-          Salir
-        </button>
+          Menú
+          <span className="w-4 h-px bg-stone-500 group-hover:w-7 group-hover:bg-white transition-all duration-500" />
+        </Link>
       </nav>
 
       {/* Indicador pull-to-refresh */}
