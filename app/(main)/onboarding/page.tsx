@@ -159,7 +159,7 @@ function OnboardingForm() {
                 placeholder="Tu nombre"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="text-center bg-neutral-900 border-stone-700 text-white placeholder:text-stone-600 focus:border-stone-500"
+                className="text-base text-center bg-neutral-900 border-stone-700 text-white placeholder:text-stone-600 focus:border-stone-500"
               />
             </div>
 
@@ -176,7 +176,7 @@ function OnboardingForm() {
                 placeholder="10 dígitos"
                 value={phone}
                 onChange={handlePhoneChange}
-                className="text-center tracking-widest bg-neutral-900 border-stone-700 text-white placeholder:text-stone-600 focus:border-stone-500"
+                className="text-base text-center tracking-widest bg-neutral-900 border-stone-700 text-white placeholder:text-stone-600 focus:border-stone-500"
               />
               <p className="text-[11px] text-stone-600 text-right">
                 {phone.length}/10
