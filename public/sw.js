@@ -136,12 +136,42 @@ self.addEventListener("sync", (event) => {
   }
 });
 
+// Periodic Background Sync — reintentar sellos pendientes periódicamente
+self.addEventListener("periodicsync", (event) => {
+  if (event.tag === "retry-stamps") {
+    event.waitUntil(flushOfflineStamps());
+  }
+});
+
 async function flushOfflineStamps() {
-  // No podemos importar módulos ES desde el SW, así que leemos la cola de localStorage
-  // vía un mensaje al cliente activo
+  // Pedir a TODOS los clientes activos que procesen la cola.
+  // El primero que tenga Firestore inicializado procesará los sellos.
   const clients = await self.clients.matchAll({ type: "window" });
   if (clients.length === 0) return;
 
-  // Pedir al primer cliente que procese la cola
-  clients[0].postMessage({ type: "FLUSH_OFFLINE_STAMPS" });
+  // Notificar a todos — el admin page (si está abierto) escuchará y procesará
+  for (const client of clients) {
+    client.postMessage({ type: "FLUSH_OFFLINE_STAMPS" });
+  }
 }
+
+// Escuchar mensaje del cliente confirmando que el sync terminó
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SYNC_COMPLETE") {
+    const { synced, failed } = event.data;
+    // Mostrar notificación si la app no está enfocada
+    self.clients.matchAll({ type: "window", includeUncontrolled: false }).then((clients) => {
+      const anyFocused = clients.some((c) => c.focused);
+      if (!anyFocused && self.registration.showNotification && synced > 0) {
+        self.registration.showNotification("La Commune", {
+          body: failed > 0
+            ? `${synced} sello${synced !== 1 ? "s" : ""} sincronizado${synced !== 1 ? "s" : ""}, ${failed} con error`
+            : `${synced} sello${synced !== 1 ? "s" : ""} sincronizado${synced !== 1 ? "s" : ""} correctamente`,
+          icon: "/icons/icon-192.png",
+          badge: "/icons/icon-192.png",
+          tag: "stamp-sync",
+        });
+      }
+    });
+  }
+});
