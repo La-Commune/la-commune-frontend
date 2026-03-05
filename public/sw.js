@@ -3,12 +3,8 @@
 const CACHE_VERSION = new URL(location.href).searchParams.get("v") || "v1";
 const CACHE = `la-commune-${CACHE_VERSION}`;
 const PRECACHE = [
-  "/",
-  "/menu",
-  "/card/preview",
-  "/onboarding",
   "/offline.html",
-  // Íconos — necesarios para splash screen y instalación offline (D)
+  // Íconos — necesarios para splash screen y instalación offline
   "/icons/icon-180.png",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
@@ -18,7 +14,7 @@ const PRECACHE = [
   "/images/poster-storytelling.jpg",
 ];
 
-// Instalación: precachear rutas clave
+// Instalación: precachear assets estáticos
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE).then((cache) => cache.addAll(PRECACHE))
@@ -26,12 +22,17 @@ self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
 
-// Activación: limpiar caches anteriores
+// Activación: limpiar caches anteriores y notificar a los clientes
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    )
+    ).then(() => {
+      // Notificar a todas las pestañas que hay una nueva versión activa
+      return self.clients.matchAll({ type: "window" }).then((clients) => {
+        clients.forEach((client) => client.postMessage({ type: "SW_UPDATED" }));
+      });
+    })
   );
   self.clients.claim();
 });
@@ -42,7 +43,7 @@ function isCacheable(res) {
   return res.status === 200;
 }
 
-// (B) Detectar si es una ruta de tarjeta dinámica /card/[cardId]
+// Detectar si es una ruta de tarjeta dinámica /card/[cardId]
 function isCardRoute(pathname) {
   return /^\/card\/[^/]+\/?$/.test(pathname);
 }
@@ -84,7 +85,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // (B) Cachear dinámicamente rutas /card/[cardId] en la primera visita online.
+  // Cachear dinámicamente rutas /card/[cardId] en la primera visita online.
   // Stale-while-revalidate: sirve del caché inmediatamente si existe, y en
   // paralelo lanza el fetch para actualizar. Si no hay caché, espera la red.
   if (isCardRoute(url.pathname)) {
@@ -95,7 +96,7 @@ self.addEventListener("fetch", (event) => {
             if (isCacheable(res)) cache.put(request, res.clone());
             return res;
           });
-          // Si hay caché lo servimos de inmediato (A); la red actualiza en background
+          // Si hay caché lo servimos de inmediato; la red actualiza en background
           return cached || networkFetch.catch(() => cache.match("/offline.html"));
         })
       )
@@ -103,7 +104,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // (A) Stale-while-revalidate para el resto de navegación HTML.
+  // Stale-while-revalidate para el resto de navegación HTML.
   // Sirve del caché al instante si existe; actualiza en background.
   // Si no hay caché, espera la red; si falla, muestra offline.html.
   event.respondWith(
@@ -127,3 +128,20 @@ self.addEventListener("fetch", (event) => {
     )
   );
 });
+
+// Background Sync — procesar cola de sellos offline cuando vuelve la conexión
+self.addEventListener("sync", (event) => {
+  if (event.tag === "flush-stamps") {
+    event.waitUntil(flushOfflineStamps());
+  }
+});
+
+async function flushOfflineStamps() {
+  // No podemos importar módulos ES desde el SW, así que leemos la cola de localStorage
+  // vía un mensaje al cliente activo
+  const clients = await self.clients.matchAll({ type: "window" });
+  if (clients.length === 0) return;
+
+  // Pedir al primer cliente que procese la cola
+  clients[0].postMessage({ type: "FLUSH_OFFLINE_STAMPS" });
+}
