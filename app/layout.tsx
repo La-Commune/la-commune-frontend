@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { MyFirebaseProvider } from "@/components/firebase-providers";
 import { Toaster } from "@/components/ui/toaster";
 import { PwaRegister } from "@/components/ui/PwaRegister";
+import { ThemeProvider } from "@/components/ui/ThemeProvider";
 import { ReactNode } from "react";
 
 const sans = Work_Sans({
@@ -40,13 +41,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={cn(sans.variable, display.variable, sans.className)}>
-        <MyFirebaseProvider>
-          {children}
-          <Toaster />
-          <PwaRegister />
-        </MyFirebaseProvider>
+        <ThemeProvider>
+          <MyFirebaseProvider>
+            {children}
+            <Toaster />
+            <PwaRegister />
+          </MyFirebaseProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

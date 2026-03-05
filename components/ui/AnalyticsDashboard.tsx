@@ -24,7 +24,7 @@ import { toast } from "@/components/ui/use-toast";
 
 type Range = 7 | 30 | 90;
 
-/* ── Helpers ─────────────────────────────────────────── */
+/* -- Helpers ------------------------------------------------- */
 
 interface ChartTooltipProps {
   active?: boolean;
@@ -39,7 +39,7 @@ interface ChartPoint {
 
 function dateKey(ts: Timestamp | null | undefined): string {
   const d = ts?.toDate?.() ?? new Date();
-  return d.toISOString().slice(0, 10); // YYYY-MM-DD
+  return d.toISOString().slice(0, 10);
 }
 
 function lastNDays(n: number): { key: string; label: string }[] {
@@ -66,7 +66,6 @@ function buildChartData(events: StampEventRaw[], range: Range): ChartPoint[] {
   }
 
   if (range === 30) {
-    // 4 grupos semanales
     return Array.from({ length: 4 }, (_, i) => {
       const weekEnd = new Date();
       weekEnd.setDate(weekEnd.getDate() - i * 7);
@@ -81,7 +80,6 @@ function buildChartData(events: StampEventRaw[], range: Range): ChartPoint[] {
     }).reverse();
   }
 
-  // range === 90: 3 grupos mensuales
   return Array.from({ length: 3 }, (_, i) => {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -108,26 +106,26 @@ function buildDrinkData(events: StampEventRaw[], topN = 8): { name: string; coun
     .slice(0, topN);
 }
 
-/* ── Tarjeta de stat ─────────────────────────────────── */
+/* -- Tarjeta de stat ----------------------------------------- */
 
 function StatCard({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
   return (
-    <div className="rounded-2xl border border-stone-800 bg-neutral-900 px-5 py-5 space-y-1.5">
-      <p className="text-[10px] uppercase tracking-[0.35em] text-stone-600">{label}</p>
-      <p className="text-3xl font-light text-stone-100">{value}</p>
-      {sub && <p className="text-[11px] text-stone-600">{sub}</p>}
+    <div className="rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-neutral-900 px-5 py-5 space-y-1.5">
+      <p className="text-[10px] uppercase tracking-[0.35em] text-stone-400 dark:text-stone-600">{label}</p>
+      <p className="text-3xl font-light text-stone-800 dark:text-stone-100">{value}</p>
+      {sub && <p className="text-[11px] text-stone-400 dark:text-stone-600">{sub}</p>}
     </div>
   );
 }
 
-/* ── Tooltips ────────────────────────────────────────── */
+/* -- Tooltips ------------------------------------------------ */
 
 function CustomTooltip({ active, payload, label }: ChartTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-neutral-800 border border-stone-700 rounded-xl px-3 py-2 text-[11px]">
-      <p className="text-stone-400 mb-1">{label}</p>
-      <p className="text-stone-100 font-medium">{payload[0].value} sellos</p>
+    <div className="bg-stone-100 dark:bg-neutral-800 border border-stone-300 dark:border-stone-700 rounded-xl px-3 py-2 text-[11px]">
+      <p className="text-stone-500 dark:text-stone-400 mb-1">{label}</p>
+      <p className="text-stone-800 dark:text-stone-100 font-medium">{payload[0].value} sellos</p>
     </div>
   );
 }
@@ -135,14 +133,14 @@ function CustomTooltip({ active, payload, label }: ChartTooltipProps) {
 function CustomTooltipDrink({ active, payload, label }: ChartTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-neutral-800 border border-stone-700 rounded-xl px-3 py-2 text-[11px]">
-      <p className="text-stone-400 mb-1">{label}</p>
-      <p className="text-stone-100 font-medium">{payload[0].value} pedidos</p>
+    <div className="bg-stone-100 dark:bg-neutral-800 border border-stone-300 dark:border-stone-700 rounded-xl px-3 py-2 text-[11px]">
+      <p className="text-stone-500 dark:text-stone-400 mb-1">{label}</p>
+      <p className="text-stone-800 dark:text-stone-100 font-medium">{payload[0].value} pedidos</p>
     </div>
   );
 }
 
-/* ── Componente principal ────────────────────────────── */
+/* -- Componente principal ------------------------------------ */
 
 export function AnalyticsDashboard() {
   const firestore = useFirestore();
@@ -177,7 +175,6 @@ export function AnalyticsDashboard() {
       });
   }, [firestore]);
 
-  // Filtrar eventos según el rango seleccionado
   const rangeDate = new Date();
   rangeDate.setDate(rangeDate.getDate() - range);
   const events = allEvents.filter((e) => (e.createdAt?.toDate?.() ?? new Date()) >= rangeDate);
@@ -187,7 +184,6 @@ export function AnalyticsDashboard() {
   const drinkData = buildDrinkData(events);
   const topDrink = drinkData[0]?.name ?? "—";
 
-  // Top referidores: contar cuántas personas ha referido cada cliente
   const customerById = new Map(customers.map((c) => [c.id, c]));
   const referralCountById = new Map<string, number>();
   customers.forEach((c) => {
@@ -200,7 +196,7 @@ export function AnalyticsDashboard() {
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
 
-  const rangeLabel = range === 7 ? "7 días" : range === 30 ? "30 días" : "90 días";
+  const rangeLabel = range === 7 ? "7 dias" : range === 30 ? "30 dias" : "90 dias";
 
   const BAR_COLOR = "#A8956E";
   const BAR_DIM = "#3D3632";
@@ -210,11 +206,11 @@ export function AnalyticsDashboard() {
       <div className="w-full max-w-3xl mx-auto space-y-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-24 rounded-2xl bg-stone-900 animate-pulse" />
+            <div key={i} className="h-24 rounded-2xl bg-stone-200 dark:bg-stone-900 animate-pulse" />
           ))}
         </div>
-        <div className="h-52 rounded-2xl bg-stone-900 animate-pulse" />
-        <div className="h-52 rounded-2xl bg-stone-900 animate-pulse" />
+        <div className="h-52 rounded-2xl bg-stone-200 dark:bg-stone-900 animate-pulse" />
+        <div className="h-52 rounded-2xl bg-stone-200 dark:bg-stone-900 animate-pulse" />
       </div>
     );
   }
@@ -230,22 +226,21 @@ export function AnalyticsDashboard() {
         <StatCard label="Bebida top" value={topDrink} />
       </div>
 
-      {/* Toggle de rango + gráficas */}
+      {/* Toggle de rango + graficas */}
       <div className="space-y-4">
-        {/* Header con toggle */}
         <div className="flex items-center justify-between">
-          <p className="text-[10px] uppercase tracking-[0.35em] text-stone-600">
+          <p className="text-[10px] uppercase tracking-[0.35em] text-stone-400 dark:text-stone-600">
             Actividad
           </p>
-          <div className="flex gap-1 p-0.5 bg-neutral-900 border border-stone-800 rounded-lg">
+          <div className="flex gap-1 p-0.5 bg-stone-100 dark:bg-neutral-900 border border-stone-200 dark:border-stone-800 rounded-lg">
             {([7, 30, 90] as Range[]).map((r) => (
               <button
                 key={r}
                 onClick={() => setRange(r)}
                 className={`px-3 py-1 rounded-md text-[10px] uppercase tracking-[0.25em] transition-all duration-150 ${
                   range === r
-                    ? "bg-stone-700 text-stone-100"
-                    : "text-stone-600 hover:text-stone-400"
+                    ? "bg-stone-300 text-stone-800 dark:bg-stone-700 dark:text-stone-100"
+                    : "text-stone-400 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400"
                 }`}
               >
                 {r}d
@@ -254,10 +249,10 @@ export function AnalyticsDashboard() {
           </div>
         </div>
 
-        {/* Gráfica 1 — Sellos por período */}
-        <div className="rounded-2xl border border-stone-800 bg-neutral-900 px-5 py-6 space-y-4">
-          <p className="text-[10px] uppercase tracking-[0.35em] text-stone-600">
-            Sellos · {rangeLabel === "7 días" ? "por día" : rangeLabel === "30 días" ? "por semana" : "por mes"}
+        {/* Grafica 1 — Sellos por periodo */}
+        <div className="rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-neutral-900 px-5 py-6 space-y-4">
+          <p className="text-[10px] uppercase tracking-[0.35em] text-stone-400 dark:text-stone-600">
+            Sellos · {rangeLabel === "7 dias" ? "por dia" : rangeLabel === "30 dias" ? "por semana" : "por mes"}
           </p>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={chartData} barSize={22} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
@@ -283,11 +278,11 @@ export function AnalyticsDashboard() {
           </ResponsiveContainer>
         </div>
 
-        {/* Gráfica 2 — Bebidas más populares */}
+        {/* Grafica 2 — Bebidas mas populares */}
         {drinkData.length > 0 && (
-          <div className="rounded-2xl border border-stone-800 bg-neutral-900 px-5 py-6 space-y-4">
-            <p className="text-[10px] uppercase tracking-[0.35em] text-stone-600">
-              Bebidas más pedidas · {rangeLabel}
+          <div className="rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-neutral-900 px-5 py-6 space-y-4">
+            <p className="text-[10px] uppercase tracking-[0.35em] text-stone-400 dark:text-stone-600">
+              Bebidas mas pedidas · {rangeLabel}
             </p>
             <ResponsiveContainer width="100%" height={Math.max(180, drinkData.length * 40)}>
               <BarChart
@@ -319,9 +314,9 @@ export function AnalyticsDashboard() {
         )}
 
         {drinkData.length === 0 && (
-          <div className="rounded-2xl border border-stone-800 bg-neutral-900 px-5 py-8 text-center">
-            <p className="text-stone-700 text-sm">Sin datos de bebidas en este período</p>
-            <p className="text-[10px] uppercase tracking-widest text-stone-800 mt-1">
+          <div className="rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-neutral-900 px-5 py-8 text-center">
+            <p className="text-stone-300 dark:text-stone-700 text-sm">Sin datos de bebidas en este periodo</p>
+            <p className="text-[10px] uppercase tracking-widest text-stone-200 dark:text-stone-800 mt-1">
               Los sellos registran la bebida al agregarlos
             </p>
           </div>
@@ -329,18 +324,18 @@ export function AnalyticsDashboard() {
       </div>
 
       {/* Top referidores */}
-      <div className="rounded-2xl border border-stone-800 bg-neutral-900 px-5 py-6 space-y-4">
-        <p className="text-[10px] uppercase tracking-[0.35em] text-stone-600">Top referidores</p>
+      <div className="rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-neutral-900 px-5 py-6 space-y-4">
+        <p className="text-[10px] uppercase tracking-[0.35em] text-stone-400 dark:text-stone-600">Top referidores</p>
         {topReferrers.length === 0 ? (
-          <p className="text-stone-700 text-sm">Sin referidos registrados aún</p>
+          <p className="text-stone-300 dark:text-stone-700 text-sm">Sin referidos registrados aun</p>
         ) : (
           <div className="space-y-2.5">
             {topReferrers.map(({ id, name, count }) => (
               <div key={id} className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-full border border-stone-700 bg-neutral-950 flex items-center justify-center shrink-0">
-                  <span className="text-[10px] text-stone-400">{name[0]?.toUpperCase() ?? "?"}</span>
+                <div className="w-7 h-7 rounded-full border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-neutral-950 flex items-center justify-center shrink-0">
+                  <span className="text-[10px] text-stone-500 dark:text-stone-400">{name[0]?.toUpperCase() ?? "?"}</span>
                 </div>
-                <span className="flex-1 text-sm text-stone-300 truncate">{name}</span>
+                <span className="flex-1 text-sm text-stone-600 dark:text-stone-300 truncate">{name}</span>
                 <span className="text-[11px] tabular-nums text-amber-600/80">
                   {count} {count === 1 ? "referido" : "referidos"}
                 </span>

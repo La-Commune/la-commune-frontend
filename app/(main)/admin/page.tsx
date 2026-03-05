@@ -11,6 +11,7 @@ import { QrScanner } from "@/components/ui/QrScanner";
 import { MenuAdmin } from "@/components/ui/MenuAdmin";
 import { CustomerDirectory } from "@/components/ui/CustomerDirectory";
 import { AnalyticsDashboard } from "@/components/ui/AnalyticsDashboard";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { verifyAdminPin, checkBaristaSession, logoutBarista } from "@/app/actions/verifyAdminPin";
 import { addStamp, redeemCard, undoStamp } from "@/services/card.service";
 import { getFullMenu } from "@/services/menu.service";
@@ -42,7 +43,7 @@ interface LoadedCard {
   customerName: string;
 }
 
-/* ── Teclado numérico ─────────────────────────────────── */
+/* -- Teclado numerico ----------------------------------------- */
 function PinPad({
   value,
   onChange,
@@ -82,15 +83,15 @@ function PinPad({
 
   return (
     <div className="flex flex-col items-center gap-8">
-      {/* Indicadores dinámicos */}
+      {/* Indicadores dinamicos */}
       <div className="flex gap-3 flex-wrap justify-center max-w-[260px]">
         {Array.from({ length: pinLength }).map((_, i) => (
           <div
             key={i}
             className={`w-3 h-3 rounded-full border transition-all duration-200 ${
               i < value.length
-                ? "bg-stone-200 border-stone-200"
-                : "bg-transparent border-stone-700"
+                ? "bg-stone-700 border-stone-700 dark:bg-stone-200 dark:border-stone-200"
+                : "bg-transparent border-stone-300 dark:border-stone-700"
             }`}
           />
         ))}
@@ -103,7 +104,7 @@ function PinPad({
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="text-[10px] uppercase tracking-widest text-red-400"
+            className="text-[10px] uppercase tracking-widest text-red-500 dark:text-red-400"
           >
             {error}
           </motion.p>
@@ -118,7 +119,7 @@ function PinPad({
             <button
               key={i}
               onClick={() => (k === "⌫" ? del() : press(k))}
-              className="w-16 h-16 rounded-2xl border border-stone-800 text-stone-300 text-lg font-light hover:border-stone-600 hover:text-white hover:bg-stone-900 active:scale-95 transition-all duration-150"
+              className="w-16 h-16 rounded-2xl border border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-300 text-lg font-light hover:border-stone-400 dark:hover:border-stone-600 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-900 active:scale-95 transition-all duration-150"
             >
               {k}
             </button>
@@ -129,7 +130,7 @@ function PinPad({
       <button
         onClick={onSubmit}
         disabled={value.length < pinLength || loading || lockoutSeconds > 0}
-        className="mt-2 w-full max-w-[220px] py-3 rounded-full bg-stone-200 text-neutral-900 text-[11px] uppercase tracking-[0.35em] hover:bg-white transition-colors duration-200 disabled:opacity-20 disabled:cursor-not-allowed"
+        className="mt-2 w-full max-w-[220px] py-3 rounded-full bg-stone-800 text-white dark:bg-stone-200 dark:text-neutral-900 text-[11px] uppercase tracking-[0.35em] hover:bg-stone-900 dark:hover:bg-white transition-colors duration-200 disabled:opacity-20 disabled:cursor-not-allowed"
       >
         {loading
           ? "Verificando…"
@@ -148,7 +149,7 @@ interface StampEntry {
   time: Date;
 }
 
-/* ── Vista de añadir sello ────────────────────────────── */
+/* -- Vista de anadir sello ----------------------------------- */
 function StampView({ onLogout }: { onLogout: () => void }) {
   const firestore = useFirestore();
   const [cardInput, setCardInput] = useState("");
@@ -176,7 +177,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
   const [pendingQueue, setPendingQueue] = useState<QueuedStamp[]>([]);
   const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "error">("idle");
 
-  // Cargar bebidas disponibles del menú
+  // Cargar bebidas disponibles del menu
   useEffect(() => {
     getFullMenu(firestore)
       .then((sections) => {
@@ -188,7 +189,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
         setMenuDrinks(drinks);
       })
       .catch(() => {
-        toast({ variant: "destructive", title: "No se pudo cargar el menú de bebidas" });
+        toast({ variant: "destructive", title: "No se pudo cargar el menu de bebidas" });
       });
   }, [firestore]);
 
@@ -232,7 +233,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
     setSyncStatus(hasError ? "error" : "idle");
   }, [firestore]);
 
-  // Auto-sync al recuperar conexión
+  // Auto-sync al recuperar conexion
   useEffect(() => {
     if (isOnline) {
       const pending = getQueue().filter((q) => q.status === "pending");
@@ -283,7 +284,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
     } catch {
       setError(
         !navigator.onLine
-          ? "Sin conexión. Si ya cargaste esta tarjeta antes, inténtalo de nuevo."
+          ? "Sin conexion. Si ya cargaste esta tarjeta antes, intentalo de nuevo."
           : "Error al cargar la tarjeta",
       );
     }
@@ -368,7 +369,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
         });
       }, 1000);
     } catch {
-      setError("Error al añadir el sello. Intenta de nuevo.");
+      setError("Error al anadir el sello. Intenta de nuevo.");
     }
     setLoading(false);
   }, [card, firestore, selectedDrink, customDrink, stampSize, clearUndoCountdown, isOnline, resetStampForm]);
@@ -431,7 +432,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
-            className="flex items-center gap-2 px-4 py-3 rounded-xl border border-amber-800/40 bg-amber-900/10"
+            className="flex items-center gap-2 px-4 py-3 rounded-xl border border-amber-300/40 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-amber-500 shrink-0">
               <line x1="1" y1="1" x2="23" y2="23"/>
@@ -442,15 +443,15 @@ function StampView({ onLogout }: { onLogout: () => void }) {
               <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
               <circle cx="12" cy="20" r="1" fill="currentColor"/>
             </svg>
-            <span className="text-[11px] uppercase tracking-[0.2em] text-amber-400">
-              Sin conexión
+            <span className="text-[11px] uppercase tracking-[0.2em] text-amber-600 dark:text-amber-400">
+              Sin conexion
               {pendingCount > 0 && ` · ${pendingCount} pendiente${pendingCount !== 1 ? "s" : ""}`}
             </span>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Barra de sincronización */}
+      {/* Barra de sincronizacion */}
       <AnimatePresence>
         {isOnline && pendingQueue.length > 0 && (
           <motion.div
@@ -460,12 +461,12 @@ function StampView({ onLogout }: { onLogout: () => void }) {
             exit={{ opacity: 0, y: -8 }}
             className={`flex items-center justify-between gap-2 px-4 py-3 rounded-xl border ${
               syncStatus === "error"
-                ? "border-red-800/40 bg-red-900/10"
-                : "border-stone-800 bg-stone-900/50"
+                ? "border-red-300/40 dark:border-red-800/40 bg-red-50/50 dark:bg-red-900/10"
+                : "border-stone-200 dark:border-stone-800 bg-stone-100/50 dark:bg-stone-900/50"
             }`}
           >
             <span className={`text-[11px] uppercase tracking-[0.2em] ${
-              syncStatus === "error" ? "text-red-400" : "text-stone-400"
+              syncStatus === "error" ? "text-red-500 dark:text-red-400" : "text-stone-500 dark:text-stone-400"
             }`}>
               {syncStatus === "syncing"
                 ? "Sincronizando…"
@@ -476,7 +477,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
             {syncStatus === "error" && (
               <button
                 onClick={() => { resetFailed(); setPendingQueue(getQueue()); syncQueue(); }}
-                className="text-[10px] uppercase tracking-widest text-stone-400 hover:text-white transition-colors"
+                className="text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors"
               >
                 Reintentar
               </button>
@@ -487,7 +488,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
 
       {/* Buscador de tarjeta */}
       <div className="space-y-3">
-        {/* Botón principal: escanear con cámara */}
+        {/* Boton principal: escanear con camara */}
         <AnimatePresence mode="wait">
           {scanning ? (
             <motion.div
@@ -508,9 +509,9 @@ function StampView({ onLogout }: { onLogout: () => void }) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => { setCard(null); setError(""); setScanning(true); }}
-              className="w-full py-4 rounded-xl border border-stone-700 text-stone-300 hover:border-stone-500 hover:text-white transition-all duration-200 flex items-center justify-center gap-3 group"
+              className="w-full py-4 rounded-xl border border-stone-300 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:border-stone-400 dark:hover:border-stone-500 hover:text-stone-900 dark:hover:text-white transition-all duration-200 flex items-center justify-center gap-3 group"
             >
-              {/* Ícono cámara */}
+              {/* Icono camara */}
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 opacity-60 group-hover:opacity-100 transition-opacity">
                 <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
                 <circle cx="12" cy="13" r="3"/>
@@ -523,9 +524,9 @@ function StampView({ onLogout }: { onLogout: () => void }) {
         {/* Separador */}
         {!scanning && (
           <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-stone-800" />
-            <span className="text-[10px] uppercase tracking-widest text-stone-700">o</span>
-            <div className="flex-1 h-px bg-stone-800" />
+            <div className="flex-1 h-px bg-stone-200 dark:bg-stone-800" />
+            <span className="text-[10px] uppercase tracking-widest text-stone-300 dark:text-stone-700">o</span>
+            <div className="flex-1 h-px bg-stone-200 dark:bg-stone-800" />
           </div>
         )}
 
@@ -538,12 +539,12 @@ function StampView({ onLogout }: { onLogout: () => void }) {
               onChange={(e) => setCardInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && loadCard(cardInput)}
               placeholder="ID o URL completa del QR"
-              className="flex-1 bg-neutral-900 border border-stone-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-stone-700 focus:outline-none focus:border-stone-600 transition-colors"
+              className="flex-1 bg-white dark:bg-neutral-900 border border-stone-200 dark:border-stone-800 rounded-xl px-4 py-3 text-sm text-stone-900 dark:text-white placeholder:text-stone-300 dark:placeholder:text-stone-700 focus:outline-none focus:border-stone-400 dark:focus:border-stone-600 transition-colors"
             />
             <button
               onClick={() => loadCard(cardInput)}
               disabled={loading || !cardInput.trim()}
-              className="px-4 rounded-xl border border-stone-700 text-stone-400 hover:border-stone-500 hover:text-white transition-colors duration-200 disabled:opacity-30 text-sm"
+              className="px-4 rounded-xl border border-stone-300 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:border-stone-400 dark:hover:border-stone-500 hover:text-stone-900 dark:hover:text-white transition-colors duration-200 disabled:opacity-30 text-sm"
             >
               {loading ? "…" : "Buscar"}
             </button>
@@ -556,7 +557,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="text-[10px] uppercase tracking-widest text-red-400"
+              className="text-[10px] uppercase tracking-widest text-red-500 dark:text-red-400"
             >
               {error}
             </motion.p>
@@ -564,7 +565,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
         </AnimatePresence>
       </div>
 
-      {/* Info de tarjeta + acción */}
+      {/* Info de tarjeta + accion */}
       <AnimatePresence mode="wait">
         {card && screen === "stamp" && (
           <motion.div
@@ -572,13 +573,13 @@ function StampView({ onLogout }: { onLogout: () => void }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="rounded-2xl border border-stone-800 bg-neutral-900 p-6 space-y-5"
+            className="rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-neutral-900 p-6 space-y-5"
           >
             {/* Cliente */}
             <div className="space-y-0.5">
-              <p className="text-[10px] uppercase tracking-[0.3em] text-stone-600">Cliente</p>
+              <p className="text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600">Cliente</p>
               <p
-                className="text-2xl font-light text-stone-100"
+                className="text-2xl font-light text-stone-800 dark:text-stone-100"
                 style={{ fontFamily: "var(--font-display)" }}
               >
                 {card.customerName || "Sin nombre"}
@@ -587,11 +588,11 @@ function StampView({ onLogout }: { onLogout: () => void }) {
 
             {/* Sellos */}
             <div className="space-y-2">
-              <div className="flex justify-between text-[10px] uppercase tracking-widest text-stone-600">
+              <div className="flex justify-between text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-600">
                 <span>Sellos</span>
                 <span>{card.stamps} / {card.maxStamps}</span>
               </div>
-              <div className="h-[2px] bg-stone-800 rounded-full overflow-hidden">
+              <div className="h-[2px] bg-stone-200 dark:bg-stone-800 rounded-full overflow-hidden">
                 <motion.div
                   className="h-full rounded-full"
                   style={{
@@ -606,7 +607,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
               </div>
               {isComplete && (
                 <p className="text-[10px] uppercase tracking-widest text-amber-500">
-                  ✓ Tarjeta completada — cortesía lista
+                  ✓ Tarjeta completada — cortesia lista
                 </p>
               )}
             </div>
@@ -614,16 +615,16 @@ function StampView({ onLogout }: { onLogout: () => void }) {
             {/* Selector de bebida — solo al agregar sello */}
             {!isComplete && (
               <div className="space-y-3 pt-1">
-                <p className="text-[10px] uppercase tracking-[0.3em] text-stone-600">
-                  ¿Qué pidió?{" "}
-                  <span className="text-stone-800">· opcional</span>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600">
+                  ¿Que pidio?{" "}
+                  <span className="text-stone-200 dark:text-stone-800">· opcional</span>
                 </p>
 
                 {/* Chips de bebidas */}
                 <div className="flex flex-wrap gap-2">
                   {menuDrinks.length === 0 && (
-                    <p className="text-[10px] text-stone-800 uppercase tracking-widest">
-                      Sin bebidas en el menú
+                    <p className="text-[10px] text-stone-200 dark:text-stone-800 uppercase tracking-widest">
+                      Sin bebidas en el menu
                     </p>
                   )}
                   {menuDrinks.map((drink) => (
@@ -632,8 +633,8 @@ function StampView({ onLogout }: { onLogout: () => void }) {
                       onClick={() => setSelectedDrink((prev) => prev === drink ? "" : drink)}
                       className={`px-3 py-1.5 rounded-full border text-[10px] uppercase tracking-widest transition-all duration-150 ${
                         selectedDrink === drink
-                          ? "border-stone-400 text-stone-100 bg-stone-800"
-                          : "border-stone-800 text-stone-600 hover:border-stone-700 hover:text-stone-400"
+                          ? "border-stone-500 dark:border-stone-400 text-stone-800 dark:text-stone-100 bg-stone-200 dark:bg-stone-800"
+                          : "border-stone-200 dark:border-stone-800 text-stone-400 dark:text-stone-600 hover:border-stone-300 dark:hover:border-stone-700 hover:text-stone-600 dark:hover:text-stone-400"
                       }`}
                     >
                       {drink}
@@ -643,8 +644,8 @@ function StampView({ onLogout }: { onLogout: () => void }) {
                     onClick={() => setSelectedDrink((prev) => prev === "otro" ? "" : "otro")}
                     className={`px-3 py-1.5 rounded-full border text-[10px] uppercase tracking-widest transition-all duration-150 ${
                       selectedDrink === "otro"
-                        ? "border-stone-400 text-stone-100 bg-stone-800"
-                        : "border-stone-800 text-stone-600 hover:border-stone-700 hover:text-stone-400"
+                        ? "border-stone-500 dark:border-stone-400 text-stone-800 dark:text-stone-100 bg-stone-200 dark:bg-stone-800"
+                        : "border-stone-200 dark:border-stone-800 text-stone-400 dark:text-stone-600 hover:border-stone-300 dark:hover:border-stone-700 hover:text-stone-600 dark:hover:text-stone-400"
                     }`}
                   >
                     Otro
@@ -659,11 +660,11 @@ function StampView({ onLogout }: { onLogout: () => void }) {
                     onChange={(e) => setCustomDrink(e.target.value)}
                     placeholder="Nombre de la bebida"
                     autoFocus
-                    className="w-full bg-neutral-950 border border-stone-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-stone-700 focus:outline-none focus:border-stone-600 transition-colors"
+                    className="w-full bg-stone-50 dark:bg-neutral-950 border border-stone-200 dark:border-stone-800 rounded-xl px-4 py-2.5 text-sm text-stone-900 dark:text-white placeholder:text-stone-300 dark:placeholder:text-stone-700 focus:outline-none focus:border-stone-400 dark:focus:border-stone-600 transition-colors"
                   />
                 )}
 
-                {/* Tamaño — solo si hay bebida seleccionada */}
+                {/* Tamano — solo si hay bebida seleccionada */}
                 {selectedDrink && selectedDrink !== "otro" && (
                   <div className="flex gap-2">
                     {(["10oz", "12oz"] as const).map((s) => (
@@ -672,8 +673,8 @@ function StampView({ onLogout }: { onLogout: () => void }) {
                         onClick={() => setStampSize((prev) => prev === s ? "" : s)}
                         className={`px-4 py-1.5 rounded-full border text-[10px] uppercase tracking-widest transition-all duration-150 ${
                           stampSize === s
-                            ? "border-stone-400 text-stone-100 bg-stone-800"
-                            : "border-stone-800 text-stone-600 hover:border-stone-700 hover:text-stone-400"
+                            ? "border-stone-500 dark:border-stone-400 text-stone-800 dark:text-stone-100 bg-stone-200 dark:bg-stone-800"
+                            : "border-stone-200 dark:border-stone-800 text-stone-400 dark:text-stone-600 hover:border-stone-300 dark:hover:border-stone-700 hover:text-stone-600 dark:hover:text-stone-400"
                         }`}
                       >
                         {s}
@@ -684,32 +685,32 @@ function StampView({ onLogout }: { onLogout: () => void }) {
               </div>
             )}
 
-            {/* Banner umbral: a 1 sello de la cortesía */}
+            {/* Banner umbral: a 1 sello de la cortesia */}
             {!isComplete && card.stamps === card.maxStamps - 1 && (
-              <div className="px-4 py-3 rounded-xl border border-amber-800/40 bg-amber-900/10 flex items-center gap-2">
+              <div className="px-4 py-3 rounded-xl border border-amber-300/40 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10 flex items-center gap-2">
                 <span className="text-base leading-none">⚡</span>
-                <span className="text-[11px] uppercase tracking-[0.2em] text-amber-400">
-                  ¡Este cliente está a 1 sello de su bebida gratis!
+                <span className="text-[11px] uppercase tracking-[0.2em] text-amber-600 dark:text-amber-400">
+                  ¡Este cliente esta a 1 sello de su bebida gratis!
                 </span>
               </div>
             )}
 
-            {/* Botón — sello o canje según estado */}
+            {/* Boton — sello o canje segun estado */}
             {isComplete ? (
               <button
                 onClick={handleRedeem}
                 disabled={loading}
-                className="w-full py-4 rounded-xl bg-amber-500/10 border border-amber-500/40 text-amber-400 text-[11px] uppercase tracking-[0.35em] hover:bg-amber-500/20 hover:border-amber-400 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed font-medium"
+                className="w-full py-4 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/40 text-amber-700 dark:text-amber-400 text-[11px] uppercase tracking-[0.35em] hover:bg-amber-100 dark:hover:bg-amber-500/20 hover:border-amber-400 dark:hover:border-amber-400 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed font-medium"
               >
-                {loading ? "Canjeando…" : "Canjear cortesía · Nueva tarjeta"}
+                {loading ? "Canjeando…" : "Canjear cortesia · Nueva tarjeta"}
               </button>
             ) : (
               <button
                 onClick={handleAddStamp}
                 disabled={loading}
-                className="w-full py-4 rounded-xl bg-stone-200 text-neutral-900 text-[11px] uppercase tracking-[0.35em] hover:bg-white transition-colors duration-200 disabled:opacity-30 disabled:cursor-not-allowed font-medium"
+                className="w-full py-4 rounded-xl bg-stone-800 text-white dark:bg-stone-200 dark:text-neutral-900 text-[11px] uppercase tracking-[0.35em] hover:bg-stone-900 dark:hover:bg-white transition-colors duration-200 disabled:opacity-30 disabled:cursor-not-allowed font-medium"
               >
-                {loading ? "Guardando…" : "Añadir sello"}
+                {loading ? "Guardando…" : "Anadir sello"}
               </button>
             )}
           </motion.div>
@@ -721,7 +722,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            className="rounded-2xl border border-amber-800/40 bg-amber-900/10 p-8 text-center space-y-3"
+            className="rounded-2xl border border-amber-300/40 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10 p-8 text-center space-y-3"
           >
             <motion.div
               initial={{ scale: 0 }}
@@ -732,12 +733,12 @@ function StampView({ onLogout }: { onLogout: () => void }) {
               ☕
             </motion.div>
             <p
-              className="text-xl font-light text-amber-300"
+              className="text-xl font-light text-amber-700 dark:text-amber-300"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              Cortesía entregada
+              Cortesia entregada
             </p>
-            <p className="text-[10px] uppercase tracking-widest text-amber-700">
+            <p className="text-[10px] uppercase tracking-widest text-amber-500 dark:text-amber-700">
               {card?.customerName || "Cliente"} · Nueva tarjeta lista
             </p>
           </motion.div>
@@ -749,7 +750,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            className="rounded-2xl border border-emerald-800/40 bg-emerald-900/20 p-8 text-center space-y-3"
+            className="rounded-2xl border border-emerald-300/40 dark:border-emerald-800/40 bg-emerald-50/30 dark:bg-emerald-900/20 p-8 text-center space-y-3"
           >
             <motion.div
               initial={{ scale: 0 }}
@@ -760,19 +761,19 @@ function StampView({ onLogout }: { onLogout: () => void }) {
               ✓
             </motion.div>
             <p
-              className="text-xl font-light text-emerald-300"
+              className="text-xl font-light text-emerald-700 dark:text-emerald-300"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              Sello añadido
+              Sello anadido
             </p>
-            <p className="text-[10px] uppercase tracking-widest text-emerald-600">
+            <p className="text-[10px] uppercase tracking-widest text-emerald-500 dark:text-emerald-600">
               {card?.customerName || "Cliente"} · {card?.stamps} / {card?.maxStamps} visitas
             </p>
             {undoSecondsLeft !== null && lastEventId && (
               <button
                 onClick={handleUndo}
                 disabled={loading}
-                className="mt-1 text-[10px] uppercase tracking-[0.3em] text-stone-600 hover:text-stone-400 transition-colors disabled:opacity-40"
+                className="mt-1 text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400 transition-colors disabled:opacity-40"
               >
                 Deshacer ({undoSecondsLeft}s)
               </button>
@@ -786,7 +787,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            className="rounded-2xl border border-amber-800/40 bg-amber-900/10 p-8 text-center space-y-3"
+            className="rounded-2xl border border-amber-300/40 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10 p-8 text-center space-y-3"
           >
             <motion.div
               initial={{ scale: 0 }}
@@ -794,7 +795,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
               className="text-4xl"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10 text-amber-400 mx-auto">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10 text-amber-500 dark:text-amber-400 mx-auto">
                 <line x1="1" y1="1" x2="23" y2="23"/>
                 <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
                 <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
@@ -805,45 +806,45 @@ function StampView({ onLogout }: { onLogout: () => void }) {
               </svg>
             </motion.div>
             <p
-              className="text-xl font-light text-amber-300"
+              className="text-xl font-light text-amber-700 dark:text-amber-300"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              Guardado sin conexión
+              Guardado sin conexion
             </p>
-            <p className="text-[10px] uppercase tracking-widest text-amber-700">
-              {card?.customerName || "Cliente"} · Se sincronizará al recuperar conexión
+            <p className="text-[10px] uppercase tracking-widest text-amber-500 dark:text-amber-700">
+              {card?.customerName || "Cliente"} · Se sincronizara al recuperar conexion
             </p>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Cerrar sesión */}
+      {/* Cerrar sesion */}
       <button
         onClick={onLogout}
-        className="text-[10px] uppercase tracking-[0.3em] text-stone-700 hover:text-stone-400 transition-colors duration-200 mx-auto"
+        className="text-[10px] uppercase tracking-[0.3em] text-stone-300 dark:text-stone-700 hover:text-stone-600 dark:hover:text-stone-400 transition-colors duration-200 mx-auto"
       >
-        Cerrar sesión
+        Cerrar sesion
       </button>
 
-      {/* Historial de sellos de sesión */}
+      {/* Historial de sellos de sesion */}
       {stampHistory.length > 0 && (
         <div className="w-full space-y-2">
-          <p className="text-[10px] uppercase tracking-widest text-stone-700 text-center">
-            Sellos de esta sesión
+          <p className="text-[10px] uppercase tracking-widest text-stone-300 dark:text-stone-700 text-center">
+            Sellos de esta sesion
           </p>
           <div className="space-y-1.5">
             {stampHistory.map((entry, i) => (
               <div
                 key={i}
-                className="flex items-center justify-between px-4 py-2.5 rounded-xl border border-stone-900 bg-neutral-950 text-stone-500"
+                className="flex items-center justify-between px-4 py-2.5 rounded-xl border border-stone-100 dark:border-stone-900 bg-stone-50 dark:bg-neutral-950 text-stone-400 dark:text-stone-500"
               >
-                <span className="text-[11px] text-stone-400 truncate max-w-[140px]">
+                <span className="text-[11px] text-stone-500 dark:text-stone-400 truncate max-w-[140px]">
                   {entry.customerName}
                 </span>
                 <span className="text-[10px] tracking-widest">
                   {entry.stamps}/{entry.maxStamps}
                 </span>
-                <span className="text-[10px] text-stone-700">
+                <span className="text-[10px] text-stone-300 dark:text-stone-700">
                   {timeAgo(entry.time)}
                 </span>
               </div>
@@ -855,7 +856,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
   );
 }
 
-/* ── Página principal ─────────────────────────────────── */
+/* -- Pagina principal ---------------------------------------- */
 export default function AdminPage() {
   const firestore = useFirestore();
   const configRef = doc(firestore, "config", "admin");
@@ -879,7 +880,7 @@ export default function AdminPage() {
     return () => clearInterval(id);
   }, [lockout]);
 
-  // Auto-auth si la cookie de sesión sigue siendo válida
+  // Auto-auth si la cookie de sesion sigue siendo valida
   useEffect(() => {
     checkBaristaSession().then((valid) => {
       if (valid) setAuthed(true);
@@ -911,7 +912,7 @@ export default function AdminPage() {
     pinLoadingRef.current = false;
   }, []);
 
-  // Auto-submit al completar todos los dígitos
+  // Auto-submit al completar todos los digitos
   useEffect(() => {
     if (pin.length === pinLength && !authed && lockout <= 0) {
       handlePinSubmit(pin);
@@ -919,21 +920,21 @@ export default function AdminPage() {
   }, [pin, pinLength, authed, lockout, handlePinSubmit]);
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white flex flex-col">
+    <div className="min-h-screen bg-stone-50 text-stone-900 dark:bg-neutral-950 dark:text-white flex flex-col">
 
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 sm:px-10 py-5">
         <Link
           href="/"
-          className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-400 hover:text-white transition-colors duration-300 group"
+          className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors duration-300 group"
         >
-          <span className="w-4 h-px bg-stone-500 group-hover:w-7 group-hover:bg-white transition-all duration-500" />
+          <span className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
           Inicio
         </Link>
-        <span className="text-[10px] uppercase tracking-[0.45em] text-stone-500">
+        <span className="text-[10px] uppercase tracking-[0.45em] text-stone-400 dark:text-stone-500">
           La Commune
         </span>
-        <div className="w-16" />
+        <ThemeToggle />
       </nav>
 
       {/* Contenido */}
@@ -950,11 +951,11 @@ export default function AdminPage() {
               className="flex flex-col items-center gap-8 w-full"
             >
               <div className="text-center space-y-2">
-                <p className="text-[10px] uppercase tracking-[0.4em] text-stone-600">
+                <p className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">
                   Acceso barista
                 </p>
                 <h1
-                  className="text-4xl font-light tracking-wide text-stone-200"
+                  className="text-4xl font-light tracking-wide text-stone-700 dark:text-stone-200"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
                   Panel de sellos
@@ -982,34 +983,34 @@ export default function AdminPage() {
             >
               {/* Header */}
               <div className="text-center space-y-2">
-                <p className="text-[10px] uppercase tracking-[0.4em] text-stone-600">
+                <p className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">
                   Barista
                 </p>
                 <h1
-                  className="text-4xl font-light tracking-wide text-stone-200"
+                  className="text-4xl font-light tracking-wide text-stone-700 dark:text-stone-200"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
-                  {adminTab === "stamps" ? "Añadir sello"
-                    : adminTab === "menu" ? "Gestionar menú"
+                  {adminTab === "stamps" ? "Anadir sello"
+                    : adminTab === "menu" ? "Gestionar menu"
                     : adminTab === "customers" ? "Clientes"
                     : "Analytics"}
                 </h1>
               </div>
 
               {/* Tabs */}
-              <div className="flex gap-1 p-1 bg-neutral-900 border border-stone-800 rounded-xl flex-wrap justify-center">
+              <div className="flex gap-1 p-1 bg-stone-100 dark:bg-neutral-900 border border-stone-200 dark:border-stone-800 rounded-xl flex-wrap justify-center">
                 {(["stamps", "menu", "customers", "analytics"] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setAdminTab(tab)}
                     className={`px-4 py-2 rounded-lg text-[10px] uppercase tracking-[0.3em] transition-all duration-200 ${
                       adminTab === tab
-                        ? "bg-stone-200 text-neutral-900"
-                        : "text-stone-600 hover:text-stone-300"
+                        ? "bg-stone-800 text-white dark:bg-stone-200 dark:text-neutral-900"
+                        : "text-stone-400 dark:text-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
                     }`}
                   >
                     {tab === "stamps" ? "Sellos"
-                      : tab === "menu" ? "Menú"
+                      : tab === "menu" ? "Menu"
                       : tab === "customers" ? "Clientes"
                       : "Analytics"}
                   </button>

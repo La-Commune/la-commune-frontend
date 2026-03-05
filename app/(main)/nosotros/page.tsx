@@ -2,9 +2,10 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 /* ================================================
-   Fade-in helper — reutilizado en toda la página
+   Fade-in helper
 ================================================= */
 const Reveal = ({
   children,
@@ -32,41 +33,42 @@ const Reveal = ({
 const pillars = [
   {
     label: "El proceso",
-    text: "Cada variable importa. La temperatura, la molienda, el tiempo de extracción. No hay atajos porque el café lo detecta. La técnica no es un fin; es respeto hacia la materia.",
+    text: "Cada variable importa. La temperatura, la molienda, el tiempo de extraccion. No hay atajos porque el cafe lo detecta. La tecnica no es un fin; es respeto hacia la materia.",
   },
   {
     label: "La comunidad",
-    text: "El nombre lo dice todo. Este espacio existe porque hay personas que eligen lo hecho con intención — y ese acto, repetido, construye algo más grande que una taza.",
+    text: "El nombre lo dice todo. Este espacio existe porque hay personas que eligen lo hecho con intencion — y ese acto, repetido, construye algo mas grande que una taza.",
   },
 ];
 
 /* ================================================
-   NOSOTROS — Opción 2: layout editorial sin video
+   NOSOTROS
 ================================================= */
 export default function Nosotros() {
   return (
-    <main className="min-h-screen bg-neutral-950 text-stone-200 selection:bg-stone-700">
+    <main className="min-h-screen bg-stone-50 text-stone-700 dark:bg-neutral-950 dark:text-stone-200 selection:bg-stone-200 dark:selection:bg-stone-700">
 
-      {/* Nav — back link fijo */}
-      <nav className="fixed top-0 left-0 z-50 px-8 py-7">
+      {/* Nav */}
+      <nav className="fixed top-0 left-0 right-0 z-50 px-8 py-7 flex items-center justify-between">
         <Link
           href="/"
-          className="inline-flex items-center gap-3 text-[10px] uppercase tracking-[0.35em] text-stone-600 hover:text-stone-300 transition-colors duration-300 group"
+          className="inline-flex items-center gap-3 text-[10px] uppercase tracking-[0.35em] text-stone-400 dark:text-stone-600 hover:text-stone-700 dark:hover:text-stone-300 transition-colors duration-300 group"
         >
-          <span className="w-6 h-px bg-stone-700 group-hover:w-10 group-hover:bg-stone-400 transition-all duration-500" />
+          <span className="w-6 h-px bg-stone-300 dark:bg-stone-700 group-hover:w-10 group-hover:bg-stone-500 dark:group-hover:bg-stone-400 transition-all duration-500" />
           Inicio
         </Link>
+        <ThemeToggle />
       </nav>
 
-      {/* ── HERO — tipografía grande, respiración vertical ── */}
+      {/* HERO */}
       <section className="min-h-[90dvh] flex flex-col justify-end px-8 sm:px-16 pb-20 pt-36 max-w-6xl mx-auto">
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 0.2 }}
-          className="text-[10px] uppercase tracking-[0.45em] text-stone-600 mb-10"
+          className="text-[10px] uppercase tracking-[0.45em] text-stone-400 dark:text-stone-600 mb-10"
         >
-          La Commune · Quiénes somos
+          La Commune · Quienes somos
         </motion.p>
 
         <div className="overflow-hidden">
@@ -74,10 +76,10 @@ export default function Nosotros() {
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             transition={{ duration: 1.1, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="font-display text-[clamp(3rem,10vw,7rem)] font-light leading-[1.02] tracking-wide text-stone-100"
+            className="font-display text-[clamp(3rem,10vw,7rem)] font-light leading-[1.02] tracking-wide text-stone-800 dark:text-stone-100"
           >
             Trabajo<br />honesto.<br />
-            <span className="text-stone-500">Taza honesta.</span>
+            <span className="text-stone-400 dark:text-stone-500">Taza honesta.</span>
           </motion.h1>
         </div>
 
@@ -85,13 +87,13 @@ export default function Nosotros() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 0.9 }}
-          className="mt-10 text-sm text-stone-600 font-light tracking-wide max-w-xs leading-relaxed"
+          className="mt-10 text-sm text-stone-400 dark:text-stone-600 font-light tracking-wide max-w-xs leading-relaxed"
         >
-          Una cafetería de especialidad en Mineral de la Reforma construida sobre trabajo colectivo, técnica y respeto al origen.
+          Una cafeteria de especialidad en Mineral de la Reforma construida sobre trabajo colectivo, tecnica y respeto al origen.
         </motion.p>
       </section>
 
-      {/* Línea divisora */}
+      {/* Linea divisora */}
       <div className="px-8 sm:px-16">
         <motion.div
           initial={{ scaleX: 0 }}
@@ -99,34 +101,34 @@ export default function Nosotros() {
           viewport={{ once: true }}
           transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
           style={{ originX: 0 }}
-          className="h-px bg-stone-800 max-w-6xl mx-auto"
+          className="h-px bg-stone-200 dark:bg-stone-800 max-w-6xl mx-auto"
         />
       </div>
 
-      {/* ── BRAND STORY — texto expandido ── */}
+      {/* BRAND STORY */}
       <section className="px-8 sm:px-16 py-28 max-w-3xl mx-auto">
         <Reveal delay={0.15} className="mt-8">
-          <p className="text-xl sm:text-2xl text-stone-400 font-light leading-relaxed">
-            La Commune es el nombre que le ponemos a ese esfuerzo compartido. El café es el resultado visible de todo lo invisible.
+          <p className="text-xl sm:text-2xl text-stone-500 dark:text-stone-400 font-light leading-relaxed">
+            La Commune es el nombre que le ponemos a ese esfuerzo compartido. El cafe es el resultado visible de todo lo invisible.
           </p>
         </Reveal>
 
         <Reveal delay={0.3} className="mt-8">
-          <p className="text-base text-stone-600 font-light leading-relaxed">
-            El nombre no es casualidad. <em>Commune</em> — comunidad, lo que se tiene en común, lo que se construye entre varios. Aquí, eso se traduce en cadenas cortas de suministro, relación directa con tostadores mexicanos y un espacio donde cada visita alimenta algo más grande que la cafeína.
+          <p className="text-base text-stone-400 dark:text-stone-600 font-light leading-relaxed">
+            El nombre no es casualidad. <em>Commune</em> — comunidad, lo que se tiene en comun, lo que se construye entre varios. Aqui, eso se traduce en cadenas cortas de suministro, relacion directa con tostadores mexicanos y un espacio donde cada visita alimenta algo mas grande que la cafeina.
           </p>
         </Reveal>
       </section>
 
-      {/* Línea divisora */}
+      {/* Linea divisora */}
       <div className="px-8 sm:px-16">
-        <div className="h-px bg-stone-900 max-w-6xl mx-auto" />
+        <div className="h-px bg-stone-100 dark:bg-stone-900 max-w-6xl mx-auto" />
       </div>
 
-      {/* ── PILARES ── */}
+      {/* PILARES */}
       <section className="px-8 sm:px-16 py-24 max-w-6xl mx-auto">
         <Reveal>
-          <p className="text-[10px] uppercase tracking-[0.45em] text-stone-600 mb-16">
+          <p className="text-[10px] uppercase tracking-[0.45em] text-stone-400 dark:text-stone-600 mb-16">
             En lo que creemos
           </p>
         </Reveal>
@@ -137,7 +139,7 @@ export default function Nosotros() {
               <p className="text-[10px] uppercase tracking-[0.4em] text-stone-500 mb-4">
                 {pillar.label}
               </p>
-              <div className="w-5 h-px bg-stone-800 mb-6" />
+              <div className="w-5 h-px bg-stone-200 dark:bg-stone-800 mb-6" />
               <p className="text-sm text-stone-500 leading-relaxed font-light">
                 {pillar.text}
               </p>
@@ -146,43 +148,43 @@ export default function Nosotros() {
         </div>
       </section>
 
-      {/* ── MANIFESTO — cierre ── */}
+      {/* MANIFESTO */}
       <section className="px-8 sm:px-16 py-32 max-w-6xl mx-auto">
         <Reveal>
-          <blockquote className="border-l border-stone-700 pl-8 sm:pl-12">
-            <p className="font-display text-[clamp(1.8rem,5vw,3.5rem)] font-light italic text-stone-600 leading-[1.2] tracking-wide">
-              &ldquo;El café es el pretexto.<br />La comunidad, el punto.&rdquo;
+          <blockquote className="border-l border-stone-300 dark:border-stone-700 pl-8 sm:pl-12">
+            <p className="font-display text-[clamp(1.8rem,5vw,3.5rem)] font-light italic text-stone-400 dark:text-stone-600 leading-[1.2] tracking-wide">
+              &ldquo;El cafe es el pretexto.<br />La comunidad, el punto.&rdquo;
             </p>
-            <footer className="mt-6 text-[10px] uppercase tracking-[0.4em] text-stone-700">
+            <footer className="mt-6 text-[10px] uppercase tracking-[0.4em] text-stone-300 dark:text-stone-700">
               — La Commune, Mineral de la Reforma
             </footer>
           </blockquote>
         </Reveal>
       </section>
 
-      {/* ── FOOTER ── */}
-      <footer className="px-8 sm:px-16 py-12 border-t border-stone-900 max-w-6xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-        <p className="text-[10px] tracking-[0.3em] uppercase text-stone-700">
+      {/* FOOTER */}
+      <footer className="px-8 sm:px-16 py-12 border-t border-stone-100 dark:border-stone-900 max-w-6xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+        <p className="text-[10px] tracking-[0.3em] uppercase text-stone-300 dark:text-stone-700">
           © {new Date().getFullYear()} · La Commune
         </p>
         <div className="flex items-center gap-8">
           <Link
             href="/menu"
-            className="text-[10px] tracking-[0.3em] uppercase text-stone-600 hover:text-stone-300 transition-colors duration-300"
+            className="text-[10px] tracking-[0.3em] uppercase text-stone-400 dark:text-stone-600 hover:text-stone-700 dark:hover:text-stone-300 transition-colors duration-300"
           >
-            Menú
+            Menu
           </Link>
-          <span className="w-px h-3 bg-stone-800" />
+          <span className="w-px h-3 bg-stone-200 dark:bg-stone-800" />
           <Link
             href="/onboarding"
-            className="text-[10px] tracking-[0.3em] uppercase text-stone-600 hover:text-stone-300 transition-colors duration-300"
+            className="text-[10px] tracking-[0.3em] uppercase text-stone-400 dark:text-stone-600 hover:text-stone-700 dark:hover:text-stone-300 transition-colors duration-300"
           >
             Mi tarjeta
           </Link>
-          <span className="w-px h-3 bg-stone-800" />
+          <span className="w-px h-3 bg-stone-200 dark:bg-stone-800" />
           <Link
             href="/"
-            className="text-[10px] tracking-[0.3em] uppercase text-stone-600 hover:text-stone-300 transition-colors duration-300"
+            className="text-[10px] tracking-[0.3em] uppercase text-stone-400 dark:text-stone-600 hover:text-stone-700 dark:hover:text-stone-300 transition-colors duration-300"
           >
             Inicio
           </Link>

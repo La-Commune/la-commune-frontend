@@ -98,9 +98,9 @@ export function EditItemModal({
   };
 
   const inputCls =
-    "w-full bg-neutral-950 border border-stone-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-stone-700 focus:outline-none focus:border-stone-600 transition-colors";
+    "w-full bg-stone-50 dark:bg-neutral-950 border border-stone-200 dark:border-stone-800 rounded-xl px-4 py-3 text-sm text-stone-900 dark:text-white placeholder:text-stone-300 dark:placeholder:text-stone-700 focus:outline-none focus:border-stone-400 dark:focus:border-stone-600 transition-colors";
   const smallInputCls =
-    "bg-neutral-950 border border-stone-800 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-stone-700 focus:outline-none focus:border-stone-600 transition-colors";
+    "bg-stone-50 dark:bg-neutral-950 border border-stone-200 dark:border-stone-800 rounded-xl px-3 py-2.5 text-sm text-stone-900 dark:text-white placeholder:text-stone-300 dark:placeholder:text-stone-700 focus:outline-none focus:border-stone-400 dark:focus:border-stone-600 transition-colors";
 
   return (
     <motion.div
@@ -116,12 +116,12 @@ export function EditItemModal({
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 40, opacity: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="w-full max-w-md bg-neutral-900 border border-stone-800 rounded-3xl p-6 space-y-4 max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-md bg-white dark:bg-neutral-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-6 space-y-4 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <p className="text-[10px] uppercase tracking-[0.4em] text-stone-600">Editar</p>
-          <button onClick={onClose} className="text-stone-700 hover:text-stone-400 transition-colors">
+          <p className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">Editar</p>
+          <button onClick={onClose} className="text-stone-300 dark:text-stone-700 hover:text-stone-600 dark:hover:text-stone-400 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
             </svg>
@@ -134,7 +134,7 @@ export function EditItemModal({
 
         {/* Imagen */}
         <div className="space-y-2">
-          <p className="text-[10px] uppercase tracking-widest text-stone-600">Imagen (URL)</p>
+          <p className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-600">Imagen (URL)</p>
           <input
             className={`${inputCls} ${!imageUrlValid ? "border-red-800 focus:border-red-600" : ""}`}
             placeholder="https://…"
@@ -148,7 +148,7 @@ export function EditItemModal({
             </p>
           )}
           {imageUrl.trim() && imageUrlValid && (
-            <div className="relative w-full h-28 rounded-xl overflow-hidden border border-stone-800">
+            <div className="relative w-full h-28 rounded-xl overflow-hidden border border-stone-200 dark:border-stone-800">
               <Image
                 src={imageUrl.trim()}
                 alt="preview"
@@ -164,16 +164,16 @@ export function EditItemModal({
         {/* ── Precio / Tamaños ── */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-[10px] uppercase tracking-widest text-stone-600">Precio</p>
-            <div className="flex gap-1 p-0.5 bg-stone-900 border border-stone-800 rounded-lg">
+            <p className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-600">Precio</p>
+            <div className="flex gap-1 p-0.5 bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-lg">
               {(["single", "sizes"] as const).map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setPricingMode(mode)}
                   className={`px-3 py-1 rounded-md text-[10px] uppercase tracking-wider transition-all duration-150 ${
                     pricingMode === mode
-                      ? "bg-stone-700 text-stone-200"
-                      : "text-stone-600 hover:text-stone-400"
+                      ? "bg-stone-300 dark:bg-stone-700 text-stone-700 dark:text-stone-200"
+                      : "text-stone-400 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400"
                   }`}
                 >
                   {mode === "single" ? "Único" : "Por tamaño"}
@@ -184,9 +184,9 @@ export function EditItemModal({
 
           {pricingMode === "single" ? (
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-600 text-sm">$</span>
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-600 text-sm">$</span>
               <input
-                className="w-full bg-neutral-950 border border-stone-800 rounded-xl pl-8 pr-4 py-3 text-sm text-white placeholder:text-stone-700 focus:outline-none focus:border-stone-600 transition-colors"
+                className="w-full bg-stone-50 dark:bg-neutral-950 border border-stone-200 dark:border-stone-800 rounded-xl pl-8 pr-4 py-3 text-sm text-stone-900 dark:text-white placeholder:text-stone-300 dark:placeholder:text-stone-700 focus:outline-none focus:border-stone-400 dark:focus:border-stone-600 transition-colors"
                 placeholder="45"
                 type="number"
                 value={price}
@@ -204,9 +204,9 @@ export function EditItemModal({
                     onChange={(e) => updateSize(i, "label", e.target.value)}
                   />
                   <div className="relative w-24 shrink-0">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-600 text-sm">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-600 text-sm">$</span>
                     <input
-                      className="w-full pl-6 pr-3 py-2.5 bg-neutral-950 border border-stone-800 rounded-xl text-sm text-white placeholder:text-stone-700 focus:outline-none focus:border-stone-600 transition-colors"
+                      className="w-full pl-6 pr-3 py-2.5 bg-stone-50 dark:bg-neutral-950 border border-stone-200 dark:border-stone-800 rounded-xl text-sm text-stone-900 dark:text-white placeholder:text-stone-300 dark:placeholder:text-stone-700 focus:outline-none focus:border-stone-400 dark:focus:border-stone-600 transition-colors"
                       placeholder="45"
                       type="number"
                       value={size.price}
@@ -216,7 +216,7 @@ export function EditItemModal({
                   <button
                     onClick={() => removeSize(i)}
                     disabled={sizes.length === 1}
-                    className="w-9 h-9 flex items-center justify-center rounded-xl border border-stone-800 text-stone-700 hover:border-stone-600 hover:text-red-600 transition-colors disabled:opacity-20 shrink-0"
+                    className="w-9 h-9 flex items-center justify-center rounded-xl border border-stone-200 dark:border-stone-800 text-stone-300 dark:text-stone-700 hover:border-stone-400 dark:hover:border-stone-600 hover:text-red-600 transition-colors disabled:opacity-20 shrink-0"
                     aria-label="Eliminar tamaño"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
@@ -227,7 +227,7 @@ export function EditItemModal({
               ))}
               <button
                 onClick={addSize}
-                className="w-full py-2.5 rounded-xl border border-dashed border-stone-800 text-stone-600 hover:border-stone-600 hover:text-stone-400 text-[10px] uppercase tracking-widest transition-all duration-200"
+                className="w-full py-2.5 rounded-xl border border-dashed border-stone-200 dark:border-stone-800 text-stone-400 dark:text-stone-600 hover:border-stone-400 dark:hover:border-stone-600 hover:text-stone-600 dark:hover:text-stone-400 text-[10px] uppercase tracking-widest transition-all duration-200"
               >
                 + Agregar tamaño
               </button>
@@ -236,7 +236,7 @@ export function EditItemModal({
         </div>
 
         <div className="space-y-2">
-          <p className="text-[10px] uppercase tracking-widest text-stone-600">Tags</p>
+          <p className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-600">Tags</p>
           <div className="flex flex-wrap gap-2">
             {ITEM_TAGS.map((tag) => (
               <button
@@ -244,8 +244,8 @@ export function EditItemModal({
                 onClick={() => toggleTag(tag)}
                 className={`text-[10px] uppercase tracking-widest px-3 py-1.5 rounded-full border transition-all duration-150 ${
                   tags.includes(tag)
-                    ? "border-stone-400 text-stone-100 bg-stone-800"
-                    : "border-stone-800 text-stone-600 hover:border-stone-700"
+                    ? "border-stone-400 text-stone-800 dark:text-stone-100 bg-stone-200 dark:bg-stone-800"
+                    : "border-stone-200 dark:border-stone-800 text-stone-400 dark:text-stone-600 hover:border-stone-300 dark:hover:border-stone-700"
                 }`}
               >
                 {tag}
@@ -262,7 +262,7 @@ export function EditItemModal({
         <button
           onClick={handleSave}
           disabled={!name.trim() || !imageUrlValid || saving}
-          className="w-full py-3.5 rounded-2xl bg-stone-200 text-neutral-900 text-[11px] uppercase tracking-[0.35em] hover:bg-white transition-colors disabled:opacity-30 mt-2"
+          className="w-full py-3.5 rounded-2xl bg-stone-800 text-white dark:bg-stone-200 dark:text-neutral-900 text-[11px] uppercase tracking-[0.35em] hover:bg-stone-900 dark:hover:bg-white transition-colors disabled:opacity-30 mt-2"
         >
           {saving ? "Guardando…" : "Guardar cambios"}
         </button>

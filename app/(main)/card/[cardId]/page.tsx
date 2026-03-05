@@ -6,6 +6,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { StampCardView } from "@/components/ui/stamp-card";
 import { DownloadCardButton } from "@/components/ui/DownloadCardButton";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { doc } from "firebase/firestore";
 import { useFirestore, useFirestoreDocData } from "reactfire";
 import { Customer } from "@/models/customer.model";
@@ -71,17 +72,17 @@ export default function CardEntry() {
 
 if (loading || !cardId) {
     return (
-      <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center gap-10 px-4">
+      <div className="min-h-screen bg-stone-50 dark:bg-neutral-950 flex flex-col items-center justify-center gap-10 px-4">
         {/* Skeleton saludo */}
         <div className="text-center space-y-3">
-          <div className="h-2.5 w-28 bg-stone-900 rounded-full animate-pulse mx-auto" />
-          <div className="h-9 w-48 bg-stone-900 rounded-xl animate-pulse mx-auto" />
-          <div className="h-2.5 w-36 bg-stone-900 rounded-full animate-pulse mx-auto" />
+          <div className="h-2.5 w-28 bg-stone-200 dark:bg-stone-900 rounded-full animate-pulse mx-auto" />
+          <div className="h-9 w-48 bg-stone-200 dark:bg-stone-900 rounded-xl animate-pulse mx-auto" />
+          <div className="h-2.5 w-36 bg-stone-200 dark:bg-stone-900 rounded-full animate-pulse mx-auto" />
         </div>
         {/* Skeleton tarjeta */}
-        <div className="w-[320px] h-[210px] bg-stone-900 rounded-[24px] animate-pulse" />
+        <div className="w-[320px] h-[210px] bg-stone-200 dark:bg-stone-900 rounded-[24px] animate-pulse" />
         {/* Skeleton botón */}
-        <div className="h-10 w-44 bg-stone-900 rounded-full animate-pulse" />
+        <div className="h-10 w-44 bg-stone-200 dark:bg-stone-900 rounded-full animate-pulse" />
       </div>
     );
   }
@@ -150,8 +151,8 @@ function Card({
       await navigator.share({
         title: "La Commune · Tarjeta de fidelidad",
         text: name
-          ? `${name} ya tiene su tarjeta de fidelidad en La Commune ☕ Cada visita suma — a las 5 te invitan una bebida. ¡Pásate!`
-          : "Ya tengo mi tarjeta de fidelidad en La Commune ☕ Cada visita suma — a las 5 te invitan una bebida. ¡Pásate!",
+          ? `${name} ya tiene su tarjeta de fidelidad en La Commune. Cada visita suma — a las 5 te invitan una bebida.`
+          : "Ya tengo mi tarjeta de fidelidad en La Commune. Cada visita suma — a las 5 te invitan una bebida.",
         url: window.location.href,
       });
     } catch {
@@ -166,27 +167,30 @@ function Card({
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white flex flex-col">
+    <div className="min-h-screen bg-stone-50 text-stone-900 dark:bg-neutral-950 dark:text-white flex flex-col">
 
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 sm:px-10 py-5">
         <Link
           href="/"
-          className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-400 hover:text-white transition-colors duration-300 group"
+          className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors duration-300 group"
         >
-          <span className="w-4 h-px bg-stone-500 group-hover:w-7 group-hover:bg-white transition-all duration-500" />
+          <span className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
           Inicio
         </Link>
-        <span className="text-[10px] uppercase tracking-[0.45em] text-stone-500">
+        <span className="text-[10px] uppercase tracking-[0.45em] text-stone-400 dark:text-stone-500">
           La Commune
         </span>
-        <Link
-          href="/menu"
-          className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-400 hover:text-white transition-colors duration-300 group"
-        >
-          Menú
-          <span className="w-4 h-px bg-stone-500 group-hover:w-7 group-hover:bg-white transition-all duration-500" />
-        </Link>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Link
+            href="/menu"
+            className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors duration-300 group"
+          >
+            Menu
+            <span className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
+          </Link>
+        </div>
       </nav>
 
       {/* Indicador pull-to-refresh */}
@@ -199,7 +203,7 @@ function Card({
             transition={{ duration: 0.2 }}
             className="flex justify-center py-2"
           >
-            <span className="text-[9px] uppercase tracking-[0.4em] text-stone-600">
+            <span className="text-[9px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">
               Actualizando…
             </span>
           </motion.div>
@@ -216,24 +220,24 @@ function Card({
           transition={{ duration: 0.8 }}
           className="text-center space-y-2"
         >
-          <p className="text-[10px] uppercase tracking-[0.4em] text-stone-600">
+          <p className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">
             Bienvenido de vuelta
           </p>
           <h1 className="font-display text-4xl sm:text-5xl font-light tracking-wide">
             {name ? `Hola, ${name}` : "Hola"}
           </h1>
           {lastVisit && (
-            <p className="text-[11px] text-stone-600 tracking-wide">
-              Última visita: {lastVisit}
+            <p className="text-[11px] text-stone-400 dark:text-stone-600 tracking-wide">
+              Ultima visita: {lastVisit}
             </p>
           )}
           {memberSince && (
-            <p className="text-[11px] text-stone-600 tracking-wide">
+            <p className="text-[11px] text-stone-400 dark:text-stone-600 tracking-wide">
               Miembro desde {memberSince}
             </p>
           )}
           {totalVisits > 0 && (
-            <p className="text-[11px] text-stone-600 tracking-wide">
+            <p className="text-[11px] text-stone-400 dark:text-stone-600 tracking-wide">
               {totalVisits} visitas totales
             </p>
           )}
@@ -260,55 +264,13 @@ function Card({
             >
               <Link
                 href={`/card/${cardId}/redeem`}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-amber-900/30 border border-amber-700/50 text-amber-300 text-[11px] uppercase tracking-[0.3em] hover:bg-amber-900/50 hover:border-amber-600 transition-colors duration-300"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-amber-100/50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700/50 text-amber-700 dark:text-amber-300 text-[11px] uppercase tracking-[0.3em] hover:bg-amber-100 dark:hover:bg-amber-900/50 hover:border-amber-400 dark:hover:border-amber-600 transition-colors duration-300"
               >
                 Canjear bebida gratis →
               </Link>
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Acciones secundarias */}
-        {/* TODO: Mejorar implementacion de botones */}
-        {/* <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.5 }}
-          className="flex items-center gap-5 flex-wrap justify-center"
-        >
-          <DownloadCardButton />
-          <Link
-            href={`/card/${cardId}/history`}
-            className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-stone-600 hover:text-stone-300 transition-colors duration-300"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-              <circle cx="12" cy="12" r="10"/>
-              <polyline points="12 6 12 12 16 14"/>
-            </svg>
-            Historial
-          </Link>
-        </motion.div> */}
-
-        {/* CTA de compartir */}
-        {/* TODO: Reactivar cuando se tenga el contenido en instagram y algo consolidado */}
-        {/* {typeof navigator !== "undefined" && !!navigator.share && (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.7 }}
-            className="w-[320px] border border-stone-800 rounded-2xl px-6 py-5 text-center space-y-3"
-          >
-            <p className="text-[10px] uppercase tracking-[0.35em] text-stone-700">
-              El café sabe mejor en compañía
-            </p>
-            <button
-              onClick={handleShare}
-              className="w-full py-2.5 rounded-xl border border-stone-700 text-[11px] uppercase tracking-[0.3em] text-stone-400 hover:border-stone-500 hover:text-stone-200 transition-colors duration-300"
-            >
-              Invitar a La Commune
-            </button>
-          </motion.div>
-        )} */}
 
       </div>
 
@@ -320,7 +282,7 @@ function Card({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 60, opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed bottom-0 left-0 right-0 bg-neutral-900 border-t border-stone-800 px-6 py-3 text-center text-[10px] uppercase tracking-widest text-stone-500"
+            className="fixed bottom-0 left-0 right-0 bg-white dark:bg-neutral-900 border-t border-stone-200 dark:border-stone-800 px-6 py-3 text-center text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-500"
           >
             Sin conexión — tu QR sigue disponible
           </motion.div>
