@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { CoffeeBean } from "@/components/ui/CoffeeBean";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 const MOCK_MAX = 5;
 
@@ -30,17 +31,17 @@ function MockCardFront({ stamps }: { stamps: number }) {
         </p>
       </div>
 
-      {/* Título + granos */}
+      {/* Titulo + granos */}
       <div className="flex-1 flex flex-col justify-center px-5 py-3 gap-3">
         <div>
           <h2
             className="text-[17px] font-light leading-tight"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            {isComplete ? "¡Bebida de cortesía!" : "Café de la casa"}
+            {isComplete ? "¡Bebida de cortesia!" : "Cafe de la casa"}
           </h2>
           <p className="text-[10px] tracking-wide text-[#8A817A] mt-0.5">
-            {isComplete ? "Preséntala en barra" : "Cliente frecuente"}
+            {isComplete ? "Presentala en barra" : "Cliente frecuente"}
           </p>
         </div>
 
@@ -177,7 +178,7 @@ function MockStampCard() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.4, delay: 1 }}
-              className="text-[10px] uppercase tracking-[0.3em] text-stone-600"
+              className="text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600"
             >
               Toca para ver tu QR
             </motion.p>
@@ -187,24 +188,24 @@ function MockStampCard() {
 
       {/* Controles interactivos */}
       <div className="flex flex-col items-center gap-3">
-        <p className="text-[10px] uppercase tracking-[0.3em] text-stone-600">
+        <p className="text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600">
           Simula sellos
         </p>
         <div className="flex items-center gap-4">
           <button
             onClick={() => setStamps((s) => Math.max(0, s - 1))}
             disabled={stamps === 0}
-            className="w-8 h-8 rounded-full border border-stone-700 text-stone-400 hover:border-stone-500 hover:text-white transition-colors duration-200 disabled:opacity-20 text-sm"
+            className="w-8 h-8 rounded-full border border-stone-300 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:border-stone-400 dark:hover:border-stone-500 hover:text-stone-900 dark:hover:text-white transition-colors duration-200 disabled:opacity-20 text-sm"
           >
             −
           </button>
-          <span className="text-sm text-stone-400 tabular-nums w-12 text-center">
+          <span className="text-sm text-stone-500 dark:text-stone-400 tabular-nums w-12 text-center">
             {stamps} / {MOCK_MAX}
           </span>
           <button
             onClick={() => setStamps((s) => Math.min(MOCK_MAX, s + 1))}
             disabled={stamps === MOCK_MAX}
-            className="w-8 h-8 rounded-full border border-stone-700 text-stone-400 hover:border-stone-500 hover:text-white transition-colors duration-200 disabled:opacity-20 text-sm"
+            className="w-8 h-8 rounded-full border border-stone-300 dark:border-stone-700 text-stone-500 dark:text-stone-400 hover:border-stone-400 dark:hover:border-stone-500 hover:text-stone-900 dark:hover:text-white transition-colors duration-200 disabled:opacity-20 text-sm"
           >
             +
           </button>
@@ -215,25 +216,25 @@ function MockStampCard() {
 }
 
 /* ================================
-   Página de preview
+   Pagina de preview
 ================================= */
 export default function CardPreviewPage() {
   return (
-    <div className="min-h-screen bg-neutral-950 text-white flex flex-col">
+    <div className="min-h-screen bg-stone-50 text-stone-900 dark:bg-neutral-950 dark:text-white flex flex-col">
 
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 sm:px-10 py-5">
         <Link
           href="/"
-          className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-400 hover:text-white transition-colors duration-300 group"
+          className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors duration-300 group"
         >
-          <span className="w-4 h-px bg-stone-500 group-hover:w-7 group-hover:bg-white transition-all duration-500" />
+          <span className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
           Inicio
         </Link>
-        <span className="text-[10px] uppercase tracking-[0.45em] text-stone-500">
+        <span className="text-[10px] uppercase tracking-[0.45em] text-stone-400 dark:text-stone-500">
           La Commune
         </span>
-        <div className="w-16" />
+        <ThemeToggle />
       </nav>
 
       {/* Contenido */}
@@ -245,14 +246,14 @@ export default function CardPreviewPage() {
           transition={{ duration: 0.8 }}
           className="text-center space-y-3"
         >
-          <p className="text-[10px] uppercase tracking-[0.4em] text-stone-600">
+          <p className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">
             Vista previa
           </p>
           <h1 className="font-display text-4xl sm:text-5xl font-light tracking-wide">
             Tu tarjeta digital
           </h1>
-          <p className="text-sm text-stone-400 max-w-xs mx-auto leading-relaxed">
-            Acumula visitas y desbloquea tu bebida de cortesía.
+          <p className="text-sm text-stone-500 dark:text-stone-400 max-w-xs mx-auto leading-relaxed">
+            Acumula visitas y desbloquea tu bebida de cortesia.
           </p>
         </motion.div>
 
@@ -272,13 +273,13 @@ export default function CardPreviewPage() {
         >
           <Link
             href="/onboarding"
-            className="inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.35em] text-stone-200 hover:text-white transition-colors duration-300 group"
+            className="inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.35em] text-stone-700 dark:text-stone-200 hover:text-stone-900 dark:hover:text-white transition-colors duration-300 group"
           >
-            <span className="w-6 h-px bg-stone-400 group-hover:w-10 group-hover:bg-white transition-all duration-500" />
+            <span className="w-6 h-px bg-stone-400 group-hover:w-10 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
             Crear mi tarjeta real
           </Link>
-          <p className="text-[10px] text-stone-600 tracking-wide">
-            Sin contraseñas · Sin spam
+          <p className="text-[10px] text-stone-400 dark:text-stone-600 tracking-wide">
+            Sin contrasenas · Sin spam
           </p>
         </motion.div>
 

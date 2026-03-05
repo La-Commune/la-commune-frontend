@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-neutral-950 text-white flex flex-col items-center justify-center px-8">
+    <div className="min-h-screen bg-stone-50 text-stone-900 dark:bg-neutral-950 dark:text-white flex flex-col items-center justify-center px-8">
       {/* Film grain */}
       <div
         className="pointer-events-none fixed inset-0 opacity-[0.035]"
@@ -23,24 +23,24 @@ export default function NotFound() {
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         className="text-center space-y-6 max-w-sm relative"
       >
-        <p className="text-[10px] uppercase tracking-[0.4em] text-stone-600">
+        <p className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">
           Error 404
         </p>
         <h1
-          className="text-5xl sm:text-6xl font-light tracking-wide text-stone-200"
+          className="text-5xl sm:text-6xl font-light tracking-wide text-stone-700 dark:text-stone-200"
           style={{ fontFamily: "var(--font-display)" }}
         >
-          Nada aquí
+          Nada aqui
         </h1>
-        <div className="w-6 h-px bg-stone-700 mx-auto" />
+        <div className="w-6 h-px bg-stone-300 dark:bg-stone-700 mx-auto" />
         <p className="text-sm text-stone-500 leading-relaxed">
-          La página que buscas no existe<br />o fue movida.
+          La pagina que buscas no existe<br />o fue movida.
         </p>
         <Link
           href="/"
-          className="inline-flex items-center gap-3 text-[10px] uppercase tracking-[0.35em] text-stone-500 hover:text-white transition-colors duration-300 group"
+          className="inline-flex items-center gap-3 text-[10px] uppercase tracking-[0.35em] text-stone-500 hover:text-stone-900 dark:hover:text-white transition-colors duration-300 group"
         >
-          <span className="w-5 h-px bg-stone-600 group-hover:w-8 group-hover:bg-white transition-all duration-500" />
+          <span className="w-5 h-px bg-stone-400 dark:bg-stone-600 group-hover:w-8 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
           Volver al inicio
         </Link>
       </motion.div>

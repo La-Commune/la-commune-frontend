@@ -13,7 +13,7 @@ import { toast } from "@/components/ui/use-toast";
 type CustomerRow = Customer & { id: string };
 type Segment = "all" | "inactive" | "top" | "new";
 
-/* ── CSV export ─────────────────────────────────────── */
+/* -- CSV export --------------------------------------------- */
 
 function toDateStr(val: unknown): string {
   if (!val) return "";
@@ -24,7 +24,7 @@ function toDateStr(val: unknown): string {
 }
 
 function exportCSV(customers: CustomerRow[]) {
-  const headers = ["Nombre", "Teléfono", "Visitas", "Sellos", "Última visita", "Miembro desde"];
+  const headers = ["Nombre", "Telefono", "Visitas", "Sellos", "Ultima visita", "Miembro desde"];
   const rows = customers.map((c) => [
     c.name ?? "",
     c.phone ?? "",
@@ -49,7 +49,7 @@ function exportCSV(customers: CustomerRow[]) {
   URL.revokeObjectURL(url);
 }
 
-/* ── Drawer de cliente ──────────────────────────────── */
+/* -- Drawer de cliente -------------------------------------- */
 
 function CustomerDrawer({
   customer,
@@ -93,7 +93,7 @@ function CustomerDrawer({
       toast({
         variant: "destructive",
         title: "No se pudo guardar la nota",
-        description: "Revisa la conexión e intenta de nuevo.",
+        description: "Revisa la conexion e intenta de nuevo.",
         duration: 5000,
       });
     } finally {
@@ -111,7 +111,7 @@ function CustomerDrawer({
       toast({
         variant: "destructive",
         title: "No se pudo eliminar el cliente",
-        description: "Revisa la conexión o los permisos de Firestore.",
+        description: "Revisa la conexion o los permisos de Firestore.",
         duration: 5000,
       });
       setDeleting(false);
@@ -133,11 +133,11 @@ function CustomerDrawer({
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", stiffness: 350, damping: 35 }}
-        className="relative w-full max-w-sm sm:max-w-lg bg-neutral-900 border-t sm:border border-stone-800 rounded-t-3xl sm:rounded-3xl px-6 pb-12 sm:pb-8 pt-6"
+        className="relative w-full max-w-sm sm:max-w-lg bg-white dark:bg-neutral-900 border-t sm:border border-stone-200 dark:border-stone-800 rounded-t-3xl sm:rounded-3xl px-6 pb-12 sm:pb-8 pt-6"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Handle móvil */}
-        <div className="w-10 h-1 bg-stone-700 rounded-full mx-auto mb-6 sm:hidden" />
+        {/* Handle movil */}
+        <div className="w-10 h-1 bg-stone-300 dark:bg-stone-700 rounded-full mx-auto mb-6 sm:hidden" />
 
         <div className="flex flex-col sm:flex-row sm:gap-10">
 
@@ -145,7 +145,7 @@ function CustomerDrawer({
           <div className="flex-1 min-w-0 space-y-5 mb-7 sm:mb-0">
             <div className="space-y-1">
               <h2
-                className="text-2xl font-light text-stone-100"
+                className="text-2xl font-light text-stone-800 dark:text-stone-100"
                 style={{ fontFamily: "var(--font-display)" }}
               >
                 {customer.name || "Sin nombre"}
@@ -156,37 +156,37 @@ function CustomerDrawer({
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-xl border border-stone-800 bg-neutral-950 px-4 py-3 text-center">
-                <p className="text-2xl font-light text-stone-200">{customer.totalVisits ?? 0}</p>
-                <p className="text-[10px] uppercase tracking-widest text-stone-600 mt-0.5">Visitas</p>
+              <div className="rounded-xl border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-neutral-950 px-4 py-3 text-center">
+                <p className="text-2xl font-light text-stone-700 dark:text-stone-200">{customer.totalVisits ?? 0}</p>
+                <p className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-600 mt-0.5">Visitas</p>
               </div>
-              <div className="rounded-xl border border-stone-800 bg-neutral-950 px-4 py-3 text-center">
-                <p className="text-2xl font-light text-stone-200">{customer.totalStamps ?? 0}</p>
-                <p className="text-[10px] uppercase tracking-widest text-stone-600 mt-0.5">Sellos</p>
+              <div className="rounded-xl border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-neutral-950 px-4 py-3 text-center">
+                <p className="text-2xl font-light text-stone-700 dark:text-stone-200">{customer.totalStamps ?? 0}</p>
+                <p className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-600 mt-0.5">Sellos</p>
               </div>
             </div>
 
             {customer.lastVisitAt && (
               <div>
-                <p className="text-[10px] uppercase tracking-[0.35em] text-stone-600 mb-0.5">Última visita</p>
-                <p className="text-sm text-stone-400">{formatDate(customer.lastVisitAt)}</p>
+                <p className="text-[10px] uppercase tracking-[0.35em] text-stone-400 dark:text-stone-600 mb-0.5">Ultima visita</p>
+                <p className="text-sm text-stone-500 dark:text-stone-400">{formatDate(customer.lastVisitAt)}</p>
               </div>
             )}
             {customer.createdAt && (
               <div>
-                <p className="text-[10px] uppercase tracking-[0.35em] text-stone-600 mb-0.5">Miembro desde</p>
-                <p className="text-sm text-stone-400">{formatDate(customer.createdAt)}</p>
+                <p className="text-[10px] uppercase tracking-[0.35em] text-stone-400 dark:text-stone-600 mb-0.5">Miembro desde</p>
+                <p className="text-sm text-stone-500 dark:text-stone-400">{formatDate(customer.createdAt)}</p>
               </div>
             )}
 
             {/* Referidos */}
             {(referredBy || referralCount > 0) && (
               <div className="space-y-1.5">
-                <p className="text-[10px] uppercase tracking-[0.35em] text-stone-600">Referidos</p>
+                <p className="text-[10px] uppercase tracking-[0.35em] text-stone-400 dark:text-stone-600">Referidos</p>
                 {referredBy && (
                   <p className="text-[11px] text-stone-500">
                     Vino referido por{" "}
-                    <span className="text-stone-300">{referredBy}</span>
+                    <span className="text-stone-700 dark:text-stone-300">{referredBy}</span>
                     {customer.referralBonusGiven && (
                       <span className="ml-1.5 text-amber-600/70">· bono dado</span>
                     )}
@@ -195,7 +195,7 @@ function CustomerDrawer({
                 {referralCount > 0 && (
                   <p className="text-[11px] text-stone-500">
                     Ha referido a{" "}
-                    <span className="text-stone-300">{referralCount}</span>{" "}
+                    <span className="text-stone-700 dark:text-stone-300">{referralCount}</span>{" "}
                     {referralCount === 1 ? "persona" : "personas"}
                   </p>
                 )}
@@ -204,21 +204,21 @@ function CustomerDrawer({
 
             {/* Bebidas favoritas */}
             <div>
-              <p className="text-[10px] uppercase tracking-[0.35em] text-stone-600 mb-2">Bebidas favoritas</p>
+              <p className="text-[10px] uppercase tracking-[0.35em] text-stone-400 dark:text-stone-600 mb-2">Bebidas favoritas</p>
               {topDrinks === null ? (
                 <div className="flex gap-2">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-6 w-16 rounded-full bg-stone-800 animate-pulse" />
+                    <div key={i} className="h-6 w-16 rounded-full bg-stone-200 dark:bg-stone-800 animate-pulse" />
                   ))}
                 </div>
               ) : topDrinks.length === 0 ? (
-                <p className="text-[11px] text-stone-700">Sin datos aún</p>
+                <p className="text-[11px] text-stone-300 dark:text-stone-700">Sin datos aun</p>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {topDrinks.map(({ drink, count }) => (
                     <span
                       key={drink}
-                      className="px-3 py-1 rounded-full border border-stone-700 bg-neutral-900 text-[10px] uppercase tracking-widest text-stone-400"
+                      className="px-3 py-1 rounded-full border border-stone-300 dark:border-stone-700 bg-white dark:bg-neutral-900 text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400"
                     >
                       {drink} · {count}
                     </span>
@@ -229,22 +229,22 @@ function CustomerDrawer({
           </div>
 
           {/* Separador desktop */}
-          <div className="hidden sm:block w-px bg-stone-800 shrink-0" />
+          <div className="hidden sm:block w-px bg-stone-200 dark:bg-stone-800 shrink-0" />
 
           {/* Notas */}
           <div className="sm:w-52 shrink-0 flex flex-col gap-3">
-            <p className="text-[10px] uppercase tracking-[0.35em] text-stone-600">Notas del barista</p>
+            <p className="text-[10px] uppercase tracking-[0.35em] text-stone-400 dark:text-stone-600">Notas del barista</p>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={4}
               placeholder="Preferencias, alergias…"
-              className="w-full bg-neutral-950 border border-stone-800 rounded-xl px-4 py-3 text-sm text-white placeholder:text-stone-700 focus:outline-none focus:border-stone-600 transition-colors resize-none"
+              className="w-full bg-stone-50 dark:bg-neutral-950 border border-stone-200 dark:border-stone-800 rounded-xl px-4 py-3 text-sm text-stone-900 dark:text-white placeholder:text-stone-300 dark:placeholder:text-stone-700 focus:outline-none focus:border-stone-400 dark:focus:border-stone-600 transition-colors resize-none"
             />
             <button
               onClick={handleSave}
               disabled={saving}
-              className="w-full py-4 rounded-2xl bg-stone-200 text-neutral-900 text-[11px] uppercase tracking-[0.35em] hover:bg-white transition-colors disabled:opacity-30"
+              className="w-full py-4 rounded-2xl bg-stone-800 text-white dark:bg-stone-200 dark:text-neutral-900 text-[11px] uppercase tracking-[0.35em] hover:bg-stone-900 dark:hover:bg-white transition-colors disabled:opacity-30"
             >
               {saving ? "Guardando…" : saved ? "Guardado ✓" : "Guardar nota"}
             </button>
@@ -252,10 +252,10 @@ function CustomerDrawer({
         </div>
 
         {/* Separador + Eliminar */}
-        <div className="mt-8 pt-5 border-t border-stone-800/60">
+        <div className="mt-8 pt-5 border-t border-stone-200/60 dark:border-stone-800/60">
           <button
             onClick={() => setConfirming(true)}
-            className="flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-red-800 hover:text-red-600 transition-colors"
+            className="flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-red-400 dark:text-red-800 hover:text-red-600 transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5">
               <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
@@ -264,27 +264,27 @@ function CustomerDrawer({
           </button>
         </div>
 
-        {/* Overlay de confirmación destructiva */}
+        {/* Overlay de confirmacion destructiva */}
         <AnimatePresence>
           {confirming && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 rounded-t-3xl sm:rounded-3xl bg-neutral-900/95 backdrop-blur-sm flex flex-col items-center justify-center px-8 gap-6"
+              className="absolute inset-0 rounded-t-3xl sm:rounded-3xl bg-white/95 dark:bg-neutral-900/95 backdrop-blur-sm flex flex-col items-center justify-center px-8 gap-6"
             >
-              <div className="w-14 h-14 rounded-full border border-red-900/60 bg-red-950/40 flex items-center justify-center">
+              <div className="w-14 h-14 rounded-full border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/40 flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-7 h-7 text-red-600">
                   <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
                 </svg>
               </div>
 
               <div className="text-center space-y-2">
-                <p className="text-base text-stone-100 font-light">
-                  ¿Eliminar a <span className="text-white font-normal">{customer.name || "este cliente"}</span>?
+                <p className="text-base text-stone-800 dark:text-stone-100 font-light">
+                  ¿Eliminar a <span className="text-stone-900 dark:text-white font-normal">{customer.name || "este cliente"}</span>?
                 </p>
                 <p className="text-xs text-stone-500 leading-relaxed">
-                  Esta acción es irreversible. El cliente y sus datos serán eliminados del directorio permanentemente.
+                  Esta accion es irreversible. El cliente y sus datos seran eliminados del directorio permanentemente.
                 </p>
               </div>
 
@@ -292,14 +292,14 @@ function CustomerDrawer({
                 <button
                   onClick={handleDelete}
                   disabled={deleting}
-                  className="w-full py-4 rounded-2xl bg-red-900 hover:bg-red-800 text-red-100 text-[11px] uppercase tracking-[0.35em] transition-colors disabled:opacity-50"
+                  className="w-full py-4 rounded-2xl bg-red-600 dark:bg-red-900 hover:bg-red-700 dark:hover:bg-red-800 text-white dark:text-red-100 text-[11px] uppercase tracking-[0.35em] transition-colors disabled:opacity-50"
                 >
-                  {deleting ? "Eliminando…" : "Sí, eliminar"}
+                  {deleting ? "Eliminando…" : "Si, eliminar"}
                 </button>
                 <button
                   onClick={() => setConfirming(false)}
                   disabled={deleting}
-                  className="w-full py-4 rounded-2xl border border-stone-800 text-stone-400 text-[11px] uppercase tracking-[0.35em] hover:text-stone-200 hover:border-stone-700 transition-colors disabled:opacity-50"
+                  className="w-full py-4 rounded-2xl border border-stone-200 dark:border-stone-800 text-stone-500 dark:text-stone-400 text-[11px] uppercase tracking-[0.35em] hover:text-stone-700 dark:hover:text-stone-200 hover:border-stone-300 dark:hover:border-stone-700 transition-colors disabled:opacity-50"
                 >
                   Cancelar
                 </button>
@@ -312,7 +312,7 @@ function CustomerDrawer({
   );
 }
 
-/* ── Chips de segmento ──────────────────────────────── */
+/* -- Chips de segmento -------------------------------------- */
 
 const SEGMENTS: { id: Segment; label: string }[] = [
   { id: "all", label: "Todos" },
@@ -321,7 +321,7 @@ const SEGMENTS: { id: Segment; label: string }[] = [
   { id: "new", label: "Nuevos este mes" },
 ];
 
-/* ── Componente principal ───────────────────────────── */
+/* -- Componente principal ----------------------------------- */
 
 export function CustomerDirectory() {
   const firestore = useFirestore();
@@ -340,7 +340,7 @@ export function CustomerDirectory() {
         toast({
           variant: "destructive",
           title: "No se pudo cargar el directorio",
-          description: "Revisa la conexión o los permisos de Firestore.",
+          description: "Revisa la conexion o los permisos de Firestore.",
           duration: 6000,
         });
       })
@@ -349,7 +349,6 @@ export function CustomerDirectory() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Filtro de segmento
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -368,7 +367,6 @@ export function CustomerDirectory() {
     return true;
   });
 
-  // Filtro de búsqueda
   const filtered = segmented.filter((c) => {
     const q = search.toLowerCase();
     return (
@@ -387,7 +385,6 @@ export function CustomerDirectory() {
     setSelected(null);
   };
 
-  // Mapa de referidos: cuántas personas ha referido cada cliente
   const referralCountById = new Map<string, number>();
   customers.forEach((c) => {
     if (c.referrerCustomerId) {
@@ -395,14 +392,13 @@ export function CustomerDirectory() {
     }
   });
 
-  // Mapa de nombre de referidor: customerId → nombre
   const customerById = new Map(customers.map((c) => [c.id, c]));
 
   if (loading) {
     return (
       <div className="w-full max-w-2xl mx-auto space-y-2">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="h-16 rounded-2xl bg-stone-900 animate-pulse" style={{ opacity: 1 - (i - 1) * 0.2 }} />
+          <div key={i} className="h-16 rounded-2xl bg-stone-200 dark:bg-stone-900 animate-pulse" style={{ opacity: 1 - (i - 1) * 0.2 }} />
         ))}
       </div>
     );
@@ -419,8 +415,8 @@ export function CustomerDirectory() {
             onClick={() => setSegment(id)}
             className={`px-3 py-1.5 rounded-full border text-[10px] uppercase tracking-widest transition-all duration-150 ${
               segment === id
-                ? "border-stone-400 text-stone-100 bg-stone-800"
-                : "border-stone-800 text-stone-600 hover:border-stone-700 hover:text-stone-400"
+                ? "border-stone-500 dark:border-stone-400 text-stone-800 dark:text-stone-100 bg-stone-200 dark:bg-stone-800"
+                : "border-stone-200 dark:border-stone-800 text-stone-400 dark:text-stone-600 hover:border-stone-300 dark:hover:border-stone-700 hover:text-stone-600 dark:hover:text-stone-400"
             }`}
           >
             {label}
@@ -430,28 +426,28 @@ export function CustomerDirectory() {
 
       {/* Buscador */}
       <div className="relative">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-600 pointer-events-none">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 dark:text-stone-600 pointer-events-none">
           <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
         </svg>
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por nombre o teléfono…"
-          className="w-full bg-neutral-900 border border-stone-800 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder:text-stone-700 focus:outline-none focus:border-stone-600 transition-colors"
+          placeholder="Buscar por nombre o telefono…"
+          className="w-full bg-white dark:bg-neutral-900 border border-stone-200 dark:border-stone-800 rounded-xl pl-10 pr-4 py-3 text-sm text-stone-900 dark:text-white placeholder:text-stone-300 dark:placeholder:text-stone-700 focus:outline-none focus:border-stone-400 dark:focus:border-stone-600 transition-colors"
         />
       </div>
 
       {/* Conteo + exportar */}
       <div className="flex items-center justify-between">
-        <p className="text-[10px] uppercase tracking-widest text-stone-700">
+        <p className="text-[10px] uppercase tracking-widest text-stone-300 dark:text-stone-700">
           {filtered.length} {filtered.length === 1 ? "cliente" : "clientes"}
           {segment !== "all" && ` · ${SEGMENTS.find(s => s.id === segment)?.label}`}
         </p>
         {customers.length > 0 && (
           <button
             onClick={() => exportCSV(customers)}
-            className="text-[10px] uppercase tracking-[0.3em] text-stone-600 hover:text-stone-300 transition-colors duration-200"
+            className="text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 hover:text-stone-700 dark:hover:text-stone-300 transition-colors duration-200"
           >
             Exportar CSV
           </button>
@@ -464,22 +460,22 @@ export function CustomerDirectory() {
           <button
             key={customer.id}
             onClick={() => setSelected(customer)}
-            className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl border border-stone-800 bg-neutral-900 hover:bg-stone-900/80 hover:border-stone-700 transition-all duration-150 text-left group"
+            className="w-full flex items-center gap-4 px-5 py-4 rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-neutral-900 hover:bg-stone-50 dark:hover:bg-stone-900/80 hover:border-stone-300 dark:hover:border-stone-700 transition-all duration-150 text-left group"
           >
             {/* Avatar inicial */}
-            <div className="w-9 h-9 rounded-full border border-stone-700 bg-neutral-950 flex items-center justify-center shrink-0">
-              <span className="text-[13px] text-stone-400 font-light">
+            <div className="w-9 h-9 rounded-full border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-neutral-950 flex items-center justify-center shrink-0">
+              <span className="text-[13px] text-stone-500 dark:text-stone-400 font-light">
                 {(customer.name ?? "?")[0]?.toUpperCase()}
               </span>
             </div>
 
             {/* Info */}
             <div className="flex-1 min-w-0 space-y-0.5">
-              <p className="text-sm text-stone-200 truncate">
+              <p className="text-sm text-stone-700 dark:text-stone-200 truncate">
                 {customer.name || "Sin nombre"}
               </p>
               {customer.phone && (
-                <p className="text-[11px] text-stone-600 truncate">{customer.phone}</p>
+                <p className="text-[11px] text-stone-400 dark:text-stone-600 truncate">{customer.phone}</p>
               )}
             </div>
 
@@ -487,8 +483,8 @@ export function CustomerDirectory() {
             <div className="text-right shrink-0 space-y-0.5">
               <div className="flex items-center justify-end gap-1.5">
                 {(referralCountById.get(customer.id) ?? 0) > 0 && (
-                  <span className="text-[9px] uppercase tracking-widest text-amber-600/80 border border-amber-800/40 rounded-full px-1.5 py-0.5">
-                    ×{referralCountById.get(customer.id)} ref
+                  <span className="text-[9px] uppercase tracking-widest text-amber-600/80 border border-amber-300/40 dark:border-amber-800/40 rounded-full px-1.5 py-0.5">
+                    x{referralCountById.get(customer.id)} ref
                   </span>
                 )}
                 <p className="text-[12px] tabular-nums text-stone-500">
@@ -496,19 +492,19 @@ export function CustomerDirectory() {
                 </p>
               </div>
               {customer.lastVisitAt && (
-                <p className="text-[10px] text-stone-700">{formatDate(customer.lastVisitAt)}</p>
+                <p className="text-[10px] text-stone-300 dark:text-stone-700">{formatDate(customer.lastVisitAt)}</p>
               )}
             </div>
 
             {/* Flecha */}
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5 text-stone-800 group-hover:text-stone-600 transition-colors shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5 text-stone-200 dark:text-stone-800 group-hover:text-stone-400 dark:group-hover:text-stone-600 transition-colors shrink-0">
               <polyline points="9 18 15 12 9 6"/>
             </svg>
           </button>
         ))}
 
         {filtered.length === 0 && !loading && (
-          <p className="text-center text-stone-700 text-sm py-8">Sin resultados</p>
+          <p className="text-center text-stone-300 dark:text-stone-700 text-sm py-8">Sin resultados</p>
         )}
       </div>
 

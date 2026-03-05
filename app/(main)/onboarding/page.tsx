@@ -10,6 +10,7 @@ import { useFirestore } from "reactfire";
 import { createCustomer, getCustomerByPhone } from "@/services/customer.service";
 import { doc, getDoc, DocumentReference } from "firebase/firestore";
 import { createCard, getCardByCustomer } from "@/services/card.service";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export default function OnboardingPage() {
   return (
@@ -39,7 +40,6 @@ function OnboardingForm() {
     setError(null);
 
     try {
-      // Si ya existe un cliente con ese teléfono, recuperar su tarjeta
       const existing = await getCustomerByPhone(firestore, phone);
 
       if (existing) {
@@ -52,13 +52,11 @@ function OnboardingForm() {
           return;
         }
 
-        // Cliente existe pero sin tarjeta — caso raro, avisar
-        setError("Encontramos tu cuenta pero no tu tarjeta. Visítanos en barra para que te ayudemos.");
+        setError("Encontramos tu cuenta pero no tu tarjeta. Visitanos en barra para que te ayudemos.");
         setLoading(false);
         return;
       }
 
-      // Resolver referrerCustomerId desde el cardId de la URL (si existe)
       let referrerCustomerId: string | undefined;
       if (cardId) {
         try {
@@ -72,7 +70,6 @@ function OnboardingForm() {
         }
       }
 
-      // Cliente nuevo — registrar
       const customerRef = await createCustomer(firestore, {
         name,
         phone,
@@ -94,11 +91,11 @@ function OnboardingForm() {
     } catch (e: any) {
       const offline = typeof navigator !== "undefined" && !navigator.onLine;
       if (offline) {
-        setError("Sin conexión a internet. Verifica tu red e intenta de nuevo.");
+        setError("Sin conexion a internet. Verifica tu red e intenta de nuevo.");
       } else if (e?.code === "permission-denied") {
-        setError("No se pudo acceder al servicio. Intenta más tarde.");
+        setError("No se pudo acceder al servicio. Intenta mas tarde.");
       } else {
-        setError("Algo salió mal. Intenta de nuevo o visítanos en barra.");
+        setError("Algo salio mal. Intenta de nuevo o visitanos en barra.");
       }
       setLoading(false);
     }
@@ -110,21 +107,21 @@ function OnboardingForm() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white flex flex-col">
+    <div className="min-h-screen bg-stone-50 text-stone-900 dark:bg-neutral-950 dark:text-white flex flex-col">
 
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 sm:px-10 py-5">
         <Link
           href="/"
-          className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-400 hover:text-white transition-colors duration-300 group"
+          className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors duration-300 group"
         >
-          <span className="w-4 h-px bg-stone-500 group-hover:w-7 group-hover:bg-white transition-all duration-500" />
+          <span className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
           Inicio
         </Link>
-        <span className="text-[10px] uppercase tracking-[0.45em] text-stone-500">
+        <span className="text-[10px] uppercase tracking-[0.45em] text-stone-400 dark:text-stone-500">
           La Commune
         </span>
-        <div className="w-16" />
+        <ThemeToggle />
       </nav>
 
       {/* Contenido */}
@@ -137,34 +134,34 @@ function OnboardingForm() {
         >
           {/* Header */}
           <div className="space-y-3">
-            <p className="text-[10px] uppercase tracking-[0.4em] text-stone-600">
+            <p className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">
               Programa de fidelidad
             </p>
             <h1 className="font-display text-4xl font-light tracking-wide">
               Tu tarjeta, siempre contigo
             </h1>
-            <p className="text-sm leading-relaxed text-stone-400">
-              Ingresa tu número de WhatsApp. Si ya tienes tarjeta, te llevamos directo a ella.
+            <p className="text-sm leading-relaxed text-stone-500 dark:text-stone-400">
+              Ingresa tu numero de WhatsApp. Si ya tienes tarjeta, te llevamos directo a ella.
             </p>
           </div>
 
           {/* Form */}
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label htmlFor="name" className="block text-[10px] uppercase tracking-[0.3em] text-stone-600 text-left">
-                Nombre <span className="text-stone-700">(opcional)</span>
+              <label htmlFor="name" className="block text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 text-left">
+                Nombre <span className="text-stone-300 dark:text-stone-700">(opcional)</span>
               </label>
               <Input
                 id="name"
                 placeholder="Tu nombre"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="text-base text-center bg-neutral-900 border-stone-700 text-white placeholder:text-stone-600 focus:border-stone-500"
+                className="text-base text-center bg-white dark:bg-neutral-900 border-stone-300 dark:border-stone-700 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600 focus:border-stone-500"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="phone" className="block text-[10px] uppercase tracking-[0.3em] text-stone-600 text-left">
+              <label htmlFor="phone" className="block text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 text-left">
                 WhatsApp <span className="text-red-500/70">*</span>
               </label>
               <Input
@@ -173,12 +170,12 @@ function OnboardingForm() {
                 type="tel"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                placeholder="10 dígitos"
+                placeholder="10 digitos"
                 value={phone}
                 onChange={handlePhoneChange}
-                className="text-base text-center tracking-widest bg-neutral-900 border-stone-700 text-white placeholder:text-stone-600 focus:border-stone-500"
+                className="text-base text-center tracking-widest bg-white dark:bg-neutral-900 border-stone-300 dark:border-stone-700 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600 focus:border-stone-500"
               />
-              <p className="text-[11px] text-stone-600 text-right">
+              <p className="text-[11px] text-stone-400 dark:text-stone-600 text-right">
                 {phone.length}/10
               </p>
             </div>
@@ -192,27 +189,27 @@ function OnboardingForm() {
               />
               <span>
                 Acepto recibir mensajes por WhatsApp relacionados con mi tarjeta y
-                promociones del café.
+                promociones del cafe.
               </span>
             </label>
           </div>
 
           {/* Error */}
           {error && (
-            <p className="text-[11px] text-red-400 tracking-wide">{error}</p>
+            <p className="text-[11px] text-red-500 dark:text-red-400 tracking-wide">{error}</p>
           )}
 
           {/* CTA */}
           <div className="space-y-4">
             <Button
-              className="w-full rounded-full bg-white text-neutral-900 py-6 text-sm tracking-wide transition hover:bg-stone-100 disabled:opacity-30"
+              className="w-full rounded-full bg-stone-800 text-white dark:bg-white dark:text-neutral-900 py-6 text-sm tracking-wide transition hover:bg-stone-900 dark:hover:bg-stone-100 disabled:opacity-30"
               onClick={handleSubmit}
               disabled={!isValidPhone || loading}
             >
               {loading ? "Un momento…" : "Continuar"}
             </Button>
-            <p className="text-[11px] text-stone-600 tracking-wide">
-              Sin contraseñas · Sin spam
+            <p className="text-[11px] text-stone-400 dark:text-stone-600 tracking-wide">
+              Sin contrasenas · Sin spam
             </p>
           </div>
         </motion.div>

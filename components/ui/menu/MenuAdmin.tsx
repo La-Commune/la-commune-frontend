@@ -37,19 +37,19 @@ const SectionCard = memo(function SectionCard({
 }: SectionCardProps) {
   return (
     <div
-      className={`rounded-2xl border border-stone-800 overflow-hidden transition-opacity duration-300 ${
+      className={`rounded-2xl border border-stone-200 dark:border-stone-800 overflow-hidden transition-opacity duration-300 ${
         !section.active ? "opacity-40" : ""
       }`}
     >
       {/* Header sección */}
-      <div className="flex items-center justify-between px-5 py-5 bg-neutral-900">
+      <div className="flex items-center justify-between px-5 py-5 bg-white dark:bg-neutral-900">
         <div className="min-w-0">
           <p className={`text-[11px] uppercase tracking-[0.4em] font-medium ${
-            section.type === "food" ? "text-amber-500" : "text-stone-300"
+            section.type === "food" ? "text-amber-500" : "text-stone-600 dark:text-stone-300"
           }`}>
             {section.title}
           </p>
-          <p className="text-[11px] text-stone-600 mt-1 truncate">{section.description}</p>
+          <p className="text-[11px] text-stone-400 dark:text-stone-600 mt-1 truncate">{section.description}</p>
         </div>
         <div className="flex items-center gap-3 shrink-0 ml-4">
           <Toggle
@@ -59,7 +59,7 @@ const SectionCard = memo(function SectionCard({
           />
           <button
             onClick={() => onDeleteSection(section)}
-            className="text-stone-800 hover:text-red-700 transition-colors"
+            className="text-stone-200 dark:text-stone-800 hover:text-red-700 transition-colors"
             aria-label="Eliminar sección"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
@@ -71,12 +71,12 @@ const SectionCard = memo(function SectionCard({
       </div>
 
       {/* Items */}
-      <ul className="divide-y divide-stone-800/40 bg-neutral-950">
+      <ul className="divide-y divide-stone-200/40 dark:divide-stone-800/40 bg-stone-50 dark:bg-neutral-950">
         {(section.items ?? []).map((item) => (
           <li key={item.id}>
             <button
               onClick={() => onItemClick(item, section.id!)}
-              className="w-full flex items-center gap-4 px-5 py-4 hover:bg-stone-900/50 active:bg-stone-900 transition-colors duration-150 text-left group min-h-[56px]"
+              className="w-full flex items-center gap-4 px-5 py-4 hover:bg-stone-100/50 dark:hover:bg-stone-900/50 active:bg-stone-100 dark:active:bg-stone-900 transition-colors duration-150 text-left group min-h-[56px]"
             >
               {item.imageUrl ? (
                 <Image
@@ -91,7 +91,7 @@ const SectionCard = memo(function SectionCard({
               ) : (
                 <span
                   className={`w-2 h-2 rounded-full shrink-0 transition-colors mt-0.5 ${
-                    item.available ? "bg-stone-500" : "bg-stone-800"
+                    item.available ? "bg-stone-500" : "bg-stone-200 dark:bg-stone-800"
                   }`}
                 />
               )}
@@ -99,7 +99,7 @@ const SectionCard = memo(function SectionCard({
               <span className="flex-1 min-w-0 space-y-0.5">
                 <span
                   className={`block text-[15px] leading-snug transition-colors ${
-                    item.available ? "text-stone-200" : "text-stone-700"
+                    item.available ? "text-stone-700 dark:text-stone-200" : "text-stone-300 dark:text-stone-700"
                   }`}
                 >
                   {item.name}
@@ -112,7 +112,7 @@ const SectionCard = memo(function SectionCard({
                 </span>
                 {item.ingredients.length > 0 && (
                   <span className={`block text-[11px] truncate transition-colors ${
-                    item.available ? "text-stone-600" : "text-stone-800"
+                    item.available ? "text-stone-400 dark:text-stone-600" : "text-stone-200 dark:text-stone-800"
                   }`}>
                     {item.ingredients.slice(0, 3).join(" · ")}
                     {item.ingredients.length > 3 ? " · …" : ""}
@@ -123,20 +123,20 @@ const SectionCard = memo(function SectionCard({
               <span className="shrink-0 text-right space-y-0.5">
                 {item.sizes ? (
                   <span className={`block text-[12px] tabular-nums transition-colors ${
-                    item.available ? "text-stone-600" : "text-stone-800"
+                    item.available ? "text-stone-400 dark:text-stone-600" : "text-stone-200 dark:text-stone-800"
                   }`}>
                     ${item.sizes[0].price}+
                   </span>
                 ) : item.price ? (
                   <span className={`block text-[13px] tabular-nums transition-colors ${
-                    item.available ? "text-stone-500" : "text-stone-800"
+                    item.available ? "text-stone-500" : "text-stone-200 dark:text-stone-800"
                   }`}>
                     ${item.price}
                   </span>
                 ) : null}
               </span>
 
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5 text-stone-800 group-hover:text-stone-600 transition-colors shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-3.5 h-3.5 text-stone-200 dark:text-stone-800 group-hover:text-stone-400 dark:group-hover:text-stone-600 transition-colors shrink-0">
                 <polyline points="9 18 15 12 9 6"/>
               </svg>
             </button>
@@ -145,10 +145,10 @@ const SectionCard = memo(function SectionCard({
       </ul>
 
       {/* Agregar item */}
-      <div className="bg-neutral-950 px-5 pb-5 pt-2">
+      <div className="bg-stone-50 dark:bg-neutral-950 px-5 pb-5 pt-2">
         <button
           onClick={() => onAddItem(section.id!)}
-          className="w-full py-3.5 rounded-2xl border border-dashed border-stone-800/80 text-stone-700 hover:border-stone-600 hover:text-stone-400 text-[10px] uppercase tracking-widest transition-all duration-200"
+          className="w-full py-3.5 rounded-2xl border border-dashed border-stone-200/80 dark:border-stone-800/80 text-stone-300 dark:text-stone-700 hover:border-stone-400 dark:hover:border-stone-600 hover:text-stone-600 dark:hover:text-stone-400 text-[10px] uppercase tracking-widest transition-all duration-200"
         >
           + Agregar item
         </button>
@@ -249,7 +249,7 @@ export function MenuAdmin() {
     return (
       <div className="w-full max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="rounded-2xl bg-stone-900 animate-pulse" style={{ height: 220, opacity: 1 - (i - 1) * 0.2 }} />
+          <div key={i} className="rounded-2xl bg-stone-200 dark:bg-stone-900 animate-pulse" style={{ height: 220, opacity: 1 - (i - 1) * 0.2 }} />
         ))}
       </div>
     );
@@ -274,7 +274,7 @@ export function MenuAdmin() {
       {/* Nueva sección */}
       <button
         onClick={() => setAddingSection(true)}
-        className="w-full mt-3 py-5 rounded-2xl border border-dashed border-stone-800 text-stone-600 hover:border-stone-600 hover:text-stone-400 text-[10px] uppercase tracking-widest transition-all duration-200"
+        className="w-full mt-3 py-5 rounded-2xl border border-dashed border-stone-200 dark:border-stone-800 text-stone-400 dark:text-stone-600 hover:border-stone-400 dark:hover:border-stone-600 hover:text-stone-600 dark:hover:text-stone-400 text-[10px] uppercase tracking-widest transition-all duration-200"
       >
         + Nueva sección
       </button>

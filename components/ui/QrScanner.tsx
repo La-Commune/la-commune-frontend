@@ -35,9 +35,9 @@ export function QrScanner({ onScan, onClose }: Props) {
         if (!stopped) {
           setStatus("error");
           if (err instanceof Error && err.message.includes("Permission")) {
-            setErrorMsg("Permiso de cámara denegado");
+            setErrorMsg("Permiso de camara denegado");
           } else {
-            setErrorMsg("No se pudo iniciar la cámara");
+            setErrorMsg("No se pudo iniciar la camara");
           }
         }
       });
@@ -59,9 +59,9 @@ export function QrScanner({ onScan, onClose }: Props) {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.97 }}
       transition={{ duration: 0.3 }}
-      className="w-full rounded-2xl overflow-hidden border border-stone-800 bg-neutral-900"
+      className="w-full rounded-2xl overflow-hidden border border-stone-200 dark:border-stone-800 bg-white dark:bg-neutral-900"
     >
-      {/* Visor de cámara */}
+      {/* Visor de camara */}
       <div className="relative w-full aspect-square bg-black">
         <video
           ref={videoRef}
@@ -70,7 +70,7 @@ export function QrScanner({ onScan, onClose }: Props) {
           playsInline
         />
 
-        {/* Overlay oscuro en los bordes (guía de escaneo) */}
+        {/* Overlay oscuro en los bordes (guia de escaneo) */}
         <div className="absolute inset-0 pointer-events-none">
           {/* Marco de escaneo */}
           <div className="absolute inset-0 flex items-center justify-center">
@@ -85,7 +85,7 @@ export function QrScanner({ onScan, onClose }: Props) {
                 <div key={i} className={`absolute w-6 h-6 border-stone-300 ${cls}`} />
               ))}
 
-              {/* Línea de escaneo animada */}
+              {/* Linea de escaneo animada */}
               {status === "ready" && (
                 <motion.div
                   className="absolute left-0 right-0 h-px bg-stone-300/70"
@@ -101,7 +101,7 @@ export function QrScanner({ onScan, onClose }: Props) {
         {status === "loading" && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60">
             <p className="text-[10px] uppercase tracking-[0.3em] text-stone-400 animate-pulse">
-              Iniciando cámara…
+              Iniciando camara…
             </p>
           </div>
         )}
@@ -111,7 +111,7 @@ export function QrScanner({ onScan, onClose }: Props) {
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80 px-6 text-center">
             <p className="text-[10px] uppercase tracking-widest text-red-400">{errorMsg}</p>
             <p className="text-[10px] text-stone-600">
-              Verifica los permisos de cámara en tu navegador
+              Verifica los permisos de camara en tu navegador
             </p>
           </div>
         )}
@@ -119,12 +119,12 @@ export function QrScanner({ onScan, onClose }: Props) {
 
       {/* Footer */}
       <div className="px-5 py-4 flex items-center justify-between">
-        <p className="text-[10px] uppercase tracking-[0.3em] text-stone-600">
+        <p className="text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600">
           {status === "ready" ? "Apunta al QR del cliente" : ""}
         </p>
         <button
           onClick={handleClose}
-          className="text-[10px] uppercase tracking-[0.3em] text-stone-500 hover:text-white transition-colors duration-200"
+          className="text-[10px] uppercase tracking-[0.3em] text-stone-500 hover:text-stone-900 dark:hover:text-white transition-colors duration-200"
         >
           Cancelar
         </button>

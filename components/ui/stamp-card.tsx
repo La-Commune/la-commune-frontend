@@ -109,7 +109,7 @@ export function StampCardView({ cardId }: { cardId: string }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.3 }}
-            className="text-[10px] uppercase tracking-[0.3em] text-stone-300"
+            className="text-[10px] uppercase tracking-[0.3em] text-stone-600 dark:text-stone-300"
           >
             Sello añadido ✓
           </motion.p>
@@ -120,7 +120,7 @@ export function StampCardView({ cardId }: { cardId: string }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4, delay: 0.6 }}
-            className="text-[10px] uppercase tracking-[0.3em] text-stone-600"
+            className="text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600"
           >
             Toca para ver tu QR
           </motion.p>
@@ -131,7 +131,7 @@ export function StampCardView({ cardId }: { cardId: string }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
-            className="text-[10px] uppercase tracking-[0.3em] text-stone-600"
+            className="text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600"
           >
             Toca para volver
           </motion.p>
