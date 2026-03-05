@@ -7,6 +7,7 @@ import { Reward } from "@/models/reward.model";
 import { CoffeeBean } from "./CoffeeBean";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { useTheme } from "next-themes";
 
 function useCountUp(target: number, duration = 500) {
   const [count, setCount] = useState(target);
@@ -38,6 +39,8 @@ export function StampCardFront({
   onComplete: () => void;
   onStampAdded: () => void;
 }) {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const firestore = useFirestore();
   const ref = doc(firestore, "cards", cardId);
   const { data } = useFirestoreDocData(ref);
@@ -96,18 +99,26 @@ export function StampCardFront({
 
   return (
     <div
-      className="absolute inset-0 backface-hidden rounded-[24px] overflow-hidden text-[#2B2B2B] shadow-[0_12px_40px_rgba(0,0,0,0.14)] flex flex-col"
-      style={{ background: "linear-gradient(145deg, #FAF7F4 0%, #F0E9E0 100%)" }}
+      className="absolute inset-0 backface-hidden rounded-[24px] overflow-hidden shadow-[0_12px_40px_rgba(0,0,0,0.14)] flex flex-col"
+      style={{
+        background: isDark
+          ? "linear-gradient(145deg, #1A1412 0%, #2A2220 100%)"
+          : "linear-gradient(145deg, #FAF7F4 0%, #F0E9E0 100%)",
+        color: isDark ? "#E8DDD5" : "#2B2B2B",
+      }}
     >
       {/* Header con marca */}
-      <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[#E8E0D8]">
+      <div
+        className="flex items-center justify-between px-5 pt-4 pb-3"
+        style={{ borderBottom: `1px solid ${isDark ? "#3A3230" : "#E8E0D8"}` }}
+      >
         <p
-          className="text-[13px] font-light tracking-[0.35em] uppercase text-[#2B2B2B]"
-          style={{ fontFamily: "var(--font-display)" }}
+          className="text-[13px] font-light tracking-[0.35em] uppercase"
+          style={{ fontFamily: "var(--font-display)", color: isDark ? "#D4C8BE" : "#2B2B2B" }}
         >
           La Commune
         </p>
-        <p className="text-[9px] tracking-widest uppercase text-[#A89E97]">
+        <p className="text-[10px] tracking-widest uppercase" style={{ color: isDark ? "#7A706A" : "#A89E97" }}>
           {isComplete ? "Completada" : "Fidelidad"}
         </p>
       </div>
@@ -117,11 +128,11 @@ export function StampCardFront({
         <div>
           <h2
             className="text-[17px] font-light leading-tight"
-            style={{ fontFamily: "var(--font-display)" }}
+            style={{ fontFamily: "var(--font-display)", color: isDark ? "#E8DDD5" : "#2B2B2B" }}
           >
             {isComplete ? `¡${rewardName}!` : "Café de la casa"}
           </h2>
-          <p className="text-[10px] tracking-wide text-[#8A817A] mt-0.5">
+          <p className="text-[10px] tracking-wide mt-0.5" style={{ color: isDark ? "#7A706A" : "#8A817A" }}>
             {isComplete ? "Preséntala en barra" : "Cliente frecuente"}
           </p>
         </div>
@@ -137,7 +148,7 @@ export function StampCardFront({
         </div>
 
         {progressMessage && (
-          <p className="text-[9px] tracking-widest uppercase text-[#A89E97]">
+          <p className="text-[10px] tracking-widest uppercase" style={{ color: isDark ? "#7A706A" : "#A89E97" }}>
             {progressMessage}
           </p>
         )}
@@ -145,13 +156,13 @@ export function StampCardFront({
 
       {/* Barra de progreso + conteo */}
       <div className="px-5 pb-4 space-y-2">
-        <div className="h-[2px] bg-[#E8E0D8] rounded-full overflow-hidden">
+        <div className="h-[2px] rounded-full overflow-hidden" style={{ background: isDark ? "#3A3230" : "#E8E0D8" }}>
           <motion.div
             className="h-full rounded-full"
             style={{
               background: isComplete
                 ? "linear-gradient(90deg, #8A6A3A, #C4954A)"
-                : "#3A2F2A",
+                : isDark ? "#C4954A" : "#3A2F2A",
             }}
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
@@ -159,10 +170,10 @@ export function StampCardFront({
           />
         </div>
         <div className="flex justify-between">
-          <p className="text-[9px] tracking-widest uppercase text-[#A89E97]">
+          <p className="text-[10px] tracking-widest uppercase" style={{ color: isDark ? "#7A706A" : "#A89E97" }}>
             {animatedStamps} de {card.maxStamps} visitas
           </p>
-          <p className="text-[9px] text-[#A89E97]">
+          <p className="text-[10px]" style={{ color: isDark ? "#7A706A" : "#A89E97" }}>
             {isComplete
               ? "✓ Lista"
               : `${remaining} restante${remaining !== 1 ? "s" : ""}`}

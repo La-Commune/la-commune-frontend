@@ -2,9 +2,12 @@
 
 import { QRCodeCanvas } from "qrcode.react";
 import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
 
 export function StampCardBack({ cardId }: { cardId: string }) {
   const [origin, setOrigin] = useState<string | null>(null);
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -15,18 +18,23 @@ export function StampCardBack({ cardId }: { cardId: string }) {
   return (
     <div
       id="stamp-card-back"
-      className="absolute inset-0 backface-hidden rotate-y-180 rounded-[24px] overflow-hidden text-[#2B2B2B] shadow-[0_12px_40px_rgba(0,0,0,0.14)] flex flex-col items-center justify-between px-5 py-4"
-      style={{ background: "linear-gradient(145deg, #FAF7F4 0%, #F0E9E0 100%)" }}
+      className="absolute inset-0 backface-hidden rotate-y-180 rounded-[24px] overflow-hidden shadow-[0_12px_40px_rgba(0,0,0,0.14)] flex flex-col items-center justify-between px-5 py-4"
+      style={{
+        background: isDark
+          ? "linear-gradient(145deg, #1A1412 0%, #2A2220 100%)"
+          : "linear-gradient(145deg, #FAF7F4 0%, #F0E9E0 100%)",
+        color: isDark ? "#E8DDD5" : "#2B2B2B",
+      }}
     >
       {/* Marca */}
       <div className="text-center space-y-1.5">
         <p
-          className="text-[15px] font-light tracking-[0.45em] uppercase text-[#2B2B2B]"
-          style={{ fontFamily: "var(--font-display)" }}
+          className="text-[15px] font-light tracking-[0.45em] uppercase"
+          style={{ fontFamily: "var(--font-display)", color: isDark ? "#D4C8BE" : "#2B2B2B" }}
         >
           La Commune
         </p>
-        <div className="w-5 h-px bg-[#C7B7A3] mx-auto" />
+        <div className="w-5 h-px mx-auto" style={{ background: isDark ? "#4A3F3A" : "#C7B7A3" }} />
       </div>
 
       {/* QR */}
@@ -40,15 +48,15 @@ export function StampCardBack({ cardId }: { cardId: string }) {
             fgColor="#2B2B2B"
           />
         </div>
-        <p className="text-[9px] tracking-[0.2em] uppercase text-[#A89E97]">
+        <p className="text-[10px] tracking-[0.2em] uppercase" style={{ color: isDark ? "#7A706A" : "#A89E97" }}>
           Escanea en barra
         </p>
       </div>
 
       {/* Footer */}
       <p
-        className="text-[11px] tracking-wide text-[#8A817A]"
-        style={{ fontFamily: "var(--font-display)" }}
+        className="text-[11px] tracking-wide"
+        style={{ fontFamily: "var(--font-display)", color: isDark ? "#7A706A" : "#8A817A" }}
       >
         Gracias por volver
       </p>

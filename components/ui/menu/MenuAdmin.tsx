@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, memo } from "react";
+import { useEffect, useState, useCallback, useMemo, memo } from "react";
 import Image from "next/image";
 import { AnimatePresence } from "framer-motion";
 import { useFirestore } from "reactfire";
@@ -104,10 +104,10 @@ const SectionCard = memo(function SectionCard({
                 >
                   {item.name}
                   {item.seasonal && (
-                    <span className="ml-2 text-[9px] uppercase tracking-widest text-emerald-700/80">Temp</span>
+                    <span className="ml-2 text-[10px] uppercase tracking-widest text-emerald-700/80">Temp</span>
                   )}
                   {item.highlight && (
-                    <span className="ml-2 text-[9px] uppercase tracking-widest text-amber-700/80">Esp</span>
+                    <span className="ml-2 text-[10px] uppercase tracking-widest text-amber-700/80">Esp</span>
                   )}
                 </span>
                 {item.ingredients.length > 0 && (
@@ -161,6 +161,24 @@ export function MenuAdmin() {
   const firestore = useFirestore();
   const [sections, setSections] = useState<MenuSection[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredSections = useMemo(() => {
+    if (!searchQuery.trim()) return sections;
+    const q = searchQuery.toLowerCase();
+    return sections
+      .map((s) => ({
+        ...s,
+        items: (s.items ?? []).filter(
+          (item) =>
+            item.name.toLowerCase().includes(q) ||
+            item.ingredients.some((ing) => ing.toLowerCase().includes(q)) ||
+            item.tags?.some((t) => t.toLowerCase().includes(q))
+        ),
+      }))
+      .filter((s) => (s.items ?? []).length > 0 || s.title.toLowerCase().includes(q));
+  }, [sections, searchQuery]);
 
   // Overlays
   const [drawerItem, setDrawerItem] = useState<{ item: MenuItem; sectionId: string } | null>(null);
@@ -258,8 +276,35 @@ export function MenuAdmin() {
   return (
     <div className="w-full max-w-4xl mx-auto">
 
+      {/* Search */}
+      <div className="mb-4">
+        <div className="relative">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-300 dark:text-stone-700">
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Buscar items..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-neutral-900 text-sm text-stone-700 dark:text-stone-300 placeholder:text-stone-300 dark:placeholder:text-stone-700 focus:outline-none focus:border-stone-400 dark:focus:border-stone-600 transition-colors"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-300 dark:text-stone-700 hover:text-stone-500 transition-colors"
+              aria-label="Limpiar busqueda"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 items-start">
-        {sections.map((section) => (
+        {filteredSections.map((section) => (
           <SectionCard
             key={section.id}
             section={section}
@@ -270,6 +315,19 @@ export function MenuAdmin() {
           />
         ))}
       </div>
+
+      {/* No results for search */}
+      {searchQuery && filteredSections.length === 0 && (
+        <div className="text-center py-12 space-y-2">
+          <p className="text-stone-400 dark:text-stone-500 text-sm">Sin resultados para &ldquo;{searchQuery}&rdquo;</p>
+          <button
+            onClick={() => setSearchQuery("")}
+            className="text-[10px] uppercase tracking-widest text-stone-300 dark:text-stone-700 hover:text-stone-600 dark:hover:text-stone-400 transition-colors underline underline-offset-4"
+          >
+            Limpiar busqueda
+          </button>
+        </div>
+      )}
 
       {/* Nueva sección */}
       <button

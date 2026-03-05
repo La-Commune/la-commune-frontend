@@ -45,6 +45,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className={cn(sans.variable, display.variable, sans.className)}>
         <ThemeProvider>
           <MyFirebaseProvider>
+            <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-3 focus:py-1.5 focus:rounded-md focus:bg-stone-800 focus:text-white focus:text-xs focus:uppercase focus:tracking-widest">
+              Saltar al contenido
+            </a>
             {children}
             <Toaster />
             <PwaRegister />

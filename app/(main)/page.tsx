@@ -11,6 +11,7 @@ import {
 } from "framer-motion";
 import React, { useRef, useState, useEffect } from "react";
 import { SplashScreen } from "@/components/ui/SplashScreen";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 /* ===============================
    Animated Text (línea por línea)
@@ -64,6 +65,7 @@ interface SectionProps {
   onSecondaryCtaClick?: () => void;
   align?: "center" | "left";
   lazy?: boolean;
+  scrollIndicator?: boolean;
 }
 
 const PremiumSection: React.FC<SectionProps> = ({
@@ -80,6 +82,7 @@ const PremiumSection: React.FC<SectionProps> = ({
   onSecondaryCtaClick,
   align = "center",
   lazy = false,
+  scrollIndicator = false,
 }) => {
   const router = useRouter();
   const ref = useRef(null);
@@ -332,6 +335,25 @@ const PremiumSection: React.FC<SectionProps> = ({
           </motion.div>
         )}
       </div>
+
+      {/* Scroll indicator */}
+      {scrollIndicator && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 2.5, duration: 1 }}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2"
+        >
+          <span className="text-[10px] uppercase tracking-[0.3em] text-stone-400">
+            Scroll
+          </span>
+          <motion.div
+            animate={{ y: [0, 6, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            className="w-px h-6 bg-gradient-to-b from-stone-400 to-transparent"
+          />
+        </motion.div>
+      )}
     </section>
   );
 };
@@ -385,7 +407,7 @@ export default function Home() {
     : { text: "Registrar mi tarjeta", link: "/onboarding" };
 
   return (
-    <main className="h-[100dvh] overflow-y-scroll snap-y snap-mandatory bg-neutral-950">
+    <main id="main-content" className="h-[100dvh] overflow-y-scroll snap-y snap-mandatory bg-neutral-950">
       <SplashScreen />
 
       {/* Hero — centrado, marca como eyebrow */}
@@ -397,6 +419,7 @@ export default function Home() {
         videoPoster="/images/poster-hero.jpg"
         ctaText="Ver menú"
         ctaLink="/menu"
+        scrollIndicator
       />
     
 
@@ -549,7 +572,7 @@ export default function Home() {
             {/* Acceso discreto para personal */}
             <Link
               href="/admin"
-              className="mt-2 text-[9px] tracking-[0.3em] uppercase text-stone-800 hover:text-stone-600 transition-colors duration-300"
+              className="mt-2 text-[10px] tracking-[0.3em] uppercase text-stone-800 hover:text-stone-600 transition-colors duration-300"
             >
               Personal
             </Link>

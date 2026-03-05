@@ -102,11 +102,11 @@ export function PromosAdmin() {
                       {promo.title}
                     </span>
                     {live && (
-                      <span className="text-[9px] uppercase tracking-widest bg-amber-100 dark:bg-amber-600/15 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-500/50 rounded-full px-2 py-0.5">
+                      <span className="text-[10px] uppercase tracking-widest bg-amber-100 dark:bg-amber-600/15 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-500/50 rounded-full px-2 py-0.5">
                         Activa
                       </span>
                     )}
-                    <span className="text-[9px] uppercase tracking-widest bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 rounded-full px-2 py-0.5">
+                    <span className="text-[10px] uppercase tracking-widest bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 rounded-full px-2 py-0.5">
                       {promo.type}
                     </span>
                   </div>

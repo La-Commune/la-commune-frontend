@@ -168,7 +168,7 @@ function Card({
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-900 dark:bg-neutral-950 dark:text-white flex flex-col">
+    <div id="main-content" className="min-h-screen bg-stone-50 text-stone-900 dark:bg-neutral-950 dark:text-white flex flex-col">
 
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 sm:px-10 py-5">
@@ -204,8 +204,8 @@ function Card({
             transition={{ duration: 0.2 }}
             className="flex justify-center py-2"
           >
-            <span className="text-[9px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">
-              Actualizando…
+            <span className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">
+              Actualizando...
             </span>
           </motion.div>
         )}
