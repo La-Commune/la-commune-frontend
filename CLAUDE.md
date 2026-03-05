@@ -38,7 +38,7 @@ app/(main)/
   page.tsx          — Landing page (marketing)
   onboarding/       — Registro de cliente nuevo (nombre + WhatsApp)
   card/[cardId]/    — Vista de tarjeta del cliente (sellos + QR + stats)
-  admin/            — Panel de barista (PIN protegido, tabs: Sellos + Menú)
+  admin/            — Panel de barista (PIN protegido, tabs: Sellos + Menú + Promos + Clientes + Analytics)
   menu/             — Menú del café público (carga desde Firestore, imprimible con print:)
   login/            — Login (referencia, no producción activa)
 ```
@@ -54,6 +54,7 @@ app/(main)/
 | `config/admin` | PIN del barista como HMAC (pinHmac, pinLength) |
 | `menu-sections` | Secciones del menú (title, description, type, order, active, schemaVersion) |
 | `menu-sections/{id}/items` | Items del menú como subcolección (name, price?, sizes?, ingredients, note?, available, tags, highlight, seasonal, order, schemaVersion) |
+| `promotions` | Cupones/promos temporales (title, description, type, startsAt, endsAt, daysOfWeek, active, appliesTo?, order, schemaVersion) |
 
 ### Por qué subcolección para items del menú
 - Actualizar disponibilidad de un item = update de 1 doc, no reescribir toda la sección
@@ -62,6 +63,12 @@ app/(main)/
 
 ## Modelos TypeScript
 
+- `models/promotion.model.ts` — `Promotion`
+  - `Promotion.type: "2x1" | "descuento" | "gratis" | "otro"` — tipo de promo
+  - `Promotion.startsAt / endsAt` — rango de fechas (Firestore Timestamps)
+  - `Promotion.daysOfWeek: number[]` — filtro por día de la semana (0=Dom…6=Sab). Vacío = todos los días
+  - `Promotion.active` — toggle del barista para habilitar/deshabilitar
+  - `Promotion.appliesTo?: string` — texto libre ("Lattes", "Espresso", etc.)
 - `models/menu.model.ts` — `MenuSection`, `MenuItem`, `SizeOption`
   - `MenuItem.sizes?: SizeOption[]` — tamaños con precio (ej: "10 oz" / "12 oz")
   - `MenuItem.price?: number` — precio único (mutuamente exclusivo con `sizes`)
@@ -74,6 +81,8 @@ app/(main)/
 
 - `services/customer.service.ts` — `createCustomer`, `getCustomerByPhone`, `getCardByCustomer`
 - `services/card.service.ts` — `createCard`, `addStamp` (transaccional), `getCardByCustomer`
+- `services/promotion.service.ts` — `getPromotions`, `getActivePromotions`, `addPromotion`, `updatePromotion`, `deletePromotion`
+  - `getActivePromotions` filtra por `active`, rango de fechas y día de la semana
 - `services/menu.service.ts` — `getFullMenu`, `updateMenuItem`, `addMenuItem`, `deleteMenuItem`, `addMenuSection`, `updateMenuSection`, `deleteMenuSection`
   - `updateMenuItem` acepta `clearFields?: (keyof MenuItem)[]` para usar `deleteField()` de Firestore (necesario al cambiar de precio único a tamaños o viceversa)
 - `app/actions/verifyAdminPin.ts` — Server Action para validar el PIN del admin con `crypto.timingSafeEqual`
@@ -86,6 +95,10 @@ app/(main)/
   - Desktop: dos columnas en drawer — detalles completos + acciones
   - `EditItemModal` — edición de item con toggle "Único / Por tamaño" para precio en oz
   - Todas las sheets responsive: `items-end sm:items-center`, `rounded-t-3xl sm:rounded-3xl`
+- `components/ui/promos/PromosAdmin.tsx` — Panel de gestión de promos (CRUD, toggle active)
+- `components/ui/promos/AddPromoSheet.tsx` — Sheet para crear nueva promo
+- `components/ui/promos/EditPromoSheet.tsx` — Sheet para editar promo existente
+- `components/ui/promos/PromoBanner.tsx` — Banner de promos activas (visible en `/menu` y `/card/[cardId]`)
 - `components/ui/stamp-card.tsx` — Tarjeta con haptic feedback (`navigator.vibrate(80)`)
 - `components/ui/StampCardFront.tsx` — Frente de tarjeta con mensaje de progreso dinámico
 - `components/ui/PwaRegister.tsx` — Prompt de instalación PWA (iOS hint + Android `beforeinstallprompt`)
@@ -123,6 +136,7 @@ Ver `.env.example`. El archivo de secretos real es `.env.local` (no commitear).
 - `customers`, `cards` — create y read públicos
 - `stamp-events` — solo escritura (create)
 - `config/admin` — lectura pública, escritura restringida a campos `pinHmac` y `pinLength`
+- `promotions` — lectura pública, escritura abierta (la seguridad real la da el PIN en la UI)
 - `menu-sections` y `menu-sections/{id}/items` — lectura pública, escritura abierta (la seguridad real la da el PIN en la UI)
 
 ## Patrones y convenciones

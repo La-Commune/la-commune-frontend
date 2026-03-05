@@ -54,6 +54,15 @@ service cloud.firestore {
                             && request.resource.data.title.size() <= 100;
       allow delete: if true;
     }
+    // promotions — lectura publica; escritura abierta (protegida por PIN en la UI)
+    match /promotions/{promoId} {
+      allow read: if true;
+      allow create, update: if request.resource.data.title is string
+                            && request.resource.data.title.size() > 0
+                            && request.resource.data.title.size() <= 200;
+      allow delete: if true;
+    }
+
     match /menu-sections/{sectionId}/items/{itemId} {
       allow read: if true;
       allow create, update: if request.resource.data.name is string

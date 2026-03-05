@@ -9,6 +9,7 @@ import { Card } from "@/models/card.model";
 import { Customer } from "@/models/customer.model";
 import { QrScanner } from "@/components/ui/QrScanner";
 import { MenuAdmin } from "@/components/ui/MenuAdmin";
+import { PromosAdmin } from "@/components/ui/promos/PromosAdmin";
 import { CustomerDirectory } from "@/components/ui/CustomerDirectory";
 import { AnalyticsDashboard } from "@/components/ui/AnalyticsDashboard";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -867,7 +868,7 @@ export default function AdminPage() {
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
   const [pinLoading, setPinLoading] = useState(false);
-  const [adminTab, setAdminTab] = useState<"stamps" | "menu" | "customers" | "analytics">("stamps");
+  const [adminTab, setAdminTab] = useState<"stamps" | "menu" | "promos" | "customers" | "analytics">("stamps");
   const [lockout, setLockout] = useState(0);
   const pinLoadingRef = useRef(false);
 
@@ -979,7 +980,7 @@ export default function AdminPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5 }}
-              className={`flex flex-col items-center gap-6 w-full ${adminTab === "menu" ? "justify-start" : ""}`}
+              className={`flex flex-col items-center gap-6 w-full ${adminTab === "menu" || adminTab === "promos" ? "justify-start" : ""}`}
             >
               {/* Header */}
               <div className="text-center space-y-2">
@@ -992,6 +993,7 @@ export default function AdminPage() {
                 >
                   {adminTab === "stamps" ? "Anadir sello"
                     : adminTab === "menu" ? "Gestionar menu"
+                    : adminTab === "promos" ? "Promociones"
                     : adminTab === "customers" ? "Clientes"
                     : "Analytics"}
                 </h1>
@@ -999,7 +1001,7 @@ export default function AdminPage() {
 
               {/* Tabs */}
               <div className="flex gap-1 p-1 bg-stone-100 dark:bg-neutral-900 border border-stone-200 dark:border-stone-800 rounded-xl flex-wrap justify-center">
-                {(["stamps", "menu", "customers", "analytics"] as const).map((tab) => (
+                {(["stamps", "menu", "promos", "customers", "analytics"] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setAdminTab(tab)}
@@ -1011,6 +1013,7 @@ export default function AdminPage() {
                   >
                     {tab === "stamps" ? "Sellos"
                       : tab === "menu" ? "Menu"
+                      : tab === "promos" ? "Promos"
                       : tab === "customers" ? "Clientes"
                       : "Analytics"}
                   </button>
@@ -1041,6 +1044,18 @@ export default function AdminPage() {
                     className="w-full"
                   >
                     <MenuAdmin />
+                  </motion.div>
+                )}
+                {adminTab === "promos" && (
+                  <motion.div
+                    key="promos-view"
+                    initial={{ opacity: 0, x: 8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -8 }}
+                    transition={{ duration: 0.2 }}
+                    className="w-full"
+                  >
+                    <PromosAdmin />
                   </motion.div>
                 )}
                 {adminTab === "customers" && (
