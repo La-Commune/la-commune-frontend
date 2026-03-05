@@ -1,43 +1,44 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useFirestore } from "reactfire";
-import { doc } from "firebase/firestore";
-import { getCardByCustomer } from "@/services/card.service";
+import { useEffect } from "react";
+import { getCustomerSession } from "@/app/actions/customerSession";
 
 export default function CardPage() {
   const router = useRouter();
-  const firestore = useFirestore();
-
-  const [card, setCard] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadCard = async () => {
+    async function resolve() {
       const customerId = localStorage.getItem("customerId");
-      const cardId = localStorage.getItem("cardId");      
+      const cardId = localStorage.getItem("cardId");
 
-      if (!customerId) {
-        router.replace("/onboarding");
+      if (customerId && cardId) {
+        router.replace("/card/" + cardId);
         return;
       }
 
-      if (!cardId) {
-        router.replace("/onboarding");
-        return;
+      // Cookie fallback
+      try {
+        const session = await getCustomerSession();
+        if (session) {
+          localStorage.setItem("customerId", session.customerId);
+          localStorage.setItem("cardId", session.cardId);
+          router.replace("/card/" + session.cardId);
+          return;
+        }
+      } catch {
+        // fall through
       }
 
-      router.replace("/card/" + cardId);
+      router.replace("/recover");
+    }
 
-    };
-
-    loadCard();
-  }, [firestore, router]);
+    resolve();
+  }, [router]);
 
   return (
     <div className="flex flex-1 items-center justify-center">
-      <p className="text-sm text-stone-500">Cargando tu tarjeta…</p>
+      <p className="text-sm text-stone-500">Cargando tu tarjeta...</p>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { useFirestore } from "reactfire";
 import { StampEvent } from "@/models/stamp-event.model";
 import { getStampEventsByCard } from "@/services/card.service";
 import { timeAgo } from "@/lib/utils";
+import { getCustomerSession } from "@/app/actions/customerSession";
 
 type EventRow = StampEvent & { id: string };
 
@@ -77,17 +78,32 @@ export default function HistoryPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    // Verificar acceso: solo el dueño de la tarjeta puede ver el historial
-    const storedCardId = localStorage.getItem("cardId");
-    if (!storedCardId || storedCardId !== cardId) {
-      router.replace(`/onboarding?cardId=${cardId}`);
-      return;
-    }
+    async function init() {
+      const storedCardId = localStorage.getItem("cardId");
+      let authorized = storedCardId === cardId;
 
-    getStampEventsByCard(firestore, cardId)
-      .then(setEvents)
-      .catch(() => setError("No se pudo cargar el historial"))
-      .finally(() => setLoading(false));
+      if (!authorized) {
+        try {
+          const session = await getCustomerSession();
+          if (session?.cardId === cardId) {
+            localStorage.setItem("cardId", session.cardId);
+            localStorage.setItem("customerId", session.customerId);
+            authorized = true;
+          }
+        } catch { /* fall through */ }
+      }
+
+      if (!authorized) {
+        router.replace("/recover");
+        return;
+      }
+
+      getStampEventsByCard(firestore, cardId)
+        .then(setEvents)
+        .catch(() => setError("No se pudo cargar el historial"))
+        .finally(() => setLoading(false));
+    }
+    init();
   }, [cardId, firestore, router]);
 
   const groups = groupEventsByDate(events);
