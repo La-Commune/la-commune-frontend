@@ -33,6 +33,7 @@ export default function CafeMenu() {
   const [error, setError] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [activeFilter, setActiveFilterState] = useState<string | null>(null);
+  const [activeTag, setActiveTag] = useState<string | null>(null);
 
   useEffect(() => {
     const saved = sessionStorage.getItem("menu-tab-filter");
@@ -82,10 +83,30 @@ export default function CafeMenu() {
   const hasFood = sections.some((s) => s.type === "food");
   const hasDrinks = sections.some((s) => s.type === "drink");
 
+  const allTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    sections.forEach((s) =>
+      (s.items ?? []).forEach((item) =>
+        item.tags?.forEach((t) => tagSet.add(t))
+      )
+    );
+    return Array.from(tagSet).sort();
+  }, [sections]);
+
   const visibleSections = useMemo(() => {
-    if (!activeFilter) return sections;
-    return sections.filter((s) => s.type === activeFilter);
-  }, [sections, activeFilter]);
+    let filtered = activeFilter ? sections.filter((s) => s.type === activeFilter) : sections;
+    if (activeTag) {
+      filtered = filtered
+        .map((s) => ({
+          ...s,
+          items: (s.items ?? []).filter((item) =>
+            item.tags?.some((t) => t === activeTag)
+          ),
+        }))
+        .filter((s) => (s.items ?? []).length > 0);
+    }
+    return filtered;
+  }, [sections, activeFilter, activeTag]);
 
   const tabs = useMemo(() => {
     const t: { label: string; value: string | null }[] = [{ label: "Todo", value: null }];
@@ -95,7 +116,7 @@ export default function CafeMenu() {
   }, [hasDrinks, hasFood]);
 
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-900 dark:bg-neutral-950 dark:text-white print:min-h-0 print:bg-white print:text-neutral-900">
+    <div id="main-content" className="min-h-screen bg-stone-50 text-stone-900 dark:bg-neutral-950 dark:text-white print:min-h-0 print:bg-white print:text-neutral-900">
 
       {/* Nav — oculta al imprimir */}
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 sm:px-10 py-5 bg-stone-50/80 dark:bg-neutral-950/80 backdrop-blur-sm print:hidden">
@@ -149,6 +170,33 @@ export default function CafeMenu() {
                 </button>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Tag filter chips */}
+        {!loading && allTags.length > 0 && (
+          <div className="flex justify-center gap-2 mb-10 flex-wrap print:hidden">
+            {allTags.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                className={`text-[10px] uppercase tracking-[0.2em] px-3 py-1 rounded-full border transition-all duration-200 ${
+                  activeTag === tag
+                    ? "bg-stone-800 text-white border-stone-800 dark:bg-stone-200 dark:text-neutral-900 dark:border-stone-200"
+                    : "text-stone-400 dark:text-stone-600 border-stone-200/60 dark:border-stone-800/60 hover:border-stone-400 dark:hover:border-stone-600 hover:text-stone-600 dark:hover:text-stone-400"
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
+            {activeTag && (
+              <button
+                onClick={() => setActiveTag(null)}
+                className="text-[10px] uppercase tracking-[0.2em] px-3 py-1 text-stone-300 dark:text-stone-700 hover:text-stone-500 dark:hover:text-stone-500 transition-colors"
+              >
+                Limpiar
+              </button>
+            )}
           </div>
         )}
 
@@ -224,7 +272,7 @@ export default function CafeMenu() {
           <div className="text-center py-20 space-y-2 print:hidden">
             <p className="text-stone-400 dark:text-stone-500 text-sm">Sin items con ese filtro</p>
             <button
-              onClick={() => setActiveFilter(null)}
+              onClick={() => { setActiveFilter(null); setActiveTag(null); }}
               className="text-[10px] uppercase tracking-widest text-stone-300 dark:text-stone-700 hover:text-stone-600 dark:hover:text-stone-400 transition-colors duration-200 underline underline-offset-4"
             >
               Ver todo
@@ -278,7 +326,7 @@ export default function CafeMenu() {
                       const isAvailable = item.available !== false;
 
                       return (
-                        <li key={item.id ?? item.name} className={`py-4 space-y-1.5 ${!isAvailable ? "opacity-40" : ""}`}>
+                        <li key={item.id ?? item.name} className={`py-4 space-y-1.5 ${!isAvailable ? "opacity-50" : ""}`}>
 
                           {/* Imagen */}
                           {item.imageUrl && <MenuItemImage src={item.imageUrl} alt={item.name} />}
@@ -291,12 +339,12 @@ export default function CafeMenu() {
                                   {item.name}
                                 </span>
                                 {item.highlight && (
-                                  <span className="text-[9px] uppercase tracking-widest bg-amber-100 dark:bg-amber-600/15 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-500/50 rounded-full px-2 py-0.5 print:bg-transparent print:text-amber-700 print:border-amber-600">
+                                  <span className="text-[10px] uppercase tracking-widest bg-amber-100 dark:bg-amber-600/15 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-500/50 rounded-full px-2 py-0.5 print:bg-transparent print:text-amber-700 print:border-amber-600">
                                     Especial
                                   </span>
                                 )}
                                 {item.seasonal && (
-                                  <span className="text-[9px] uppercase tracking-widest bg-emerald-50 dark:bg-emerald-600/10 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/40 rounded-full px-2 py-0.5 print:bg-transparent print:text-emerald-700 print:border-emerald-600">
+                                  <span className="text-[10px] uppercase tracking-widest bg-emerald-50 dark:bg-emerald-600/10 text-emerald-700 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/40 rounded-full px-2 py-0.5 print:bg-transparent print:text-emerald-700 print:border-emerald-600">
                                     Temporada
                                   </span>
                                 )}
@@ -356,9 +404,9 @@ export default function CafeMenu() {
                           )}
 
                           {!isAvailable && (
-                            <p className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-600 print:text-neutral-400 mt-1">
-                              No disponible hoy
-                            </p>
+                            <span className="inline-block text-[9px] uppercase tracking-widest bg-stone-200 dark:bg-stone-800 text-stone-500 dark:text-stone-400 rounded-full px-2.5 py-0.5 mt-1 print:bg-neutral-200 print:text-neutral-500">
+                              Agotado
+                            </span>
                           )}
                         </li>
                       );
@@ -405,8 +453,8 @@ export default function CafeMenu() {
             </p>
             <span className="w-8 h-px bg-neutral-300" />
           </div>
-          <p className="text-[9px] uppercase tracking-[0.3em] text-neutral-400">
-            Efectivo · Tarjeta vía Mercado Pago
+          <p className="text-[10px] uppercase tracking-[0.3em] text-neutral-400">
+            Efectivo · Tarjeta via Mercado Pago
           </p>
         </div>
 

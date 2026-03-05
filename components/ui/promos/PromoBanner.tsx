@@ -33,27 +33,39 @@ function useActivePromos() {
  */
 export function PromoBannerInline() {
   const promos = useActivePromos();
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    if (promos.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % promos.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [promos.length]);
 
   if (promos.length === 0) return null;
 
+  const promo = promos[current];
+
   return (
     <div className="w-full space-y-3 print:hidden">
-      <AnimatePresence>
-        {promos.map((promo, i) => (
+      <div className="text-center space-y-1.5">
+        <div className="flex items-center justify-center gap-3">
+          <span className="w-5 h-px bg-amber-400/40 dark:bg-amber-600/30" />
+          <p className="text-[10px] uppercase tracking-[0.35em] text-amber-600/80 dark:text-amber-400/70">
+            Promo
+          </p>
+          <span className="w-5 h-px bg-amber-400/40 dark:bg-amber-600/30" />
+        </div>
+        <AnimatePresence mode="wait">
           <motion.div
             key={promo.id}
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: i * 0.1 }}
-            className="text-center space-y-1.5"
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-1.5"
           >
-            <div className="flex items-center justify-center gap-3">
-              <span className="w-5 h-px bg-amber-400/40 dark:bg-amber-600/30" />
-              <p className="text-[10px] uppercase tracking-[0.35em] text-amber-600/80 dark:text-amber-400/70">
-                Promo
-              </p>
-              <span className="w-5 h-px bg-amber-400/40 dark:bg-amber-600/30" />
-            </div>
             <p className="font-display text-lg sm:text-xl font-light tracking-wide text-stone-700 dark:text-stone-200">
               {promo.title}
             </p>
@@ -63,21 +75,39 @@ export function PromoBannerInline() {
               </p>
             )}
             <div className="flex items-center justify-center gap-2 pt-0.5">
-              <span className="text-[9px] uppercase tracking-[0.3em] text-stone-300 dark:text-stone-700">
+              <span className="text-[10px] uppercase tracking-[0.3em] text-stone-300 dark:text-stone-700">
                 {formatRange(promo.startsAt, promo.endsAt)}
               </span>
               {promo.appliesTo && (
                 <>
                   <span className="w-px h-2.5 bg-stone-200 dark:bg-stone-800" />
-                  <span className="text-[9px] uppercase tracking-[0.3em] text-stone-300 dark:text-stone-700">
+                  <span className="text-[10px] uppercase tracking-[0.3em] text-stone-300 dark:text-stone-700">
                     {promo.appliesTo}
                   </span>
                 </>
               )}
             </div>
           </motion.div>
-        ))}
-      </AnimatePresence>
+        </AnimatePresence>
+
+        {/* Pagination dots */}
+        {promos.length > 1 && (
+          <div className="flex justify-center gap-1.5 pt-2">
+            {promos.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrent(i)}
+                className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                  i === current
+                    ? "bg-amber-500/70 scale-110"
+                    : "bg-stone-300 dark:bg-stone-700 hover:bg-stone-400 dark:hover:bg-stone-600"
+                }`}
+                aria-label={`Ver promo ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

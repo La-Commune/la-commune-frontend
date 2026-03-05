@@ -31,8 +31,12 @@ function OnboardingForm() {
   const [consentWhatsApp, setConsentWhatsApp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [phoneTouched, setPhoneTouched] = useState(false);
 
   const isValidPhone = phone.length === 10;
+  const phoneError = phoneTouched && phone.length > 0 && phone.length < 10
+    ? "Ingresa los 10 digitos"
+    : null;
 
   const handleSubmit = async () => {
     if (!phone) return;
@@ -107,7 +111,7 @@ function OnboardingForm() {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-900 dark:bg-neutral-950 dark:text-white flex flex-col">
+    <div id="main-content" className="min-h-screen bg-stone-50 text-stone-900 dark:bg-neutral-950 dark:text-white flex flex-col">
 
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 sm:px-10 py-5">
@@ -173,11 +177,21 @@ function OnboardingForm() {
                 placeholder="10 digitos"
                 value={phone}
                 onChange={handlePhoneChange}
-                className="text-base text-center tracking-widest bg-white dark:bg-neutral-900 border-stone-300 dark:border-stone-700 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600 focus:border-stone-500"
+                onBlur={() => setPhoneTouched(true)}
+                className={`text-base text-center tracking-widest bg-white dark:bg-neutral-900 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600 focus:border-stone-500 ${
+                  phoneError ? "border-red-400 dark:border-red-500" : "border-stone-300 dark:border-stone-700"
+                }`}
               />
-              <p className="text-[11px] text-stone-400 dark:text-stone-600 text-right">
-                {phone.length}/10
-              </p>
+              <div className="flex justify-between">
+                {phoneError ? (
+                  <p className="text-[11px] text-red-500 dark:text-red-400">{phoneError}</p>
+                ) : (
+                  <span />
+                )}
+                <p className={`text-[11px] ${isValidPhone ? "text-emerald-500" : "text-stone-400 dark:text-stone-600"}`}>
+                  {phone.length}/10{isValidPhone && " ✓"}
+                </p>
+              </div>
             </div>
 
             <label className="flex items-start gap-3 text-xs text-stone-500 leading-snug text-left">
@@ -206,7 +220,15 @@ function OnboardingForm() {
               onClick={handleSubmit}
               disabled={!isValidPhone || loading}
             >
-              {loading ? "Un momento…" : "Continuar"}
+              {loading ? (
+                <span className="inline-flex items-center gap-2">
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Un momento...
+                </span>
+              ) : "Continuar"}
             </Button>
             <p className="text-[11px] text-stone-400 dark:text-stone-600 tracking-wide">
               Sin contrasenas · Sin spam

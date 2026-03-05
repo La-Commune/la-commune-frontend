@@ -39,6 +39,7 @@ export function StampCardView({ cardId }: { cardId: string }) {
   const handleComplete = useCallback(() => {
     if (completed) return;
     setCompleted(true);
+    if ("vibrate" in navigator) navigator.vibrate([50, 30, 100]);
     fireConfetti();
   }, [completed, fireConfetti]);
 
