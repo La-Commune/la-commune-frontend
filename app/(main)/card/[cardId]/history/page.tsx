@@ -154,13 +154,20 @@ export default function HistoryPage() {
         )}
 
         {!loading && !error && events.length === 0 && (
-          <div className="text-center mt-20 space-y-3">
-            <p className="text-stone-500 text-sm leading-relaxed">
-              Aún no hay visitas registradas.
+          <div className="text-center mt-20 space-y-4">
+            <p className="text-stone-400 text-sm leading-relaxed">
+              Tu historial aparecera aqui cuando hagas tu primera visita.
             </p>
-            <p className="text-[10px] uppercase tracking-widest text-stone-800">
-              Cada café cuenta — te esperamos
+            <p className="text-[11px] text-stone-600 leading-relaxed max-w-[30ch] mx-auto">
+              Pide un cafe en la barra y el barista escaneara tu QR para agregar un sello.
             </p>
+            <Link
+              href={`/card/${cardId}`}
+              className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest text-stone-500 hover:text-white transition-colors mt-2"
+            >
+              <span className="w-4 h-px bg-stone-700" />
+              Ver mi tarjeta
+            </Link>
           </div>
         )}
 

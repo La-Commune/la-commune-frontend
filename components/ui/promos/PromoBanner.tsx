@@ -17,14 +17,16 @@ function formatRange(start: Timestamp | string, end: Timestamp | string): string
 function useActivePromos() {
   const firestore = useFirestore();
   const [promos, setPromos] = useState<Promotion[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     getActivePromotions(firestore)
       .then(setPromos)
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoaded(true));
   }, [firestore]);
 
-  return promos;
+  return { promos, loaded };
 }
 
 /**
@@ -32,23 +34,40 @@ function useActivePromos() {
  * Used in the card page below the greeting.
  */
 export function PromoBannerInline() {
-  const promos = useActivePromos();
+  const { promos, loaded } = useActivePromos();
   const [current, setCurrent] = useState(0);
+  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
-    if (promos.length <= 1) return;
+    if (promos.length <= 1 || paused) return;
     const interval = setInterval(() => {
       setCurrent((prev) => (prev + 1) % promos.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, [promos.length]);
+  }, [promos.length, paused]);
+
+  if (!loaded) {
+    return (
+      <div className="w-full space-y-2 animate-pulse print:hidden">
+        <div className="h-2 w-16 bg-stone-200 dark:bg-stone-800 rounded-full mx-auto" />
+        <div className="h-5 w-40 bg-stone-200 dark:bg-stone-800 rounded mx-auto" />
+        <div className="h-3 w-32 bg-stone-200 dark:bg-stone-800 rounded mx-auto" />
+      </div>
+    );
+  }
 
   if (promos.length === 0) return null;
 
   const promo = promos[current];
 
   return (
-    <div className="w-full space-y-3 print:hidden">
+    <div
+      className="w-full space-y-3 print:hidden"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onTouchStart={() => setPaused(true)}
+      onTouchEnd={() => setPaused(false)}
+    >
       <div className="text-center space-y-1.5">
         <div className="flex items-center justify-center gap-3">
           <span className="w-5 h-px bg-amber-400/40 dark:bg-amber-600/30" />
@@ -97,12 +116,12 @@ export function PromoBannerInline() {
               <button
                 key={i}
                 onClick={() => setCurrent(i)}
-                className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
                   i === current
-                    ? "bg-amber-500/70 scale-110"
+                    ? "bg-amber-500/70 scale-125"
                     : "bg-stone-300 dark:bg-stone-700 hover:bg-stone-400 dark:hover:bg-stone-600"
                 }`}
-                aria-label={`Ver promo ${i + 1}`}
+                aria-label={`Ver promo ${i + 1} de ${promos.length}`}
               />
             ))}
           </div>
@@ -117,18 +136,19 @@ export function PromoBannerInline() {
  * Shows the first active promo as a compact one-liner.
  */
 export function PromoBannerSticky() {
-  const promos = useActivePromos();
+  const { promos } = useActivePromos();
   const [dismissed, setDismissed] = useState(false);
   const [current, setCurrent] = useState(0);
+  const [paused, setPaused] = useState(false);
 
   // Rotate promos every 5s if multiple
   useEffect(() => {
-    if (promos.length <= 1) return;
+    if (promos.length <= 1 || paused) return;
     const interval = setInterval(() => {
       setCurrent((prev) => (prev + 1) % promos.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, [promos.length]);
+  }, [promos.length, paused]);
 
   if (promos.length === 0 || dismissed) return null;
 
@@ -143,7 +163,11 @@ export function PromoBannerSticky() {
         transition={{ type: "spring", stiffness: 300, damping: 30, delay: 1 }}
         className="fixed bottom-0 left-0 right-0 z-40 print:hidden"
       >
-        <div className="bg-stone-50/90 dark:bg-neutral-950/90 backdrop-blur-md border-t border-stone-200/60 dark:border-stone-800/60">
+        <div
+          className="bg-stone-50/90 dark:bg-neutral-950/90 backdrop-blur-md border-t border-stone-200/60 dark:border-stone-800/60"
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+        >
           <div className="max-w-5xl mx-auto px-4 sm:px-8 py-3 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <span className="shrink-0 text-[9px] uppercase tracking-[0.3em] text-amber-600/80 dark:text-amber-400/60 border border-amber-300/50 dark:border-amber-700/30 rounded-full px-2 py-0.5">
@@ -184,13 +208,15 @@ export function PromoBannerSticky() {
 
           {/* Progress dots for multiple promos */}
           {promos.length > 1 && (
-            <div className="flex justify-center gap-1 pb-2">
+            <div className="flex justify-center gap-1.5 pb-2">
               {promos.map((_, i) => (
-                <span
+                <button
                   key={i}
-                  className={`w-1 h-1 rounded-full transition-colors duration-300 ${
-                    i === current ? "bg-amber-500/60" : "bg-stone-300 dark:bg-stone-800"
+                  onClick={() => setCurrent(i)}
+                  className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                    i === current ? "bg-amber-500/70 scale-110" : "bg-stone-300 dark:bg-stone-800 hover:bg-stone-400 dark:hover:bg-stone-600"
                   }`}
+                  aria-label={`Ver promo ${i + 1} de ${promos.length}`}
                 />
               ))}
             </div>
