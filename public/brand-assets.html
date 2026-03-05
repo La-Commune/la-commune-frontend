@@ -84,7 +84,7 @@
 <body>
 
   <h1>La Commune</h1>
-  <p class="page-sub">Brand Assets · WhatsApp Business</p>
+  <p class="page-sub">Brand Assets · WhatsApp Business · GitHub</p>
 
   <!-- ─── PERFIL 640×640 ─── -->
   <div class="section">
@@ -115,6 +115,54 @@
         <line x1="12" y1="15" x2="12" y2="3"/>
       </svg>
       Descargar PNG 800 × 800
+    </button>
+  </div>
+
+  <!-- ─── GITHUB SOCIAL PREVIEW 1280×640 ─── -->
+  <div class="section">
+    <p class="section-label">GitHub — Social Preview — 1280 × 640 px · fondo claro</p>
+    <canvas id="c-gh-social" width="640" height="320"></canvas>
+    <p class="canvas-note">Vista previa al 50 % — se descarga en 1280 × 640</p>
+    <br/>
+    <button class="btn" id="btn-gh-social" onclick="download('gh-social')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Descargar PNG 1280 × 640
+    </button>
+  </div>
+
+  <!-- ─── GITHUB README BANNER 1200×280 ─── -->
+  <div class="section">
+    <p class="section-label">GitHub — README Banner — 1200 × 280 px · fondo claro</p>
+    <canvas id="c-gh-banner" width="600" height="140"></canvas>
+    <p class="canvas-note">Vista previa al 50 % — se descarga en 1200 × 280</p>
+    <br/>
+    <button class="btn" id="btn-gh-banner" onclick="download('gh-banner')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Descargar PNG 1200 × 280
+    </button>
+  </div>
+
+  <!-- ─── GITHUB AVATAR CLARO 640×640 ─── -->
+  <div class="section">
+    <p class="section-label">GitHub — Avatar claro — 640 × 640 px (se recorta en círculo)</p>
+    <canvas id="c-gh-avatar" width="320" height="320"></canvas>
+    <p class="canvas-note">Vista previa al 50 % — se descarga en 640 × 640</p>
+    <br/>
+    <button class="btn" id="btn-gh-avatar" onclick="download('gh-avatar')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Descargar PNG 640 × 640
     </button>
   </div>
 
@@ -262,27 +310,160 @@
     spaced(ctx, 'TARJETA DE FIDELIDAD DIGITAL', cx, bY + bH / 2, W * 0.013);
   }
 
+  // ── drawGhSocial (1280×640, fondo claro) ─────────────────
+  function drawGhSocial(ctx, W, H) {
+    const cx = W / 2, cy = H / 2;
+
+    // Parchment background
+    ctx.fillStyle = '#f5f1eb';
+    ctx.fillRect(0, 0, W, H);
+
+    // Subtle warm grain
+    addGrain(ctx, W, H, 28);
+
+    // Thin border inset
+    ctx.strokeStyle = '#ddd8d0';
+    ctx.lineWidth = 1;
+    const pad = W * 0.028;
+    ctx.strokeRect(pad, pad, W - pad * 2, H - pad * 2);
+
+    // Corner marks (decorative)
+    const mk = 18, mp = pad + 10;
+    ctx.strokeStyle = '#c8c2b8';
+    ctx.lineWidth = 1;
+    [[mp, mp],[W-mp, mp],[mp, H-mp],[W-mp, H-mp]].forEach(([x, y]) => {
+      const sx = x === mp ? 1 : -1;
+      const sy = y === mp ? 1 : -1;
+      ctx.beginPath(); ctx.moveTo(x, y + sy * mk); ctx.lineTo(x, y); ctx.lineTo(x + sx * mk, y); ctx.stroke();
+    });
+
+    // Eyebrow
+    ctx.fillStyle = '#9e9690';
+    ctx.font = `300 ${W * 0.018}px 'Work Sans', sans-serif`;
+    ctx.textBaseline = 'middle';
+    spaced(ctx, 'CAFÉ DE ESPECIALIDAD', cx, H * 0.38, W * 0.013);
+
+    // Wordmark
+    ctx.fillStyle = '#1a1714';
+    ctx.font = `300 ${W * 0.088}px 'Cormorant Garamond', serif`;
+    spaced(ctx, 'LA COMMUNE', cx, H * 0.5, W * 0.024);
+
+    // Divider
+    ctx.fillStyle = '#c0bab2';
+    ctx.fillRect(cx - W * 0.04, H * 0.565, W * 0.08, 1);
+
+    // Tagline
+    ctx.fillStyle = '#7a7670';
+    ctx.font = `300 ${W * 0.018}px 'Work Sans', sans-serif`;
+    spaced(ctx, 'MINERAL DE LA REFORMA · HIDALGO · MÉXICO', cx, H * 0.614, W * 0.011);
+
+    // URL hint bottom-right
+    ctx.fillStyle = '#b0aaa2';
+    ctx.font = `300 ${W * 0.014}px 'Work Sans', sans-serif`;
+    ctx.textBaseline = 'bottom';
+    const urlTxt = 'lacommune.mx';
+    const urlW = ctx.measureText(urlTxt).width;
+    ctx.fillText(urlTxt, W - pad - 16 - urlW, H - pad - 14);
+  }
+
+  // ── drawGhBanner (1200×280, fondo claro) ─────────────────
+  function drawGhBanner(ctx, W, H) {
+    const cx = W / 2, cy = H / 2;
+
+    // Parchment background
+    ctx.fillStyle = '#f5f1eb';
+    ctx.fillRect(0, 0, W, H);
+
+    addGrain(ctx, W, H, 25);
+
+    // Top & bottom border lines
+    ctx.fillStyle = '#ddd8d0';
+    ctx.fillRect(0, 0, W, 1);
+    ctx.fillRect(0, H - 1, W, 1);
+
+    // Left accent line
+    ctx.fillStyle = '#c0bab2';
+    const lx = W * 0.06;
+    ctx.fillRect(lx, H * 0.28, 1, H * 0.44);
+
+    // Eyebrow (left of center line)
+    ctx.fillStyle = '#9e9690';
+    ctx.font = `300 ${H * 0.155}px 'Work Sans', sans-serif`;
+    ctx.textBaseline = 'middle';
+    spaced(ctx, 'CAFÉ DE ESPECIALIDAD', lx + W * 0.036, cy - H * 0.175, H * 0.1);
+
+    // Wordmark
+    ctx.fillStyle = '#1a1714';
+    ctx.font = `300 ${H * 0.44}px 'Cormorant Garamond', serif`;
+    spaced(ctx, 'LA COMMUNE', lx + W * 0.036, cy + H * 0.06, H * 0.18);
+
+    // Right side — tagline stacked
+    const rx = W * 0.72;
+    ctx.fillStyle = '#b0aaa2';
+    ctx.font = `300 ${H * 0.14}px 'Work Sans', sans-serif`;
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Mineral de la Reforma', rx, cy - H * 0.12);
+    ctx.fillText('Hidalgo · México', rx, cy + H * 0.06);
+    ctx.fillText('lacommune.mx', rx, cy + H * 0.25);
+  }
+
+  // ── drawGhAvatar (640×640, fondo claro) ──────────────────
+  function drawGhAvatar(ctx, W, H) {
+    const cx = W / 2;
+
+    // Parchment background
+    ctx.fillStyle = '#f5f1eb';
+    ctx.fillRect(0, 0, W, H);
+
+    addGrain(ctx, W, H, 25);
+
+    // Wordmark
+    ctx.fillStyle = '#1a1714';
+    ctx.font = `300 ${W * 0.083}px 'Cormorant Garamond', serif`;
+    ctx.textBaseline = 'middle';
+    spaced(ctx, 'LA COMMUNE', cx, H * 0.455, W * 0.022);
+
+    // Divider
+    ctx.fillStyle = '#c0bab2';
+    ctx.fillRect(cx - W * 0.038, H * 0.515, W * 0.075, 1);
+
+    // Tagline
+    ctx.fillStyle = '#9e9690';
+    ctx.font = `300 ${W * 0.028}px 'Work Sans', sans-serif`;
+    spaced(ctx, 'MINERAL DE LA REFORMA · HIDALGO', cx, H * 0.565, W * 0.013);
+  }
+
   // ── render previews ──────────────────────────────────────
   async function renderAll() {
     await document.fonts.ready;
 
     const cProfile  = document.getElementById('c-profile');
     const cCatalog  = document.getElementById('c-catalog');
+    const cGhSocial = document.getElementById('c-gh-social');
+    const cGhBanner = document.getElementById('c-gh-banner');
+    const cGhAvatar = document.getElementById('c-gh-avatar');
 
     drawProfile(cProfile.getContext('2d'), 320, 320);
     drawCatalog(cCatalog.getContext('2d'), 320, 320);
+    drawGhSocial(cGhSocial.getContext('2d'), 640, 320);
+    drawGhBanner(cGhBanner.getContext('2d'), 600, 140);
+    drawGhAvatar(cGhAvatar.getContext('2d'), 320, 320);
   }
 
   // ── download at full resolution ──────────────────────────
+  const DOWNLOAD_CONFIG = {
+    'profile':   { W: 640,  H: 640,  name: 'lacommune-perfil-640.png',         draw: drawProfile },
+    'catalog':   { W: 800,  H: 800,  name: 'lacommune-catalogo-800.png',        draw: drawCatalog },
+    'gh-social': { W: 1280, H: 640,  name: 'lacommune-github-social-1280.png',  draw: drawGhSocial },
+    'gh-banner': { W: 1200, H: 280,  name: 'lacommune-github-banner-1200.png',  draw: drawGhBanner },
+    'gh-avatar': { W: 640,  H: 640,  name: 'lacommune-github-avatar-640.png',   draw: drawGhAvatar },
+  };
+
   async function download(type) {
     await document.fonts.ready;
 
-    const isProfile = type === 'profile';
-    const W = isProfile ? 640 : 800;
-    const H = isProfile ? 640 : 800;
-    const name = isProfile
-      ? 'lacommune-perfil-640.png'
-      : 'lacommune-catalogo-800.png';
+    const cfg = DOWNLOAD_CONFIG[type];
+    const { W, H, name, draw } = cfg;
 
     const btn = document.getElementById(`btn-${type}`);
     btn.textContent = 'Generando…';
@@ -291,10 +472,7 @@
     const canvas = document.createElement('canvas');
     canvas.width  = W;
     canvas.height = H;
-    const ctx = canvas.getContext('2d');
-
-    if (isProfile) drawProfile(ctx, W, H);
-    else           drawCatalog(ctx, W, H);
+    draw(canvas.getContext('2d'), W, H);
 
     canvas.toBlob(blob => {
       const url = URL.createObjectURL(blob);
