@@ -193,6 +193,32 @@ export function MenuAdmin() {
     );
   };
 
+  // Auto-toggle sección cuando todos los items quedan deshabilitados o uno se habilita
+  const syncSectionActive = useCallback(async (sectionId: string, itemId: string, newAvailable: boolean) => {
+    const section = sections.find((s) => s.id === sectionId);
+    if (!section?.items) return;
+
+    const updatedItems = section.items.map((it) =>
+      it.id === itemId ? { ...it, available: newAvailable } : it
+    );
+
+    const allUnavailable = updatedItems.length > 0 && updatedItems.every((it) => !it.available);
+
+    if (allUnavailable && section.active) {
+      await updateMenuSection(firestore, sectionId, { active: false });
+      setSections((prev) =>
+        prev.map((s) => s.id === sectionId ? { ...s, active: false } : s)
+      );
+      toast({ title: `"${section.title}" deshabilitada`, description: "Todos los items están no disponibles." });
+    } else if (newAvailable && !section.active) {
+      await updateMenuSection(firestore, sectionId, { active: true });
+      setSections((prev) =>
+        prev.map((s) => s.id === sectionId ? { ...s, active: true } : s)
+      );
+      toast({ title: `"${section.title}" habilitada`, description: "Un item volvió a estar disponible." });
+    }
+  }, [sections, firestore]);
+
   const handleToggleSectionActive = useCallback(async (section: MenuSection) => {
     await updateMenuSection(firestore, section.id!, { active: !section.active });
     setSections((prev) =>
@@ -266,6 +292,9 @@ export function MenuAdmin() {
             onUpdated={(patch) => {
               patchItem(drawerItem.sectionId, drawerItem.item.id!, patch);
               setDrawerItem((prev) => prev ? { ...prev, item: { ...prev.item, ...patch } } : null);
+              if (patch.available !== undefined) {
+                syncSectionActive(drawerItem.sectionId, drawerItem.item.id!, patch.available);
+              }
             }}
             onEdit={() => setEditItem(drawerItem)}
             onDelete={() =>
