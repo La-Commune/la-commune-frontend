@@ -173,28 +173,29 @@ export default function CafeMenu() {
           </div>
         )}
 
-        {/* Tag filter chips */}
+        {/* Tag filter — compact dropdown + clear button */}
         {!loading && allTags.length > 0 && (
-          <div className="flex justify-center gap-2 mb-10 flex-wrap print:hidden">
-            {allTags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => setActiveTag(activeTag === tag ? null : tag)}
-                className={`text-[10px] uppercase tracking-[0.2em] px-3 py-1 rounded-full border transition-all duration-200 ${
-                  activeTag === tag
-                    ? "bg-stone-800 text-white border-stone-800 dark:bg-stone-200 dark:text-neutral-900 dark:border-stone-200"
-                    : "text-stone-400 dark:text-stone-600 border-stone-200/60 dark:border-stone-800/60 hover:border-stone-400 dark:hover:border-stone-600 hover:text-stone-600 dark:hover:text-stone-400"
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
+          <div className="flex items-center justify-center gap-2 mb-10 print:hidden">
+            <select
+              value={activeTag ?? ""}
+              onChange={(e) => setActiveTag(e.target.value || null)}
+              className="appearance-none text-[10px] uppercase tracking-[0.3em] pl-4 pr-8 py-1.5 rounded-full border border-stone-200 dark:border-stone-800 bg-transparent text-stone-500 dark:text-stone-400 cursor-pointer focus:outline-none focus:border-stone-400 dark:focus:border-stone-600 transition-colors"
+              style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
+            >
+              <option value="">Filtrar por tipo</option>
+              {allTags.map((tag) => (
+                <option key={tag} value={tag}>{tag}</option>
+              ))}
+            </select>
             {activeTag && (
               <button
                 onClick={() => setActiveTag(null)}
-                className="text-[10px] uppercase tracking-[0.2em] px-3 py-1 text-stone-300 dark:text-stone-700 hover:text-stone-500 dark:hover:text-stone-500 transition-colors"
+                className="w-6 h-6 rounded-full border border-stone-200 dark:border-stone-800 flex items-center justify-center text-stone-300 dark:text-stone-700 hover:text-stone-500 dark:hover:text-stone-500 hover:border-stone-400 dark:hover:border-stone-600 transition-colors"
+                aria-label="Limpiar filtro"
               >
-                Limpiar
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
               </button>
             )}
           </div>
