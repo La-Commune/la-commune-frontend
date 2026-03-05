@@ -25,6 +25,9 @@ import {
   markFailed,
   getQueue,
   resetFailed,
+  hasPending,
+  requestBackgroundSync,
+  requestPeriodicSync,
   QueuedStamp,
 } from "@/lib/offlineQueue";
 
@@ -212,6 +215,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
     if (pending.length === 0) return;
     setSyncStatus("syncing");
     let hasError = false;
+    let syncedCount = 0;
     for (const item of pending) {
       try {
         const customerIdRef = item.customerId
@@ -224,6 +228,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
           size: item.size,
         });
         removeFromQueue(item.id);
+        syncedCount++;
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Error desconocido";
         markFailed(item.id, msg);
@@ -232,16 +237,45 @@ function StampView({ onLogout }: { onLogout: () => void }) {
     }
     setPendingQueue(getQueue());
     setSyncStatus(hasError ? "error" : "idle");
+
+    // Notificar al SW para que muestre notificacion si la app no esta enfocada
+    if (syncedCount > 0 && "serviceWorker" in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: "SYNC_COMPLETE",
+        synced: syncedCount,
+        failed: hasError ? getQueue().filter((q) => q.status === "failed").length : 0,
+      });
+    }
+
+    if (syncedCount > 0 && !hasError) {
+      toast({
+        title: `${syncedCount} sello${syncedCount !== 1 ? "s" : ""} sincronizado${syncedCount !== 1 ? "s" : ""}`,
+        variant: "default",
+      });
+      // Limpiar la barra de sync despues de 3s si todo salio bien
+      setTimeout(() => {
+        setPendingQueue(getQueue());
+      }, 3000);
+    }
   }, [firestore]);
 
-  // Auto-sync al recuperar conexion
+  // Auto-sync al recuperar conexion o al montar con pendientes
   useEffect(() => {
-    if (isOnline) {
-      const pending = getQueue().filter((q) => q.status === "pending");
-      if (pending.length > 0) syncQueue();
+    if (isOnline && hasPending()) {
+      syncQueue();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOnline]);
+
+  // Sync on mount si hay pendientes (cubre el caso donde la app se cerro y reabre con conexion)
+  useEffect(() => {
+    if (navigator.onLine && hasPending()) {
+      syncQueue();
+    }
+    // Registrar periodic sync como fallback para reintentos automaticos
+    requestPeriodicSync();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Escuchar peticion del SW (Background Sync) para flush de sellos
   useEffect(() => {
@@ -333,6 +367,8 @@ function StampView({ onLogout }: { onLogout: () => void }) {
         drinkType: finalDrink,
         size: stampSize || undefined,
       });
+      // Registrar Background Sync para que el SW sincronice al volver la red
+      requestBackgroundSync();
       setCard({ ...card, stamps: optimisticStamps });
       setStampHistory((prev) => [
         { customerName: card.customerName || "Cliente", stamps: optimisticStamps, maxStamps: card.maxStamps, time: new Date() },
@@ -477,7 +513,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
               syncStatus === "error" ? "text-red-500 dark:text-red-400" : "text-stone-500 dark:text-stone-400"
             }`}>
               {syncStatus === "syncing"
-                ? "Sincronizando…"
+                ? `Sincronizando ${pendingCount} sello${pendingCount !== 1 ? "s" : ""}…`
                 : syncStatus === "error"
                 ? `Error al sincronizar ${failedCount}`
                 : "Todo sincronizado"}
