@@ -432,8 +432,8 @@ export default function Home() {
         videoPoster="/images/poster-loyalty.jpg"
         ctaText={loyaltyCta.text}
         ctaLink={loyaltyCta.link}
-        secondaryCtaText={cardId ? "No es mi tarjeta" : ""}
-        secondaryCtaLink={cardId ? undefined : "/card/preview"}
+        secondaryCtaText={cardId ? "No es mi tarjeta" : "Ya tengo cuenta"}
+        secondaryCtaLink={cardId ? undefined : "/recover"}
         onSecondaryCtaClick={cardId ? handleClearSession : undefined}
         align="left"
         lazy
@@ -558,6 +558,10 @@ export default function Home() {
               <span className="hidden sm:block w-px h-3 bg-stone-800 mx-5" />
               <Link href="/onboarding" className="hidden sm:block text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300">
                 Registrarse
+              </Link>
+              <span className="hidden sm:block w-px h-3 bg-stone-800 mx-5" />
+              <Link href="/recover" className="hidden sm:block text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300">
+                Recuperar tarjeta
               </Link>
               <span className="hidden sm:block w-px h-3 bg-stone-800 mx-5" />
               <a

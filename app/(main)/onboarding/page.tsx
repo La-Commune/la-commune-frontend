@@ -11,6 +11,7 @@ import { createCustomer, getCustomerByPhone } from "@/services/customer.service"
 import { doc, getDoc, DocumentReference } from "firebase/firestore";
 import { createCard, getCardByCustomer } from "@/services/card.service";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { hashCustomerPin, setCustomerSession } from "@/app/actions/customerSession";
 
 export default function OnboardingPage() {
   return (
@@ -28,35 +29,29 @@ function OnboardingForm() {
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [pin, setPin] = useState("");
   const [consentWhatsApp, setConsentWhatsApp] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [phoneTouched, setPhoneTouched] = useState(false);
 
   const isValidPhone = phone.length === 10;
+  const isValidPin = pin.length === 4;
   const phoneError = phoneTouched && phone.length > 0 && phone.length < 10
     ? "Ingresa los 10 digitos"
     : null;
 
   const handleSubmit = async () => {
-    if (!phone) return;
+    if (!phone || !isValidPin) return;
     setLoading(true);
     setError(null);
 
     try {
+      // Check if phone already registered — don't auto-login, require recovery with PIN
       const existing = await getCustomerByPhone(firestore, phone);
 
       if (existing) {
-        const existingCard = await getCardByCustomer(firestore, existing.ref);
-
-        if (existingCard) {
-          localStorage.setItem("customerId", existing.id);
-          localStorage.setItem("cardId", existingCard.id);
-          router.replace("/card/" + existingCard.id);
-          return;
-        }
-
-        setError("Encontramos tu cuenta pero no tu tarjeta. Visitanos en barra para que te ayudemos.");
+        setError("Ya existe una cuenta con este numero. Usa \"Recuperar mi tarjeta\" para acceder.");
         setLoading(false);
         return;
       }
@@ -74,10 +69,14 @@ function OnboardingForm() {
         }
       }
 
+      // Hash PIN server-side before storing
+      const pinHmac = await hashCustomerPin(pin);
+
       const customerRef = await createCustomer(firestore, {
         name,
         phone,
         consentWhatsApp,
+        pinHmac,
         ...(referrerCustomerId ? { referrerCustomerId } : {}),
       });
 
@@ -88,8 +87,10 @@ function OnboardingForm() {
         rewardRef,
       });
 
+      // Set both localStorage and httpOnly cookie
       localStorage.setItem("customerId", customerRef.id);
       localStorage.setItem("cardId", cardRef.id);
+      await setCustomerSession(customerRef.id, cardRef.id);
 
       router.replace("/card/" + cardRef.id);
     } catch (e: any) {
@@ -145,7 +146,8 @@ function OnboardingForm() {
               Tu tarjeta, siempre contigo
             </h1>
             <p className="text-sm leading-relaxed text-stone-500 dark:text-stone-400">
-              Ingresa tu numero de WhatsApp. Si ya tienes tarjeta, te llevamos directo a ella.
+              Crea tu tarjeta de fidelidad. Solo necesitas tu WhatsApp y un PIN
+              de 4 digitos para recuperarla despues.
             </p>
           </div>
 
@@ -194,6 +196,28 @@ function OnboardingForm() {
               </div>
             </div>
 
+            {/* PIN */}
+            <div className="space-y-1.5">
+              <label htmlFor="pin" className="block text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 text-left">
+                PIN de recuperacion <span className="text-red-500/70">*</span>
+              </label>
+              <Input
+                id="pin"
+                required
+                type="password"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={4}
+                placeholder="4 digitos"
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                className="text-base text-center tracking-[0.5em] bg-white dark:bg-neutral-900 border-stone-300 dark:border-stone-700 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600 focus:border-stone-500"
+              />
+              <p className="text-[11px] text-stone-400 dark:text-stone-600 text-left">
+                Lo necesitaras si cambias de dispositivo o borras datos del navegador.
+              </p>
+            </div>
+
             <label className="flex items-start gap-3 text-xs text-stone-500 leading-snug text-left">
               <input
                 type="checkbox"
@@ -218,7 +242,7 @@ function OnboardingForm() {
             <Button
               className="w-full rounded-full bg-stone-800 text-white dark:bg-white dark:text-neutral-900 py-6 text-sm tracking-wide transition hover:bg-stone-900 dark:hover:bg-stone-100 disabled:opacity-30"
               onClick={handleSubmit}
-              disabled={!isValidPhone || loading}
+              disabled={!isValidPhone || !isValidPin || loading}
             >
               {loading ? (
                 <span className="inline-flex items-center gap-2">
@@ -231,7 +255,12 @@ function OnboardingForm() {
               ) : "Continuar"}
             </Button>
             <p className="text-[11px] text-stone-400 dark:text-stone-600 tracking-wide">
-              Sin contrasenas · Sin spam
+              <Link
+                href="/recover"
+                className="underline underline-offset-2 hover:text-stone-600 dark:hover:text-stone-300 transition-colors"
+              >
+                Ya tengo cuenta, recuperar mi tarjeta
+              </Link>
             </p>
           </div>
         </motion.div>

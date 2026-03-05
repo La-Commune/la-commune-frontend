@@ -21,6 +21,9 @@ export interface Customer {
   /** Marketing (opcional) */
   consentWhatsApp?: boolean;
 
+  /** PIN de recuperación (HMAC-SHA256, verificado server-side) */
+  pinHmac?: string;
+
   notes?: string;
 
   /** Referidos */

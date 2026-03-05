@@ -9,6 +9,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import { doc } from "firebase/firestore";
 import { useFirestore, useFirestoreDocData } from "reactfire";
 import { getCardByCustomer } from "@/services/card.service";
+import { setCustomerSession } from "@/app/actions/customerSession";
 
 type ConfettiInstance = (opts: any) => void;
 
@@ -61,6 +62,7 @@ export default function RedeemPage() {
     getCardByCustomer(firestore, customerRef).then((newCard) => {
       if (newCard) {
         localStorage.setItem("cardId", newCard.id);
+        setCustomerSession(customerId!, newCard.id);
         router.replace(`/card/${newCard.id}`);
       }
     });

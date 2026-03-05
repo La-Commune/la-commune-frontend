@@ -13,6 +13,14 @@ import { Customer } from "@/models/customer.model";
 import { formatDate } from "@/lib/utils";
 import { getCardByCustomer } from "@/services/card.service";
 import { PromoBannerInline } from "@/components/ui/promos/PromoBanner";
+import {
+  getCustomerSession,
+  setCustomerSession,
+  clearCustomerSession,
+  updateCustomerPhone,
+} from "@/app/actions/customerSession";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 
 export default function CardEntry() {
@@ -22,13 +30,13 @@ export default function CardEntry() {
 
   const [loading, setLoading] = useState(true);
   const [cardId, setCardId] = useState<string | null>(null);
+  const [resolvedCustomerId, setResolvedCustomerId] = useState<string | null>(null);
 
-  const customerId =
-    typeof window !== "undefined"
-      ? localStorage.getItem("customerId")
-      : null;
-
-  const customerRef = doc(firestore, "customers", customerId ?? "_placeholder");
+  const customerRef = doc(
+    firestore,
+    "customers",
+    resolvedCustomerId ?? "_placeholder",
+  );
 
   const { data: customer } = useFirestoreDocData(customerRef, {
     suspense: false,
@@ -40,7 +48,7 @@ export default function CardEntry() {
 
   // Auto-redirect a la página de canje cuando la tarjeta se completa
   useEffect(() => {
-    if (!cardId) return; // Esperar a que la sesión esté verificada
+    if (!cardId) return;
     if ((cardDoc as any)?.status !== "completed") return;
     router.replace(`/card/${cardIdParam}/redeem`);
   }, [(cardDoc as any)?.status, cardId, cardIdParam, router]);
@@ -48,27 +56,51 @@ export default function CardEntry() {
   // Si la tarjeta fue canjeada, buscar la nueva tarjeta activa y redirigir
   useEffect(() => {
     if (!cardDoc || (cardDoc as any).status !== "redeemed") return;
-    if (!customerId) return;
+    if (!resolvedCustomerId) return;
 
-    const customerRef = doc(firestore, "customers", customerId);
-    getCardByCustomer(firestore, customerRef).then((newCard) => {
+    const ref = doc(firestore, "customers", resolvedCustomerId);
+    getCardByCustomer(firestore, ref).then((newCard) => {
       if (newCard) {
         localStorage.setItem("cardId", newCard.id);
+        setCustomerSession(resolvedCustomerId, newCard.id);
         router.replace(`/card/${newCard.id}`);
       }
     });
-  }, [(cardDoc as any)?.status, customerId, firestore, router]);
+  }, [(cardDoc as any)?.status, resolvedCustomerId, firestore, router]);
 
+  // Session resolution: localStorage first, then cookie fallback
   useEffect(() => {
-    const storedCardId = localStorage.getItem("cardId");
+    async function resolveSession() {
+      const storedCardId = localStorage.getItem("cardId");
+      const storedCustomerId = localStorage.getItem("customerId");
 
-    if (!storedCardId || storedCardId !== cardIdParam) {
-      router.replace(`/onboarding?cardId=${cardIdParam}`);
-      return;
+      if (storedCardId && storedCardId === cardIdParam && storedCustomerId) {
+        setCardId(storedCardId);
+        setResolvedCustomerId(storedCustomerId);
+        setLoading(false);
+        return;
+      }
+
+      // Cookie fallback — recovers session after cache clear
+      try {
+        const cookieSession = await getCustomerSession();
+        if (cookieSession && cookieSession.cardId === cardIdParam) {
+          localStorage.setItem("cardId", cookieSession.cardId);
+          localStorage.setItem("customerId", cookieSession.customerId);
+          setCardId(cookieSession.cardId);
+          setResolvedCustomerId(cookieSession.customerId);
+          setLoading(false);
+          return;
+        }
+      } catch {
+        // Cookie check failed, fall through
+      }
+
+      // No valid session — redirect to recovery
+      router.replace(`/recover`);
     }
 
-    setCardId(storedCardId);
-    setLoading(false);
+    resolveSession();
   }, [cardIdParam, router]);
 
 if (loading || !cardId) {
@@ -161,10 +193,52 @@ function Card({
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     localStorage.removeItem("cardId");
     localStorage.removeItem("customerId");
+    await clearCustomerSession();
     router.replace("/");
+  };
+
+  // --- Update phone state ---
+  const [showPhoneUpdate, setShowPhoneUpdate] = useState(false);
+  const [newPhone, setNewPhone] = useState("");
+  const [phonePin, setPhonePin] = useState("");
+  const [phoneUpdateLoading, setPhoneUpdateLoading] = useState(false);
+  const [phoneUpdateMsg, setPhoneUpdateMsg] = useState<{
+    type: "ok" | "err";
+    text: string;
+  } | null>(null);
+
+  const handlePhoneUpdate = async () => {
+    if (newPhone.length !== 10 || phonePin.length !== 4) return;
+    const cid =
+      typeof window !== "undefined"
+        ? localStorage.getItem("customerId")
+        : null;
+    if (!cid) return;
+
+    setPhoneUpdateLoading(true);
+    setPhoneUpdateMsg(null);
+
+    try {
+      const res = await updateCustomerPhone(cid, phonePin, newPhone);
+      if (res.ok) {
+        setPhoneUpdateMsg({ type: "ok", text: "Telefono actualizado." });
+        setNewPhone("");
+        setPhonePin("");
+        setTimeout(() => {
+          setShowPhoneUpdate(false);
+          setPhoneUpdateMsg(null);
+        }, 2000);
+      } else {
+        setPhoneUpdateMsg({ type: "err", text: res.error });
+      }
+    } catch {
+      setPhoneUpdateMsg({ type: "err", text: "Error inesperado." });
+    } finally {
+      setPhoneUpdateLoading(false);
+    }
   };
 
   return (
@@ -282,6 +356,87 @@ function Card({
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Settings section */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 0.5 }}
+          className="w-full max-w-xs space-y-3 pt-4"
+        >
+          <div className="flex items-center justify-center gap-4">
+            <button
+              onClick={() => setShowPhoneUpdate((v) => !v)}
+              className="text-[10px] uppercase tracking-[0.25em] text-stone-400 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400 transition-colors"
+            >
+              Cambiar telefono
+            </button>
+            <span className="w-px h-3 bg-stone-300 dark:bg-stone-700" />
+            <button
+              onClick={handleLogout}
+              className="text-[10px] uppercase tracking-[0.25em] text-stone-400 dark:text-stone-600 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+            >
+              Cerrar sesion
+            </button>
+          </div>
+
+          <AnimatePresence>
+            {showPhoneUpdate && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden space-y-3 pt-2"
+              >
+                <Input
+                  type="tel"
+                  inputMode="numeric"
+                  placeholder="Nuevo telefono (10 digitos)"
+                  value={newPhone}
+                  onChange={(e) =>
+                    setNewPhone(e.target.value.replace(/\D/g, "").slice(0, 10))
+                  }
+                  className="text-sm text-center tracking-widest bg-white dark:bg-neutral-900 border-stone-300 dark:border-stone-700 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600"
+                />
+                <Input
+                  type="password"
+                  inputMode="numeric"
+                  placeholder="Tu PIN de 4 digitos"
+                  value={phonePin}
+                  maxLength={4}
+                  onChange={(e) =>
+                    setPhonePin(
+                      e.target.value.replace(/\D/g, "").slice(0, 4),
+                    )
+                  }
+                  className="text-sm text-center tracking-[0.5em] bg-white dark:bg-neutral-900 border-stone-300 dark:border-stone-700 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600"
+                />
+                {phoneUpdateMsg && (
+                  <p
+                    className={`text-[11px] text-center ${
+                      phoneUpdateMsg.type === "ok"
+                        ? "text-emerald-500"
+                        : "text-red-500 dark:text-red-400"
+                    }`}
+                  >
+                    {phoneUpdateMsg.text}
+                  </p>
+                )}
+                <Button
+                  onClick={handlePhoneUpdate}
+                  disabled={
+                    newPhone.length !== 10 ||
+                    phonePin.length !== 4 ||
+                    phoneUpdateLoading
+                  }
+                  className="w-full rounded-full bg-stone-800 text-white dark:bg-white dark:text-neutral-900 py-2 text-[11px] tracking-wide disabled:opacity-30"
+                >
+                  {phoneUpdateLoading ? "Actualizando..." : "Actualizar telefono"}
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
 
       </div>
 
