@@ -243,6 +243,13 @@ function StampView({ onLogout }: { onLogout: () => void }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOnline]);
 
+  // Escuchar peticion del SW (Background Sync) para flush de sellos
+  useEffect(() => {
+    const handler = () => syncQueue();
+    window.addEventListener("flush-offline-stamps", handler);
+    return () => window.removeEventListener("flush-offline-stamps", handler);
+  }, [syncQueue]);
+
   const clearUndoCountdown = useCallback(() => {
     if (undoIntervalRef.current) {
       clearInterval(undoIntervalRef.current);

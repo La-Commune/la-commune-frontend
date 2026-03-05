@@ -41,7 +41,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning>
       <body className={cn(sans.variable, display.variable, sans.className)}>
         <ThemeProvider>
           <MyFirebaseProvider>
