@@ -6,11 +6,21 @@ import { useTheme } from "next-themes";
 
 export function StampCardBack({ cardId }: { cardId: string }) {
   const [origin, setOrigin] = useState<string | null>(null);
+  const [isOffline, setIsOffline] = useState(false);
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
 
   useEffect(() => {
     setOrigin(window.location.origin);
+    setIsOffline(!navigator.onLine);
+    const goOffline = () => setIsOffline(true);
+    const goOnline = () => setIsOffline(false);
+    window.addEventListener("offline", goOffline);
+    window.addEventListener("online", goOnline);
+    return () => {
+      window.removeEventListener("offline", goOffline);
+      window.removeEventListener("online", goOnline);
+    };
   }, []);
 
   if (!origin) return null;
@@ -49,8 +59,13 @@ export function StampCardBack({ cardId }: { cardId: string }) {
           />
         </div>
         <p className="text-[10px] tracking-[0.2em] uppercase" style={{ color: isDark ? "#7A706A" : "#A89E97" }}>
-          Escanea en barra
+          {isOffline ? "Sin conexion" : "Escanea en barra"}
         </p>
+        {isOffline && (
+          <p className="text-[9px] tracking-wide" style={{ color: "#A0522D" }}>
+            Requiere conexion para escanear
+          </p>
+        )}
       </div>
 
       {/* Footer */}

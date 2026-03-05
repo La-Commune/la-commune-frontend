@@ -21,6 +21,17 @@ import {
 } from "@/app/actions/customerSession";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 
 export default function CardEntry() {
@@ -105,7 +116,12 @@ export default function CardEntry() {
 
 if (loading || !cardId) {
     return (
-      <div className="min-h-screen bg-stone-50 dark:bg-neutral-950 flex flex-col items-center justify-center gap-10 px-4">
+      <motion.div
+        initial={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3 }}
+        className="min-h-screen bg-stone-50 dark:bg-neutral-950 flex flex-col items-center justify-center gap-10 px-4"
+      >
         {/* Skeleton saludo */}
         <div className="text-center space-y-3">
           <div className="h-2.5 w-28 bg-stone-200 dark:bg-stone-900 rounded-full animate-pulse mx-auto" />
@@ -114,9 +130,9 @@ if (loading || !cardId) {
         </div>
         {/* Skeleton tarjeta */}
         <div className="w-[320px] h-[210px] bg-stone-200 dark:bg-stone-900 rounded-[24px] animate-pulse" />
-        {/* Skeleton botón */}
+        {/* Skeleton boton */}
         <div className="h-10 w-44 bg-stone-200 dark:bg-stone-900 rounded-full animate-pulse" />
-      </div>
+      </motion.div>
     );
   }
 
@@ -145,6 +161,7 @@ function Card({
     typeof navigator !== "undefined" ? navigator.onLine : true
   );
   const [refreshing, setRefreshing] = useState(false);
+  const [showPullHint, setShowPullHint] = useState(false);
   const touchStartY = useRef(0);
 
   useEffect(() => {
@@ -156,6 +173,19 @@ function Card({
       window.removeEventListener("online", setOnline);
       window.removeEventListener("offline", setOffline);
     };
+  }, []);
+
+  // Pull-to-refresh hint (show once)
+  useEffect(() => {
+    const hintKey = "pull-refresh-hint-shown";
+    if (!localStorage.getItem(hintKey)) {
+      const t = setTimeout(() => {
+        setShowPullHint(true);
+        localStorage.setItem(hintKey, "1");
+        setTimeout(() => setShowPullHint(false), 4000);
+      }, 3000);
+      return () => clearTimeout(t);
+    }
   }, []);
 
   useEffect(() => {
@@ -179,17 +209,30 @@ function Card({
     };
   }, [router]);
 
+  const [copied, setCopied] = useState(false);
+
   const handleShare = async () => {
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({
+          title: "La Commune · Tarjeta de fidelidad",
+          text: name
+            ? `${name} ya tiene su tarjeta de fidelidad en La Commune. Cada visita suma — a las 5 te invitan una bebida.`
+            : "Ya tengo mi tarjeta de fidelidad en La Commune. Cada visita suma — a las 5 te invitan una bebida.",
+          url: window.location.href,
+        });
+        return;
+      } catch {
+        // User cancelled or share failed — fall through to clipboard
+      }
+    }
+    // Fallback: copy link to clipboard
     try {
-      await navigator.share({
-        title: "La Commune · Tarjeta de fidelidad",
-        text: name
-          ? `${name} ya tiene su tarjeta de fidelidad en La Commune. Cada visita suma — a las 5 te invitan una bebida.`
-          : "Ya tengo mi tarjeta de fidelidad en La Commune. Cada visita suma — a las 5 te invitan una bebida.",
-        url: window.location.href,
-      });
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch {
-      // User cancelled or API not supported
+      // Clipboard not available
     }
   };
 
@@ -283,6 +326,19 @@ function Card({
             </span>
           </motion.div>
         )}
+        {showPullHint && !refreshing && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.4 }}
+            className="flex justify-center py-2"
+          >
+            <span className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">
+              Desliza hacia abajo para actualizar
+            </span>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       {/* Contenido */}
@@ -357,27 +413,92 @@ function Card({
           )}
         </AnimatePresence>
 
-        {/* Settings section */}
+        {/* Actions: Historial + Descargar + Invitar (movil) */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.5 }}
-          className="w-full max-w-xs space-y-3 pt-4"
+          transition={{ duration: 0.8, delay: 0.4 }}
+          className="flex items-center justify-center gap-6"
         >
-          <div className="flex items-center justify-center gap-4">
+          <Link
+            href={`/card/${cardId}/history`}
+            className="flex flex-col items-center gap-1.5 group"
+          >
+            <span className="w-10 h-10 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center group-hover:border-stone-500 dark:group-hover:border-stone-500 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-stone-400 dark:text-stone-500 group-hover:text-stone-700 dark:group-hover:text-stone-300 transition-colors">
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </span>
+            <span className="text-[9px] uppercase tracking-[0.25em] text-stone-400 dark:text-stone-600 group-hover:text-stone-600 dark:group-hover:text-stone-400 transition-colors">
+              Historial
+            </span>
+          </Link>
+
+          <DownloadCardButton cardId={cardId} customerName={name} />
+
+          {/* Invitar: solo movil */}
+          <button
+            onClick={handleShare}
+            className="flex flex-col items-center gap-1.5 group sm:hidden"
+          >
+            <span className="w-10 h-10 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center group-hover:border-stone-500 dark:group-hover:border-stone-500 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-stone-400 dark:text-stone-500 group-hover:text-stone-700 dark:group-hover:text-stone-300 transition-colors">
+                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+              </svg>
+            </span>
+            <span className="text-[9px] uppercase tracking-[0.25em] text-stone-400 dark:text-stone-600 group-hover:text-stone-600 dark:group-hover:text-stone-400 transition-colors">
+              {copied ? "Copiado!" : "Invitar"}
+            </span>
+          </button>
+        </motion.div>
+
+      </div>
+
+      {/* Footer discreto: ajustes de cuenta */}
+      <motion.footer
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: 0.8 }}
+        className="w-full border-t border-stone-200/50 dark:border-stone-800/50 py-6 px-4"
+      >
+        <div className="max-w-xs mx-auto space-y-3">
+          <div className="flex items-center justify-center gap-6">
             <button
               onClick={() => setShowPhoneUpdate((v) => !v)}
-              className="text-[10px] uppercase tracking-[0.25em] text-stone-400 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400 transition-colors"
+              className="text-[9px] uppercase tracking-[0.2em] text-stone-300 dark:text-stone-700 hover:text-stone-500 dark:hover:text-stone-500 transition-colors"
             >
               Cambiar telefono
             </button>
-            <span className="w-px h-3 bg-stone-300 dark:bg-stone-700" />
-            <button
-              onClick={handleLogout}
-              className="text-[10px] uppercase tracking-[0.25em] text-stone-400 dark:text-stone-600 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-            >
-              Cerrar sesion
-            </button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  className="text-[9px] uppercase tracking-[0.2em] text-stone-300 dark:text-stone-700 hover:text-red-400 dark:hover:text-red-500 transition-colors"
+                >
+                  Cerrar sesion
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="bg-white dark:bg-neutral-900 border-stone-200 dark:border-stone-800">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-stone-900 dark:text-stone-100">
+                    Cerrar sesion
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="text-stone-500 dark:text-stone-400">
+                    Necesitaras tu PIN de 4 digitos para volver a entrar.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="text-stone-600 dark:text-stone-400 border-stone-300 dark:border-stone-700">
+                    Cancelar
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleLogout}
+                    className="bg-red-600 text-white hover:bg-red-700"
+                  >
+                    Cerrar sesion
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
 
           <AnimatePresence>
@@ -436,11 +557,10 @@ function Card({
               </motion.div>
             )}
           </AnimatePresence>
-        </motion.div>
+        </div>
+      </motion.footer>
 
-      </div>
-
-      {/* Banner sin conexión */}
+      {/* Banner sin conexion */}
       <AnimatePresence>
         {!isOnline && (
           <motion.div

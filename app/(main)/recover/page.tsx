@@ -117,6 +117,7 @@ export default function RecoverPage() {
                 inputMode="numeric"
                 pattern="[0-9]*"
                 placeholder="10 digitos"
+                maxLength={10}
                 value={phone}
                 onChange={handlePhoneChange}
                 onBlur={() => setPhoneTouched(true)}
@@ -162,6 +163,20 @@ export default function RecoverPage() {
                 onChange={handlePinChange}
                 className="text-base text-center tracking-[0.5em] bg-white dark:bg-neutral-900 border-stone-300 dark:border-stone-700 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600 focus:border-stone-500"
               />
+              <div className="flex justify-end">
+                <div className="flex gap-1.5">
+                  {[0, 1, 2, 3].map((i) => (
+                    <span
+                      key={i}
+                      className={`w-2 h-2 rounded-full transition-colors duration-200 ${
+                        i < pin.length
+                          ? "bg-stone-800 dark:bg-stone-200"
+                          : "bg-stone-300 dark:bg-stone-700"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 

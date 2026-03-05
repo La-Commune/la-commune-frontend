@@ -256,6 +256,7 @@ const PremiumSection: React.FC<SectionProps> = ({
         className={`relative z-10 px-8 sm:px-16 max-w-3xl text-white ${
           align === "left" ? "text-left" : "text-center mx-auto"
         }`}
+        aria-live="polite"
       >
         {eyebrow && (
           <motion.p

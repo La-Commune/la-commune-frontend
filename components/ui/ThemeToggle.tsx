@@ -18,6 +18,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       onClick={() => setTheme(isDark ? "light" : "dark")}
       className={`p-2 rounded-lg transition-colors duration-200 text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 ${className}`}
       aria-label={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+      title={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
     >
       {isDark ? (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
