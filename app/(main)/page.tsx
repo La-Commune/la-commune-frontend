@@ -524,28 +524,28 @@ export default function Home() {
             <p className="text-[10px] tracking-[0.3em] uppercase text-stone-600 text-center" suppressHydrationWarning>
               © {new Date().getFullYear()} · La Commune · En construcción permanente
             </p>
-            <div className="flex items-center gap-6">
+            <nav className="flex items-center justify-center gap-0">
               <Link href="/menu" className="text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300">
                 Menú
               </Link>
-              <span className="w-px h-3 bg-stone-800" />
+              <span className="w-px h-3 bg-stone-800 mx-5" />
               <Link href="/card/preview" className="text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300">
                 Simulador de tarjeta
               </Link>
-              <span className="w-px h-3 bg-stone-800" />
-              <Link href="/onboarding" className="text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300">
+              <span className="hidden sm:block w-px h-3 bg-stone-800 mx-5" />
+              <Link href="/onboarding" className="hidden sm:block text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300">
                 Registrarse
               </Link>
-              <span className="w-px h-3 bg-stone-800" />
+              <span className="hidden sm:block w-px h-3 bg-stone-800 mx-5" />
               <a
                 href="https://wa.me/527711006533"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300"
+                className="hidden sm:block text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300"
               >
                 WhatsApp
               </a>
-            </div>
+            </nav>
             {/* Acceso discreto para personal */}
             <Link
               href="/admin"
