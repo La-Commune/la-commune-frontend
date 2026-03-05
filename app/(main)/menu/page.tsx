@@ -7,6 +7,7 @@ import { useFirestore } from "reactfire";
 import { MenuSection } from "@/models/menu.model";
 import { getFullMenu } from "@/services/menu.service";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { PromoBannerSticky } from "@/components/ui/promos/PromoBanner";
 
 function MenuItemImage({ src, alt }: { src: string; alt: string }) {
   const [loaded, setLoaded] = useState(false);
@@ -410,6 +411,9 @@ export default function CafeMenu() {
         </div>
 
       </div>
+
+      {/* Promo sticky banner */}
+      {!loading && !error && <PromoBannerSticky />}
     </div>
   );
 }

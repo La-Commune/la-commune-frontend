@@ -12,6 +12,7 @@ import { useFirestore, useFirestoreDocData } from "reactfire";
 import { Customer } from "@/models/customer.model";
 import { formatDate } from "@/lib/utils";
 import { getCardByCustomer } from "@/services/card.service";
+import { PromoBannerInline } from "@/components/ui/promos/PromoBanner";
 
 
 export default function CardEntry() {
@@ -241,6 +242,16 @@ function Card({
               {totalVisits} visitas totales
             </p>
           )}
+        </motion.div>
+
+        {/* Promos activas */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.15 }}
+          className="w-full max-w-xs"
+        >
+          <PromoBannerInline />
         </motion.div>
 
         {/* Tarjeta */}

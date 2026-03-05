@@ -10,7 +10,8 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "deploy:rules": "firebase deploy --only firestore:rules"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
