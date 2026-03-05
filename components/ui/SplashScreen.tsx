@@ -1,20 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function SplashScreen() {
   const [visible, setVisible] = useState(false);
+  const [showSkip, setShowSkip] = useState(false);
+
+  const dismiss = useCallback(() => setVisible(false), []);
 
   useEffect(() => {
     const seen = sessionStorage.getItem("splash-seen");
     if (!seen) {
       setVisible(true);
       sessionStorage.setItem("splash-seen", "1");
-      const t = setTimeout(() => setVisible(false), 1100);
-      return () => clearTimeout(t);
+      const t = setTimeout(dismiss, 1100);
+      // Fallback: force-dismiss after 4s in case animation gets stuck
+      const fallback = setTimeout(dismiss, 4000);
+      // Show skip button after 2.5s if still visible
+      const skipTimer = setTimeout(() => setShowSkip(true), 2500);
+      return () => {
+        clearTimeout(t);
+        clearTimeout(fallback);
+        clearTimeout(skipTimer);
+      };
     }
-  }, []);
+  }, [dismiss]);
 
   return (
     <AnimatePresence>
@@ -24,6 +35,7 @@ export function SplashScreen() {
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.6, ease: "easeInOut" }}
+          onClick={showSkip ? dismiss : undefined}
         >
           {/* Film grain — mismo que el home */}
           <div
@@ -50,6 +62,22 @@ export function SplashScreen() {
               Mineral de la Reforma, Hidalgo
             </p>
           </motion.div>
+
+          {/* Skip button — appears if splash gets stuck */}
+          <AnimatePresence>
+            {showSkip && (
+              <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                onClick={dismiss}
+                className="absolute bottom-12 text-[11px] uppercase tracking-[0.3em] text-stone-500 hover:text-stone-300 transition-colors"
+              >
+                Continuar
+              </motion.button>
+            )}
+          </AnimatePresence>
         </motion.div>
       )}
     </AnimatePresence>
