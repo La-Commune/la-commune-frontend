@@ -12,7 +12,7 @@ import { useFirestore, useFirestoreDocData } from "reactfire";
 import { Customer } from "@/models/customer.model";
 import { formatDate } from "@/lib/utils";
 import { getCardByCustomer } from "@/services/card.service";
-import { PromoBannerInline } from "@/components/ui/promos/PromoBanner";
+import { PromoBannerInline, useActivePromos } from "@/components/ui/promos/PromoBanner";
 import {
   getCustomerSession,
   setCustomerSession,
@@ -152,10 +152,21 @@ function Card({
   isCompleted?: boolean;
 }) {
   const router = useRouter();
+  const firestore = useFirestore();
   const name = customer?.name?.trim();
   const lastVisit = formatDate(customer?.lastVisitAt);
   const memberSince = formatDate(customer?.createdAt);
   const totalVisits = customer?.totalVisits ?? 0;
+
+  // Reward info
+  const rewardRef = doc(firestore, "rewards", "default");
+  const { data: rewardDoc } = useFirestoreDocData(rewardRef, { suspense: false });
+  const rewardName: string = (rewardDoc as any)?.name ?? "Bebida gratis";
+  const requiredStamps: number = (rewardDoc as any)?.requiredStamps ?? 5;
+
+  // Promos
+  const { promos, loaded: promosLoaded } = useActivePromos();
+  const hasPromos = promos.length > 0;
 
   const [isOnline, setIsOnline] = useState(
     typeof navigator !== "undefined" ? navigator.onLine : true
@@ -374,14 +385,39 @@ function Card({
           )}
         </motion.div>
 
-        {/* Promos activas */}
+        {/* Promos activas — si no hay promos, muestra el reward goal aquí */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.15 }}
           className="w-full max-w-xs"
         >
-          <PromoBannerInline />
+          {hasPromos ? (
+            <div className="space-y-4">
+              <PromoBannerInline />
+              {!isCompleted && rewardDoc && (
+                <p className="text-[11px] text-stone-400 dark:text-stone-500 tracking-wide text-center">
+                  Completa {requiredStamps} sellos y gana: <span className="text-stone-600 dark:text-stone-300">{rewardName}</span>
+                </p>
+              )}
+            </div>
+          ) : promosLoaded && !isCompleted && rewardDoc ? (
+            <div className="text-center space-y-1.5">
+              <div className="flex items-center justify-center gap-3">
+                <span className="w-5 h-px bg-stone-300/40 dark:bg-stone-700/40" />
+                <p className="text-[10px] uppercase tracking-[0.35em] text-stone-400/80 dark:text-stone-500/70">
+                  Recompensa
+                </p>
+                <span className="w-5 h-px bg-stone-300/40 dark:bg-stone-700/40" />
+              </div>
+              <p className="font-display text-lg sm:text-xl font-light tracking-wide text-stone-700 dark:text-stone-200">
+                {rewardName}
+              </p>
+              <p className="text-[11px] text-stone-400 dark:text-stone-600 leading-snug">
+                Completa {requiredStamps} sellos para obtenerla
+              </p>
+            </div>
+          ) : null}
         </motion.div>
 
         {/* Tarjeta */}
@@ -407,7 +443,7 @@ function Card({
                 href={`/card/${cardId}/redeem`}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-amber-100/50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700/50 text-amber-700 dark:text-amber-300 text-[11px] uppercase tracking-[0.3em] hover:bg-amber-100 dark:hover:bg-amber-900/50 hover:border-amber-400 dark:hover:border-amber-600 transition-colors duration-300"
               >
-                Canjear bebida gratis →
+                Canjear {rewardName.toLowerCase()} →
               </Link>
             </motion.div>
           )}

@@ -13,6 +13,7 @@ export interface Card {
   createdAt: Timestamp;
   lastStampAt?: Timestamp;
   completedAt?: Timestamp;
+  redeemedAt?: Timestamp;
 
   /** Seguridad */
   pinHash?: string; // para vista barista

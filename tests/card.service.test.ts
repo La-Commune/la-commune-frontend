@@ -50,10 +50,23 @@ describe("card.service", () => {
   // ==========================================================================
 
   describe("createCard", () => {
-    it("creates a card with correct initial data", async () => {
+    it("creates a card using requiredStamps from reward", async () => {
       // ARRANGE: crear refs fake de cliente y reward
       const customerRef = mockDocRef("customers/c1");
       const rewardRef = mockDocRef("rewards/default");
+
+      // Mock getDoc para que devuelva un reward con requiredStamps = 8
+      firestoreMocks.getDoc.mockResolvedValue(
+        mockDocSnap(
+          {
+            name: "Café gratis",
+            requiredStamps: 8,
+            type: "drink",
+            active: true,
+          },
+          "default",
+        ),
+      );
 
       // ACT: llamar la funcion real
       const result = await createCard(firestore, { customerRef, rewardRef });
@@ -61,17 +74,28 @@ describe("card.service", () => {
       // ASSERT: verificar que addDoc fue llamado 1 vez
       expect(firestoreMocks.addDoc).toHaveBeenCalledTimes(1);
 
-      // Acceder al 2do argumento de la 1ra llamada a addDoc (los datos de la tarjeta)
-      // mock.calls es un array de llamadas, cada una es un array de argumentos:
-      //   calls[0] = primera llamada
-      //   calls[0][0] = primer argumento (la coleccion)
-      //   calls[0][1] = segundo argumento (los datos)
       const data = firestoreMocks.addDoc.mock.calls[0][1];
-      expect(data.stamps).toBe(0);          // empieza sin sellos
-      expect(data.maxStamps).toBe(5);       // 5 sellos para completar
-      expect(data.status).toBe("active");   // estado inicial
-      expect(data.schemaVersion).toBe(1);   // version del esquema
+      expect(data.stamps).toBe(0); // empieza sin sellos
+      expect(data.maxStamps).toBe(8); // viene del reward.requiredStamps
+      expect(data.status).toBe("active"); // estado inicial
+      expect(data.schemaVersion).toBe(1); // version del esquema
       expect(result.id).toBe("new-doc-id"); // ID que retorna nuestro mock de addDoc
+    });
+
+    it("falls back to 5 when reward does not exist", async () => {
+      // ARRANGE: reward que no existe
+      const customerRef = mockDocRef("customers/c1");
+      const rewardRef = mockDocRef("rewards/missing");
+
+      firestoreMocks.getDoc.mockResolvedValue(mockDocSnap(null, "missing"));
+
+      // ACT
+      const result = await createCard(firestore, { customerRef, rewardRef });
+
+      // ASSERT: usa DEFAULT_MAX_STAMPS (5)
+      const data = firestoreMocks.addDoc.mock.calls[0][1];
+      expect(data.maxStamps).toBe(5);
+      expect(result.id).toBe("new-doc-id");
     });
   });
 
@@ -97,11 +121,11 @@ describe("card.service", () => {
       const result = await addStamp(firestore, "card1");
 
       // ASSERT
-      expect(result.stamps).toBe(3);          // 2 + 1 = 3
-      expect(result.status).toBe("active");   // aun no se completa (necesita 5)
-      expect(result.eventId).toBeTruthy();     // se creo un evento de sello
-      expect(tx.update).toHaveBeenCalled();    // se actualizo la tarjeta
-      expect(tx.set).toHaveBeenCalled();       // se creo el stamp-event
+      expect(result.stamps).toBe(3); // 2 + 1 = 3
+      expect(result.status).toBe("active"); // aun no se completa (necesita 5)
+      expect(result.eventId).toBeTruthy(); // se creo un evento de sello
+      expect(tx.update).toHaveBeenCalled(); // se actualizo la tarjeta
+      expect(tx.set).toHaveBeenCalled(); // se creo el stamp-event
     });
 
     it("marks card as completed when reaching maxStamps", async () => {
@@ -116,7 +140,7 @@ describe("card.service", () => {
       const result = await addStamp(firestore, "card1");
 
       // ASSERT
-      expect(result.stamps).toBe(5);          // 4 + 1 = 5 (completa!)
+      expect(result.stamps).toBe(5); // 4 + 1 = 5 (completa!)
       expect(result.status).toBe("completed");
 
       // Verificar que tx.update recibio los campos correctos:
@@ -140,9 +164,9 @@ describe("card.service", () => {
 
       // ASSERT: no debe hacer nada, solo retornar el estado actual
       expect(result.stamps).toBe(5);
-      expect(result.eventId).toBe("");             // sin evento porque no se agrego sello
-      expect(tx.update).not.toHaveBeenCalled();    // NO actualizo la tarjeta
-      expect(tx.set).not.toHaveBeenCalled();       // NO creo stamp-event
+      expect(result.eventId).toBe(""); // sin evento porque no se agrego sello
+      expect(tx.update).not.toHaveBeenCalled(); // NO actualizo la tarjeta
+      expect(tx.set).not.toHaveBeenCalled(); // NO creo stamp-event
     });
 
     it("throws if card does not exist", async () => {
@@ -236,8 +260,8 @@ describe("card.service", () => {
 
       // ASSERT
       const updateCall = tx.update.mock.calls[0][1];
-      expect(updateCall.stamps).toBe(2);        // 3 - 1 = 2
-      expect(tx.delete).toHaveBeenCalled();      // borro el stamp-event
+      expect(updateCall.stamps).toBe(2); // 3 - 1 = 2
+      expect(tx.delete).toHaveBeenCalled(); // borro el stamp-event
     });
 
     it("reverts completed status when undoing last stamp", async () => {
@@ -253,8 +277,8 @@ describe("card.service", () => {
 
       // ASSERT
       const updateCall = tx.update.mock.calls[0][1];
-      expect(updateCall.stamps).toBe(4);         // 5 - 1 = 4
-      expect(updateCall.status).toBe("active");  // revertido de "completed" a "active"
+      expect(updateCall.stamps).toBe(4); // 5 - 1 = 4
+      expect(updateCall.status).toBe("active"); // revertido de "completed" a "active"
     });
 
     it("does not go below 0 stamps", async () => {
@@ -296,6 +320,19 @@ describe("card.service", () => {
       const customerRef = mockDocRef("customers/c1");
       const rewardRef = mockDocRef("rewards/default");
 
+      // createCard internamente hace getDoc del reward para leer requiredStamps
+      firestoreMocks.getDoc.mockResolvedValue(
+        mockDocSnap(
+          {
+            name: "Café gratis",
+            requiredStamps: 5,
+            type: "drink",
+            active: true,
+          },
+          "default",
+        ),
+      );
+
       // ACT
       const newCard = await redeemCard(firestore, {
         oldCardId: "old1",
@@ -329,15 +366,15 @@ describe("card.service", () => {
         mockQuerySnap([
           {
             id: "e1",
-            data: { createdAt: mockTimestamp(1000), source: "manual" },  // mas viejo
+            data: { createdAt: mockTimestamp(1000), source: "manual" }, // mas viejo
           },
           {
             id: "e2",
-            data: { createdAt: mockTimestamp(3000), source: "manual" },  // mas reciente
+            data: { createdAt: mockTimestamp(3000), source: "manual" }, // mas reciente
           },
           {
             id: "e3",
-            data: { createdAt: mockTimestamp(2000), source: "manual" },  // intermedio
+            data: { createdAt: mockTimestamp(2000), source: "manual" }, // intermedio
           },
         ]),
       );

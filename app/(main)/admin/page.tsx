@@ -15,6 +15,8 @@ import { AnalyticsDashboard } from "@/components/ui/AnalyticsDashboard";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { verifyAdminPin, checkBaristaSession, logoutBarista } from "@/app/actions/verifyAdminPin";
 import { addStamp, redeemCard, undoStamp } from "@/services/card.service";
+import { getDefaultReward, upsertDefaultReward } from "@/services/reward.service";
+import { Reward } from "@/models/reward.model";
 import { getFullMenu } from "@/services/menu.service";
 import { timeAgo } from "@/lib/utils";
 import { toast } from "@/components/ui/use-toast";
@@ -900,6 +902,155 @@ function StampView({ onLogout }: { onLogout: () => void }) {
   );
 }
 
+/* -- Config del reward ---------------------------------------- */
+function RewardConfig() {
+  const firestore = useFirestore();
+  const [reward, setReward] = useState<(Reward & { id: string }) | null>(null);
+  const [loadingReward, setLoadingReward] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [stamps, setStamps] = useState(5);
+  const [rewardName, setRewardName] = useState("");
+  const [rewardDesc, setRewardDesc] = useState("");
+
+  useEffect(() => {
+    getDefaultReward(firestore).then((r) => {
+      if (r) {
+        setReward(r);
+        setStamps(r.requiredStamps);
+        setRewardName(r.name);
+        setRewardDesc(r.description);
+      }
+      setLoadingReward(false);
+    });
+  }, [firestore]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSaved(false);
+    try {
+      await upsertDefaultReward(firestore, {
+        name: rewardName || "Bebida gratis",
+        description: rewardDesc || "Completa tu tarjeta y recibe una bebida gratis",
+        requiredStamps: stamps,
+        type: "drink",
+        active: true,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch {
+      // silently fail
+    }
+    setSaving(false);
+  };
+
+  if (loadingReward) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="w-5 h-5 border-2 border-stone-300 dark:border-stone-700 border-t-stone-700 dark:border-t-stone-300 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-sm mx-auto space-y-8">
+      {/* Reward principal */}
+      <div className="space-y-5">
+        <p className="text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600">
+          Recompensa principal
+        </p>
+
+        <div className="space-y-1.5">
+          <label className="block text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600">
+            Nombre
+          </label>
+          <input
+            type="text"
+            value={rewardName}
+            onChange={(e) => setRewardName(e.target.value)}
+            placeholder="Bebida gratis"
+            className="w-full px-4 py-2.5 rounded-lg bg-white dark:bg-neutral-900 border border-stone-200 dark:border-stone-800 text-sm text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600 focus:outline-none focus:border-stone-400 dark:focus:border-stone-600 transition-colors"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="block text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600">
+            Descripcion
+          </label>
+          <input
+            type="text"
+            value={rewardDesc}
+            onChange={(e) => setRewardDesc(e.target.value)}
+            placeholder="Completa tu tarjeta y recibe una bebida gratis"
+            className="w-full px-4 py-2.5 rounded-lg bg-white dark:bg-neutral-900 border border-stone-200 dark:border-stone-800 text-sm text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600 focus:outline-none focus:border-stone-400 dark:focus:border-stone-600 transition-colors"
+          />
+        </div>
+
+        <div className="space-y-3">
+          <label className="block text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600">
+            Sellos para completar tarjeta
+          </label>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setStamps(Math.max(1, stamps - 1))}
+              className="w-10 h-10 rounded-lg bg-stone-100 dark:bg-neutral-900 border border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-neutral-800 transition-colors text-lg"
+            >
+              -
+            </button>
+            <span className="text-3xl font-light tracking-wide text-stone-700 dark:text-stone-200 min-w-[3ch] text-center tabular-nums">
+              {stamps}
+            </span>
+            <button
+              onClick={() => setStamps(Math.min(20, stamps + 1))}
+              className="w-10 h-10 rounded-lg bg-stone-100 dark:bg-neutral-900 border border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-neutral-800 transition-colors text-lg"
+            >
+              +
+            </button>
+          </div>
+          <p className="text-[11px] text-stone-400 dark:text-stone-600">
+            Las tarjetas nuevas usaran este numero. Las existentes no se afectan.
+          </p>
+        </div>
+      </div>
+
+      {/* Preview */}
+      <div className="p-4 rounded-xl bg-stone-100 dark:bg-neutral-900 border border-stone-200 dark:border-stone-800">
+        <p className="text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 mb-3">
+          Vista previa de la tarjeta
+        </p>
+        <div className="flex gap-2 flex-wrap">
+          {Array.from({ length: stamps }).map((_, i) => (
+            <div
+              key={i}
+              className={`w-7 h-7 rounded-full border-2 transition-colors ${
+                i < Math.floor(stamps / 2)
+                  ? "bg-stone-700 border-stone-700 dark:bg-stone-300 dark:border-stone-300"
+                  : "bg-transparent border-stone-300 dark:border-stone-700"
+              }`}
+            />
+          ))}
+        </div>
+        <p className="text-[11px] text-stone-500 dark:text-stone-500 mt-2">
+          {Math.floor(stamps / 2)} de {stamps} sellos
+        </p>
+      </div>
+
+      {/* Guardar */}
+      <button
+        onClick={handleSave}
+        disabled={saving}
+        className={`w-full py-3 rounded-full text-sm tracking-wide transition-all duration-300 ${
+          saved
+            ? "bg-emerald-600 text-white"
+            : "bg-stone-800 text-white dark:bg-stone-200 dark:text-neutral-900 hover:bg-stone-900 dark:hover:bg-stone-100"
+        } disabled:opacity-50`}
+      >
+        {saving ? "Guardando..." : saved ? "Guardado" : "Guardar cambios"}
+      </button>
+    </div>
+  );
+}
+
 /* -- Pagina principal ---------------------------------------- */
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -911,7 +1062,7 @@ export default function AdminPage() {
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
   const [pinLoading, setPinLoading] = useState(false);
-  const [adminTab, setAdminTab] = useState<"stamps" | "menu" | "promos" | "customers" | "analytics">("stamps");
+  const [adminTab, setAdminTab] = useState<"stamps" | "menu" | "promos" | "customers" | "analytics" | "config">("stamps");
   const [lockout, setLockout] = useState(0);
   const pinLoadingRef = useRef(false);
 
@@ -1023,7 +1174,7 @@ export default function AdminPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5 }}
-              className={`flex flex-col items-center gap-6 w-full ${adminTab === "menu" || adminTab === "promos" ? "justify-start" : ""}`}
+              className={`flex flex-col items-center gap-6 w-full ${adminTab === "menu" || adminTab === "promos" || adminTab === "config" ? "justify-start" : ""}`}
             >
               {/* Header */}
               <div className="text-center space-y-2">
@@ -1038,13 +1189,14 @@ export default function AdminPage() {
                     : adminTab === "menu" ? "Gestionar menu"
                     : adminTab === "promos" ? "Promociones"
                     : adminTab === "customers" ? "Clientes"
+                    : adminTab === "config" ? "Configuracion"
                     : "Analytics"}
                 </h1>
               </div>
 
               {/* Tabs */}
               <div className="flex gap-1 p-1 bg-stone-100 dark:bg-neutral-900 border border-stone-200 dark:border-stone-800 rounded-xl flex-wrap justify-center">
-                {(["stamps", "menu", "promos", "customers", "analytics"] as const).map((tab) => (
+                {(["stamps", "menu", "promos", "customers", "analytics", "config"] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setAdminTab(tab)}
@@ -1058,7 +1210,8 @@ export default function AdminPage() {
                       : tab === "menu" ? "Menu"
                       : tab === "promos" ? "Promos"
                       : tab === "customers" ? "Clientes"
-                      : "Analytics"}
+                      : tab === "analytics" ? "Analytics"
+                      : "Config"}
                   </button>
                 ))}
               </div>
@@ -1123,6 +1276,18 @@ export default function AdminPage() {
                     className="w-full"
                   >
                     <AnalyticsDashboard />
+                  </motion.div>
+                )}
+                {adminTab === "config" && (
+                  <motion.div
+                    key="config-view"
+                    initial={{ opacity: 0, x: 8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -8 }}
+                    transition={{ duration: 0.2 }}
+                    className="w-full"
+                  >
+                    <RewardConfig />
                   </motion.div>
                 )}
               </AnimatePresence>

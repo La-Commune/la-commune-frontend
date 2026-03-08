@@ -17,7 +17,9 @@ export async function createCustomer(
   data: {
     name?: string;
     phone: string;
+    email?: string;
     consentWhatsApp: boolean;
+    consentEmail?: boolean;
     referrerCustomerId?: string;
     pinHmac?: string;
   },
@@ -33,6 +35,8 @@ export async function createCustomer(
     lastVisitAt: Timestamp.now(),
     notes: "",
     schemaVersion: 1,
+    ...(data.email ? { email: data.email } : {}),
+    ...(data.consentEmail != null ? { consentEmail: data.consentEmail } : {}),
     ...(data.referrerCustomerId ? { referrerCustomerId: data.referrerCustomerId } : {}),
     ...(data.pinHmac ? { pinHmac: data.pinHmac } : {}),
   };
@@ -136,4 +140,16 @@ export async function updateCustomerPhone(
   phone: string,
 ): Promise<void> {
   await updateDoc(doc(firestore, "customers", customerId), { phone });
+}
+
+export async function updateCustomerEmail(
+  firestore: Firestore,
+  customerId: string,
+  email: string,
+  consentEmail?: boolean,
+): Promise<void> {
+  await updateDoc(doc(firestore, "customers", customerId), {
+    email,
+    ...(consentEmail != null ? { consentEmail } : {}),
+  });
 }
