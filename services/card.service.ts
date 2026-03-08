@@ -1,6 +1,10 @@
 import { Card } from "@/models/card.model";
+import { Reward } from "@/models/reward.model";
 import { StampEvent } from "@/models/stamp-event.model";
 import { Firestore, doc, runTransaction, Timestamp, collection, DocumentReference, addDoc, where, query, getDocs, updateDoc, deleteField, getDoc, increment } from "firebase/firestore";
+
+/** Fallback si el reward no existe o no tiene requiredStamps */
+const DEFAULT_MAX_STAMPS = 5;
 
 export async function createCard(
   firestore: Firestore,
@@ -9,15 +13,20 @@ export async function createCard(
     rewardRef: DocumentReference;
   },
 ) {
-  const cardData : Card = {
+  // Leer requiredStamps del reward en vez de hardcodear
+  const rewardSnap = await getDoc(params.rewardRef);
+  const reward = rewardSnap.exists() ? (rewardSnap.data() as Reward) : null;
+  const maxStamps = reward?.requiredStamps ?? DEFAULT_MAX_STAMPS;
+
+  const cardData: Card = {
     customerId: params.customerRef,
     rewardId: params.rewardRef,
     stamps: 0,
-    maxStamps: 5,
+    maxStamps,
     status: "active",
     createdAt: Timestamp.now(),
-    schemaVersion: 1
-  }
+    schemaVersion: 1,
+  };
   return addDoc(collection(firestore, "cards"), cardData);
 }
 export type AddStampResult = {

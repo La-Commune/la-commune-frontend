@@ -29,16 +29,23 @@ function OnboardingForm() {
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [pin, setPin] = useState("");
   const [consentWhatsApp, setConsentWhatsApp] = useState(false);
+  const [consentEmail, setConsentEmail] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [phoneTouched, setPhoneTouched] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
 
   const isValidPhone = phone.length === 10;
   const isValidPin = pin.length === 4;
+  const isValidEmail = email === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const phoneError = phoneTouched && phone.length > 0 && phone.length < 10
     ? "Ingresa los 10 digitos"
+    : null;
+  const emailError = emailTouched && email.length > 0 && !isValidEmail
+    ? "Ingresa un email valido"
     : null;
 
   const handleSubmit = async () => {
@@ -75,7 +82,9 @@ function OnboardingForm() {
       const customerRef = await createCustomer(firestore, {
         name,
         phone,
+        ...(email ? { email } : {}),
         consentWhatsApp,
+        ...(email ? { consentEmail } : {}),
         pinHmac,
         ...(referrerCustomerId ? { referrerCustomerId } : {}),
       });
@@ -197,6 +206,28 @@ function OnboardingForm() {
               </div>
             </div>
 
+            {/* Email */}
+            <div className="space-y-1.5">
+              <label htmlFor="email" className="block text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 text-left">
+                Email <span className="text-stone-300 dark:text-stone-700">(opcional)</span>
+              </label>
+              <Input
+                id="email"
+                type="email"
+                inputMode="email"
+                placeholder="tu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value.trim())}
+                onBlur={() => setEmailTouched(true)}
+                className={`text-base text-center bg-white dark:bg-neutral-900 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600 focus:border-stone-500 ${
+                  emailError ? "border-red-400 dark:border-red-500" : "border-stone-300 dark:border-stone-700"
+                }`}
+              />
+              {emailError && (
+                <p className="text-[11px] text-red-500 dark:text-red-400">{emailError}</p>
+              )}
+            </div>
+
             {/* PIN */}
             <div className="space-y-1.5">
               <label htmlFor="pin" className="block text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 text-left">
@@ -245,6 +276,20 @@ function OnboardingForm() {
                 promociones del cafe.
               </span>
             </label>
+
+            {email && (
+              <label className="flex items-start gap-3 text-xs text-stone-500 leading-snug text-left">
+                <input
+                  type="checkbox"
+                  checked={consentEmail}
+                  onChange={(e) => setConsentEmail(e.target.checked)}
+                  className="mt-0.5 accent-stone-400"
+                />
+                <span>
+                  Acepto recibir correos con promociones y novedades del cafe.
+                </span>
+              </label>
+            )}
           </div>
 
           {/* Error */}
@@ -257,7 +302,7 @@ function OnboardingForm() {
             <Button
               className="w-full rounded-full bg-stone-800 text-white dark:bg-white dark:text-neutral-900 py-6 text-sm tracking-wide transition hover:bg-stone-900 dark:hover:bg-stone-100 disabled:opacity-30"
               onClick={handleSubmit}
-              disabled={!isValidPhone || !isValidPin || loading}
+              disabled={!isValidPhone || !isValidPin || !isValidEmail || loading}
             >
               {loading ? (
                 <span className="inline-flex items-center gap-2">

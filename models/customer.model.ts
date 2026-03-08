@@ -3,6 +3,7 @@ import { Timestamp } from "firebase/firestore";
 export interface Customer {
   name?: string;
   phone?: string;
+  email?: string;
 
   /** Identidad técnica */
   deviceIds?: string[]; // para multidevice futuro
@@ -20,6 +21,7 @@ export interface Customer {
 
   /** Marketing (opcional) */
   consentWhatsApp?: boolean;
+  consentEmail?: boolean;
 
   /** PIN de recuperación (HMAC-SHA256, verificado server-side) */
   pinHmac?: string;

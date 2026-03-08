@@ -14,7 +14,7 @@ function formatRange(start: Timestamp | string, end: Timestamp | string): string
   return `${s.toLocaleDateString("es-MX", opts)} — ${e.toLocaleDateString("es-MX", opts)}`;
 }
 
-function useActivePromos() {
+export function useActivePromos() {
   const firestore = useFirestore();
   const [promos, setPromos] = useState<Promotion[]>([]);
   const [loaded, setLoaded] = useState(false);

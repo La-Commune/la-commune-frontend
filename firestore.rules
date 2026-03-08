@@ -14,10 +14,16 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // rewards — solo lectura (la app necesita leer "default" al crear tarjeta)
+    // rewards — lectura publica + escritura con validacion basica (admin configura requiredStamps)
     match /rewards/{docId} {
       allow read: if true;
-      allow write: if false;
+      allow create, update: if request.resource.data.name is string
+                            && request.resource.data.name.size() > 0
+                            && request.resource.data.name.size() <= 100
+                            && request.resource.data.requiredStamps is int
+                            && request.resource.data.requiredStamps >= 1
+                            && request.resource.data.requiredStamps <= 20;
+      allow delete: if false;
     }
 
     // customers — cualquiera puede crear (onboarding), lectura y actualización públicas (admin panel)

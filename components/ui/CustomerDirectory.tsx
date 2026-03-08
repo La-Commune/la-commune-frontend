@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useFirestore } from "reactfire";
 import { doc } from "firebase/firestore";
 import { Customer } from "@/models/customer.model";
-import { getAllCustomers, updateCustomerNotes, deleteCustomer } from "@/services/customer.service";
+import { getAllCustomers, updateCustomerNotes, updateCustomerEmail, deleteCustomer } from "@/services/customer.service";
 import { getCustomerTopDrinks } from "@/services/analytics.service";
 import { formatDate } from "@/lib/utils";
 import { toast } from "@/components/ui/use-toast";
@@ -24,14 +24,17 @@ function toDateStr(val: unknown): string {
 }
 
 function exportCSV(customers: CustomerRow[]) {
-  const headers = ["Nombre", "Telefono", "Visitas", "Sellos", "Ultima visita", "Miembro desde"];
+  const headers = ["Nombre", "Telefono", "Email", "Visitas", "Sellos", "Ultima visita", "Miembro desde", "Consent WhatsApp", "Consent Email"];
   const rows = customers.map((c) => [
     c.name ?? "",
     c.phone ?? "",
+    c.email ?? "",
     c.totalVisits ?? 0,
     c.totalStamps ?? 0,
     toDateStr(c.lastVisitAt),
     toDateStr(c.createdAt),
+    c.consentWhatsApp ? "Si" : "No",
+    c.consentEmail ? "Si" : "No",
   ]);
   const csvContent = [headers, ...rows]
     .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
@@ -152,6 +155,9 @@ function CustomerDrawer({
               </h2>
               {customer.phone && (
                 <p className="text-sm text-stone-500">{customer.phone}</p>
+              )}
+              {customer.email && (
+                <p className="text-sm text-stone-500">{customer.email}</p>
               )}
             </div>
 
@@ -371,7 +377,8 @@ export function CustomerDirectory() {
     const q = search.toLowerCase();
     return (
       (c.name ?? "").toLowerCase().includes(q) ||
-      (c.phone ?? "").includes(q)
+      (c.phone ?? "").includes(q) ||
+      (c.email ?? "").toLowerCase().includes(q)
     );
   });
 
@@ -433,7 +440,7 @@ export function CustomerDirectory() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por nombre o telefono…"
+          placeholder="Buscar por nombre, telefono o email…"
           className="w-full bg-white dark:bg-neutral-900 border border-stone-200 dark:border-stone-800 rounded-xl pl-10 pr-4 py-3 text-sm text-stone-900 dark:text-white placeholder:text-stone-300 dark:placeholder:text-stone-700 focus:outline-none focus:border-stone-400 dark:focus:border-stone-600 transition-colors"
         />
       </div>
@@ -476,6 +483,9 @@ export function CustomerDirectory() {
               </p>
               {customer.phone && (
                 <p className="text-[11px] text-stone-400 dark:text-stone-600 truncate">{customer.phone}</p>
+              )}
+              {customer.email && (
+                <p className="text-[10px] text-stone-300 dark:text-stone-700 truncate">{customer.email}</p>
               )}
             </div>
 
