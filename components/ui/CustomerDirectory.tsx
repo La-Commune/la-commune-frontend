@@ -2,8 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useFirestore } from "reactfire";
-import { doc } from "firebase/firestore";
 import { Customer } from "@/models/customer.model";
 import { getAllCustomers, updateCustomerNotes, updateCustomerEmail, deleteCustomer } from "@/services/customer.service";
 import { getCustomerTopDrinks } from "@/services/analytics.service";
@@ -69,7 +67,6 @@ function CustomerDrawer({
   onNotesSaved: (id: string, notes: string) => void;
   onDeleted: (id: string) => void;
 }) {
-  const firestore = useFirestore();
   const [notes, setNotes] = useState(customer.notes ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -78,16 +75,15 @@ function CustomerDrawer({
   const [topDrinks, setTopDrinks] = useState<{ drink: string; count: number }[] | null>(null);
 
   useEffect(() => {
-    const customerRef = doc(firestore, "customers", customer.id);
-    getCustomerTopDrinks(firestore, customerRef)
+    getCustomerTopDrinks(customer.id)
       .then(setTopDrinks)
       .catch(() => setTopDrinks([]));
-  }, [customer.id, firestore]);
+  }, [customer.id]);
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      await updateCustomerNotes(firestore, customer.id, notes);
+      await updateCustomerNotes(customer.id, notes);
       onNotesSaved(customer.id, notes);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
@@ -107,14 +103,14 @@ function CustomerDrawer({
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      await deleteCustomer(firestore, customer.id);
+      await deleteCustomer(customer.id);
       onDeleted(customer.id);
     } catch (e) {
       console.error("Error al eliminar cliente:", e);
       toast({
         variant: "destructive",
         title: "No se pudo eliminar el cliente",
-        description: "Revisa la conexion o los permisos de Firestore.",
+        description: "Revisa la conexion o los permisos de Supabase.",
         duration: 5000,
       });
       setDeleting(false);
@@ -330,7 +326,6 @@ const SEGMENTS: { id: Segment; label: string }[] = [
 /* -- Componente principal ----------------------------------- */
 
 export function CustomerDirectory() {
-  const firestore = useFirestore();
   const [customers, setCustomers] = useState<CustomerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -339,19 +334,19 @@ export function CustomerDirectory() {
 
   const load = useCallback(() => {
     setLoading(true);
-    getAllCustomers(firestore)
+    getAllCustomers()
       .then(setCustomers)
       .catch((e) => {
         console.error("Error al cargar clientes:", e);
         toast({
           variant: "destructive",
           title: "No se pudo cargar el directorio",
-          description: "Revisa la conexion o los permisos de Firestore.",
+          description: "Revisa la conexion o los permisos de Supabase.",
           duration: 6000,
         });
       })
       .finally(() => setLoading(false));
-  }, [firestore]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
@@ -363,12 +358,14 @@ export function CustomerDirectory() {
     if (segment === "all") return true;
     if (segment === "inactive") {
       if (!c.lastVisitAt) return true;
-      return (c.lastVisitAt as { toDate: () => Date }).toDate() < thirtyDaysAgo;
+      const d = typeof c.lastVisitAt === "string" ? new Date(c.lastVisitAt) : c.lastVisitAt;
+      return d < thirtyDaysAgo;
     }
     if (segment === "top") return (c.totalVisits ?? 0) >= 5;
     if (segment === "new") {
       if (!c.createdAt) return false;
-      return (c.createdAt as { toDate: () => Date }).toDate() >= startOfMonth;
+      const d = typeof c.createdAt === "string" ? new Date(c.createdAt) : c.createdAt;
+      return d >= startOfMonth;
     }
     return true;
   });

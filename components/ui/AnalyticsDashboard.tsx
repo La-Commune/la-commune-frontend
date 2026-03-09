@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useFirestore } from "reactfire";
 import {
   BarChart,
   Bar,
@@ -19,7 +18,6 @@ import {
 } from "@/services/analytics.service";
 import { getAllCustomers } from "@/services/customer.service";
 import { Customer } from "@/models/customer.model";
-import { Timestamp } from "firebase/firestore";
 import { toast } from "@/components/ui/use-toast";
 
 type Range = 7 | 30 | 90;
@@ -37,8 +35,8 @@ interface ChartPoint {
   sellos: number;
 }
 
-function dateKey(ts: Timestamp | null | undefined): string {
-  const d = ts?.toDate?.() ?? new Date();
+function dateKey(ts: string | Date | null | undefined): string {
+  const d = ts ? (typeof ts === "string" ? new Date(ts) : ts) : new Date();
   return d.toISOString().slice(0, 10);
 }
 
@@ -73,7 +71,7 @@ function buildChartData(events: StampEventRaw[], range: Range): ChartPoint[] {
       weekStart.setDate(weekStart.getDate() - 6);
       const label = new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short" }).format(weekStart);
       const sellos = stamps.filter((e) => {
-        const d = e.createdAt?.toDate?.() ?? new Date();
+        const d = e.createdAt ? (typeof e.createdAt === "string" ? new Date(e.createdAt) : e.createdAt) : new Date();
         return d >= weekStart && d <= weekEnd;
       }).length;
       return { label, sellos };
@@ -86,7 +84,7 @@ function buildChartData(events: StampEventRaw[], range: Range): ChartPoint[] {
     const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59);
     const label = new Intl.DateTimeFormat("es-MX", { month: "short" }).format(monthStart);
     const sellos = stamps.filter((e) => {
-      const d = e.createdAt?.toDate?.() ?? new Date();
+      const d = e.createdAt ? (typeof e.createdAt === "string" ? new Date(e.createdAt) : e.createdAt) : new Date();
       return d >= monthStart && d <= monthEnd;
     }).length;
     return { label, sellos };
@@ -143,8 +141,6 @@ function CustomTooltipDrink({ active, payload, label }: ChartTooltipProps) {
 /* -- Componente principal ------------------------------------ */
 
 export function AnalyticsDashboard() {
-  const firestore = useFirestore();
-
   const [loading, setLoading] = useState(true);
   const [totalCustomers, setTotalCustomers] = useState(0);
   const [totalRedemptions, setTotalRedemptions] = useState(0);
@@ -157,10 +153,10 @@ export function AnalyticsDashboard() {
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
     Promise.all([
-      getTotalCustomers(firestore),
-      getTotalRedemptions(firestore),
-      getStampEventsInRange(firestore, ninetyDaysAgo),
-      getAllCustomers(firestore),
+      getTotalCustomers(),
+      getTotalRedemptions(),
+      getStampEventsInRange(ninetyDaysAgo),
+      getAllCustomers(),
     ])
       .then(([total, redemptions, evts, allCustomers]) => {
         setTotalCustomers(total);
@@ -173,11 +169,14 @@ export function AnalyticsDashboard() {
         setLoading(false);
         toast({ variant: "destructive", title: "Error al cargar analytics", description: "No se pudieron obtener los datos. Intenta recargar." });
       });
-  }, [firestore]);
+  }, []);
 
   const rangeDate = new Date();
   rangeDate.setDate(rangeDate.getDate() - range);
-  const events = allEvents.filter((e) => (e.createdAt?.toDate?.() ?? new Date()) >= rangeDate);
+  const events = allEvents.filter((e) => {
+    const d = e.createdAt ? (typeof e.createdAt === "string" ? new Date(e.createdAt) : e.createdAt) : new Date();
+    return d >= rangeDate;
+  });
 
   const rangeStamps = events.filter((e) => e.source !== "redemption").length;
   const chartData = buildChartData(events, range);

@@ -1,34 +1,47 @@
+import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
 import { Card } from "@/models/card.model";
 import { Reward } from "@/models/reward.model";
 import { StampEvent } from "@/models/stamp-event.model";
-import { Firestore, doc, runTransaction, Timestamp, collection, DocumentReference, addDoc, where, query, getDocs, updateDoc, deleteField, getDoc, increment } from "firebase/firestore";
 
 /** Fallback si el reward no existe o no tiene requiredStamps */
 const DEFAULT_MAX_STAMPS = 5;
 
-export async function createCard(
-  firestore: Firestore,
-  params: {
-    customerRef: DocumentReference;
-    rewardRef: DocumentReference;
-  },
-) {
-  // Leer requiredStamps del reward en vez de hardcodear
-  const rewardSnap = await getDoc(params.rewardRef);
-  const reward = rewardSnap.exists() ? (rewardSnap.data() as Reward) : null;
-  const maxStamps = reward?.requiredStamps ?? DEFAULT_MAX_STAMPS;
+export async function createCard(params: {
+  customerRef: string;
+  rewardRef: string;
+}) {
+  const supabase = getSupabase();
 
-  const cardData: Card = {
-    customerId: params.customerRef,
-    rewardId: params.rewardRef,
-    stamps: 0,
-    maxStamps,
-    status: "active",
-    createdAt: Timestamp.now(),
-    schemaVersion: 1,
+  // Leer requiredStamps del reward en vez de hardcodear
+  const { data: rewardData } = await supabase
+    .from("recompensas")
+    .select("sellos_requeridos")
+    .eq("id", params.rewardRef)
+    .eq("negocio_id", NEGOCIO_ID)
+    .single();
+
+  const maxStamps = rewardData?.sellos_requeridos ?? DEFAULT_MAX_STAMPS;
+
+  const cardData = {
+    negocio_id: NEGOCIO_ID,
+    cliente_id: params.customerRef,
+    recompensa_id: params.rewardRef,
+    sellos: 0,
+    sellos_maximos: maxStamps,
+    estado: "activa",
+    creado_en: new Date().toISOString(),
   };
-  return addDoc(collection(firestore, "cards"), cardData);
+
+  const { data, error } = await supabase
+    .from("tarjetas")
+    .insert([cardData])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
 }
+
 export type AddStampResult = {
   stamps: number;
   maxStamps: number;
@@ -37,229 +50,163 @@ export type AddStampResult = {
 };
 
 export async function addStamp(
-  firestore: Firestore,
   cardId: string,
   options?: {
-    customerId?: DocumentReference;
+    customerId?: string;
     addedBy?: string;
     drinkType?: string;
     size?: string;
   },
 ): Promise<AddStampResult> {
-  const cardRef = doc(firestore, "cards", cardId);
-  const eventsRef = collection(firestore, "stamp-events");
-  const eventRef = doc(eventsRef); // Create ref with auto-ID before transaction
-  let result: AddStampResult | null = null;
+  const supabase = getSupabase();
 
-  await runTransaction(firestore, async (tx) => {
-    const snap = await tx.get(cardRef);
-    if (!snap.exists()) throw new Error("Card not found");
-
-    const card = snap.data();
-    if (card.stamps >= card.maxStamps) {
-      result = { stamps: card.stamps, maxStamps: card.maxStamps, status: card.status, eventId: "" };
-      return;
-    }
-
-    const newStamps = card.stamps + 1;
-    const isComplete = newStamps >= card.maxStamps;
-    const newStatus = isComplete ? "completed" : card.status;
-
-    const now = Timestamp.now();
-
-    tx.update(cardRef, {
-      stamps: newStamps,
-      lastStampAt: now,
-      ...(isComplete ? { status: "completed", completedAt: now } : {}),
-    });
-
-    if (options?.customerId) {
-      tx.update(options.customerId, {
-        lastVisitAt: now,
-        totalStamps: increment(1),
-        totalVisits: increment(1),
-      });
-    }
-
-    tx.set(eventRef, {
-      cardId: cardRef,
-      customerId: options?.customerId ?? null,
-      createdAt: Timestamp.now(),
-      addedBy: options?.addedBy ?? "system",
-      source: "manual",
-      ...(options?.drinkType ? { drinkType: options.drinkType } : {}),
-      ...(options?.size ? { size: options.size } : {}),
-    });
-
-    result = { stamps: newStamps, maxStamps: card.maxStamps, status: newStatus, eventId: eventRef.id };
+  // Call the PostgreSQL function
+  const { data, error } = await supabase.rpc("agregar_sello_a_tarjeta", {
+    p_tarjeta_id: cardId,
+    p_cliente_id: options?.customerId || null,
+    p_agregado_por: options?.addedBy || "system",
+    p_tipo_bebida: options?.drinkType || null,
+    p_tamano: options?.size || null,
+    p_notas: null,
   });
 
-  // Bono de referido: fuera de la transacción para poder hacer la query
-  // del customerId referidor (Firestore no permite queries dentro de transacciones)
-  if (result!.stamps === 1 && options?.customerId) {
-    awardReferralBonusIfNeeded(firestore, options.customerId).catch(() => {
-      // No bloquear el flujo principal si el bono falla
-    });
-  }
+  if (error) throw error;
 
-  return result!;
+  return {
+    stamps: data.sellos,
+    maxStamps: data.sellos_maximos,
+    status: data.estado,
+    eventId: data.evento_id,
+  };
 }
 
 /**
  * Otorga un sello de bono al referidor cuando el cliente referido recibe su primer sello.
- * Busca la tarjeta activa del referidor vía query (no puede hacerse dentro de una transacción)
- * y luego aplica el bono en una transacción propia para garantizar atomicidad.
  */
 export async function awardReferralBonusIfNeeded(
-  firestore: Firestore,
-  referredCustomerRef: DocumentReference,
+  referredCustomerId: string,
 ): Promise<void> {
-  const customerSnap = await getDoc(referredCustomerRef);
-  if (!customerSnap.exists()) return;
+  const supabase = getSupabase();
 
-  const customer = customerSnap.data();
-  if (!customer.referrerCustomerId || customer.referralBonusGiven) return;
+  // Get customer data
+  const { data: customer, error: customerError } = await supabase
+    .from("clientes")
+    .select("id_referidor, bono_referido_entregado")
+    .eq("id", referredCustomerId)
+    .eq("negocio_id", NEGOCIO_ID)
+    .single();
 
-  // Query: tarjeta activa del referidor
-  const referrerRef = doc(firestore, "customers", customer.referrerCustomerId);
-  const activeCardQ = query(
-    collection(firestore, "cards"),
-    where("customerId", "==", referrerRef),
-    where("status", "==", "active"),
-  );
-  const cardSnap = await getDocs(activeCardQ);
-  if (cardSnap.empty) return;
+  if (customerError || !customer) return;
+  if (!customer.id_referidor || customer.bono_referido_entregado) return;
 
-  const referrerCardRef = cardSnap.docs[0].ref;
+  // Get active card for referrer
+  const { data: referrerCard, error: cardError } = await supabase
+    .from("tarjetas")
+    .select("id, sellos, sellos_maximos, estado")
+    .eq("negocio_id", NEGOCIO_ID)
+    .eq("cliente_id", customer.id_referidor)
+    .eq("estado", "activa")
+    .limit(1)
+    .single();
 
-  // Transacción atómica: dar bono + marcar como entregado
-  await runTransaction(firestore, async (tx) => {
-    // Re-leer para evitar doble bono en caso de concurrencia
-    const freshCustomer = await tx.get(referredCustomerRef);
-    if (!freshCustomer.exists() || freshCustomer.data().referralBonusGiven) return;
+  if (cardError || !referrerCard) return;
+  if (referrerCard.sellos >= referrerCard.sellos_maximos) return;
 
-    const referrerCard = await tx.get(referrerCardRef);
-    if (!referrerCard.exists()) return;
-
-    const card = referrerCard.data();
-    if (card.status !== "active" || card.stamps >= card.maxStamps) return;
-
-    const bonusStamps = card.stamps + 1;
-    const bonusComplete = bonusStamps >= card.maxStamps;
-
-    tx.update(referrerCardRef, {
-      stamps: bonusStamps,
-      lastStampAt: Timestamp.now(),
-      ...(bonusComplete ? { status: "completed", completedAt: Timestamp.now() } : {}),
-    });
-
-    const bonusEventRef = doc(collection(firestore, "stamp-events"));
-    tx.set(bonusEventRef, {
-      cardId: referrerCardRef,
-      createdAt: Timestamp.now(),
-      addedBy: "system",
-      source: "referral_bonus",
-    });
-
-    tx.update(referredCustomerRef, { referralBonusGiven: true });
+  // Award bonus via RPC
+  const { error: bonusError } = await supabase.rpc("agregar_sello_a_tarjeta", {
+    p_tarjeta_id: referrerCard.id,
+    p_cliente_id: customer.id_referidor,
+    p_agregado_por: "system",
+    p_tipo_bebida: null,
+    p_tamano: null,
+    p_notas: "Bono por referido",
   });
+
+  if (bonusError) return; // Don't block main flow
+
+  // Mark bonus as delivered
+  const { error: updateError } = await supabase
+    .from("clientes")
+    .update({ bono_referido_entregado: true })
+    .eq("id", referredCustomerId)
+    .eq("negocio_id", NEGOCIO_ID);
+
+  if (updateError) return;
 }
 
 export async function undoStamp(
-  firestore: Firestore,
   cardId: string,
   eventId: string,
 ): Promise<void> {
-  const cardRef = doc(firestore, "cards", cardId);
-  const eventRef = doc(firestore, "stamp-events", eventId);
+  const supabase = getSupabase();
 
-  await runTransaction(firestore, async (tx) => {
-    const snap = await tx.get(cardRef);
-    if (!snap.exists()) throw new Error("Card not found");
-
-    const card = snap.data();
-    const newStamps = Math.max(0, card.stamps - 1);
-    const wasCompleted = card.status === "completed";
-
-    tx.update(cardRef, {
-      stamps: newStamps,
-      ...(wasCompleted ? { status: "active", completedAt: deleteField() } : {}),
-    });
-    tx.delete(eventRef);
+  const { error } = await supabase.rpc("deshacer_sello", {
+    p_tarjeta_id: cardId,
+    p_evento_id: eventId,
   });
+
+  if (error) throw error;
 }
 
-export async function redeemCard(
-  firestore: Firestore,
-  params: {
-    oldCardId: string;
-    customerRef: DocumentReference;
-    rewardRef: DocumentReference;
-  },
-) {
-  const oldCardRef = doc(firestore, "cards", params.oldCardId);
+export async function redeemCard(params: {
+  oldCardId: string;
+  customerId: string;
+  rewardRef: string;
+}) {
+  const supabase = getSupabase();
 
-  // Marcar tarjeta actual como canjeada
-  await updateDoc(oldCardRef, {
-    status: "redeemed",
-    redeemedAt: Timestamp.now(),
+  // Call the RPC function to redeem and create new card
+  const { data, error } = await supabase.rpc("canjear_tarjeta", {
+    p_tarjeta_id: params.oldCardId,
+    p_cliente_id: params.customerId,
+    p_recompensa_id: params.rewardRef,
   });
 
-  // Log del canje para auditoría
-  await addDoc(collection(firestore, "stamp-events"), {
-    cardId: oldCardRef,
-    customerId: params.customerRef,
-    createdAt: Timestamp.now(),
-    addedBy: "barista",
-    source: "redemption",
-  });
-
-  // Crear nueva tarjeta limpia para el mismo cliente
-  const newCardRef = await createCard(firestore, {
-    customerRef: params.customerRef,
-    rewardRef: params.rewardRef,
-  });
-
-  return newCardRef;
+  if (error) throw error;
+  return data; // Returns new card ID
 }
 
 export async function getStampEventsByCard(
-  firestore: Firestore,
   cardId: string,
 ): Promise<(StampEvent & { id: string })[]> {
-  const cardRef = doc(firestore, "cards", cardId);
-  const q = query(
-    collection(firestore, "stamp-events"),
-    where("cardId", "==", cardRef),
-  );
-  const snap = await getDocs(q);
-  return snap.docs
-    .map((d) => ({ id: d.id, ...(d.data() as StampEvent) }))
-    .sort((a, b) => {
-      const aMs = a.createdAt?.toMillis?.() ?? 0;
-      const bMs = b.createdAt?.toMillis?.() ?? 0;
-      return bMs - aMs;
-    });
+  const supabase = getSupabase();
+
+  const { data, error } = await supabase
+    .from("eventos_sello")
+    .select("*")
+    .eq("negocio_id", NEGOCIO_ID)
+    .eq("tarjeta_id", cardId)
+    .order("creado_en", { ascending: false });
+
+  if (error) throw error;
+
+  return (data || []).map((row) => ({
+    id: row.id,
+    cardId: row.tarjeta_id,
+    customerId: row.cliente_id,
+    createdAt: new Date(row.creado_en),
+    drinkType: row.tipo_bebida,
+    size: row.tamano,
+    addedBy: row.agregado_por,
+    baristaId: row.id_barista,
+    notes: row.notas,
+    source: row.origen,
+    schemaVersion: 1,
+  }));
 }
 
-export async function getCardByCustomer(
-  firestore: Firestore,
-  customerRef: DocumentReference,
-) {
-  const q = query(
-    collection(firestore, "cards"),
-    where("customerId", "==", customerRef),
-    where("status", "==", "active"),
-  );
+export async function getCardByCustomer(customerRef: string) {
+  const supabase = getSupabase();
 
-  const snap = await getDocs(q);
+  const { data, error } = await supabase
+    .from("tarjetas")
+    .select("*")
+    .eq("negocio_id", NEGOCIO_ID)
+    .eq("cliente_id", customerRef)
+    .eq("estado", "activa")
+    .limit(1)
+    .single();
 
-  if (snap.empty) return null;
-
-  const doc = snap.docs[0];
-
-  return {
-    id: doc.id,
-    ...doc.data(),
-  };
+  if (error && error.code !== "PGRST116") throw error;
+  return data || null;
 }

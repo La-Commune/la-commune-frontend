@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useFirestore } from "reactfire";
 import { StampEvent } from "@/models/stamp-event.model";
 import { getStampEventsByCard } from "@/services/card.service";
 import { timeAgo } from "@/lib/utils";
@@ -41,7 +40,7 @@ function groupEventsByDate(events: EventRow[]): EventGroup[] {
   const groups = new Map<string, EventGroup>();
 
   for (const event of events) {
-    const date = event.createdAt?.toDate?.() ?? new Date();
+    const date = event.createdAt instanceof Date ? event.createdAt : new Date(event.createdAt);
     const day = new Date(date);
     day.setHours(0, 0, 0, 0);
 
@@ -71,7 +70,6 @@ function groupEventsByDate(events: EventRow[]): EventGroup[] {
 export default function HistoryPage() {
   const { cardId } = useParams<{ cardId: string }>();
   const router = useRouter();
-  const firestore = useFirestore();
 
   const [events, setEvents] = useState<EventRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,13 +96,13 @@ export default function HistoryPage() {
         return;
       }
 
-      getStampEventsByCard(firestore, cardId)
+      getStampEventsByCard(cardId)
         .then(setEvents)
         .catch(() => setError("No se pudo cargar el historial"))
         .finally(() => setLoading(false));
     }
     init();
-  }, [cardId, firestore, router]);
+  }, [cardId, router]);
 
   const groups = groupEventsByDate(events);
 
@@ -188,7 +186,7 @@ export default function HistoryPage() {
                   <div className="absolute left-[7px] top-2 bottom-2 w-px bg-stone-800" />
                   <ul className="space-y-4 pl-6">
                     {group.events.map((event) => {
-                      const date = event.createdAt?.toDate?.() ?? new Date();
+                      const date = event.createdAt instanceof Date ? event.createdAt : new Date(event.createdAt);
                       const isRedemption = event.source === "redemption";
 
                       return (

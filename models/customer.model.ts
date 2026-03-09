@@ -1,5 +1,3 @@
-import { Timestamp } from "firebase/firestore";
-
 export interface Customer {
   name?: string;
   phone?: string;
@@ -16,8 +14,8 @@ export interface Customer {
   totalStamps?: number;
 
   /** Trazabilidad */
-  createdAt: Timestamp;
-  lastVisitAt?: Timestamp;
+  createdAt: string | Date;
+  lastVisitAt?: string | Date;
 
   /** Marketing (opcional) */
   consentWhatsApp?: boolean;

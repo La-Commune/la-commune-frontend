@@ -1,13 +1,12 @@
 "use client";
 
-import { doc } from "firebase/firestore";
-import { useFirestore, useFirestoreDocData } from "reactfire";
 import { Card } from "@/models/card.model";
 import { Reward } from "@/models/reward.model";
 import { CoffeeBean } from "./CoffeeBean";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
+import { getSupabase } from "@/lib/supabase";
 
 function useCountUp(target: number, duration = 500) {
   const [count, setCount] = useState(target);
@@ -41,19 +40,70 @@ export function StampCardFront({
 }) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const firestore = useFirestore();
-  const ref = doc(firestore, "cards", cardId);
-  const { data } = useFirestoreDocData(ref);
-  const rewardRef = doc(firestore, "rewards", "default");
-  const { data: rewardData } = useFirestoreDocData(rewardRef, { suspense: false });
-  const reward = rewardData as Reward | undefined;
+  const [card, setCard] = useState<Card | undefined>(undefined);
+  const [reward, setReward] = useState<Reward | undefined>(undefined);
+
+  // Setup realtime subscription for card
+  useEffect(() => {
+    const sb = getSupabase();
+    const channel = sb
+      .channel(`card-${cardId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tarjetas", filter: `id=eq.${cardId}` },
+        (payload) => {
+          setCard(payload.new as Card);
+        }
+      )
+      .subscribe();
+
+    // Initial fetch
+    sb.from("tarjetas")
+      .select("*")
+      .eq("id", cardId)
+      .single()
+      .then(({ data }) => {
+        if (data) setCard(data as Card);
+      });
+
+    return () => {
+      sb.removeChannel(channel);
+    };
+  }, [cardId]);
+
+  // Setup realtime subscription for reward
+  useEffect(() => {
+    const sb = getSupabase();
+    const channel = sb
+      .channel("reward-default")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "recompensas", filter: `id=eq.default` },
+        (payload) => {
+          setReward(payload.new as Reward);
+        }
+      )
+      .subscribe();
+
+    // Initial fetch
+    sb.from("recompensas")
+      .select("*")
+      .eq("id", "default")
+      .single()
+      .then(({ data }) => {
+        if (data) setReward(data as Reward);
+      });
+
+    return () => {
+      sb.removeChannel(channel);
+    };
+  }, []);
+
   const rewardName = reward?.name ?? "Bebida de cortesía";
 
   const hasCompletedRef = useRef(false);
   const prevStampsRef = useRef<number | undefined>(undefined);
   const [newStampIdx, setNewStampIdx] = useState<number | null>(null);
-
-  const card = data as Card | undefined;
   const animatedStamps = useCountUp(card?.stamps ?? 0);
   const isComplete = card ? card.stamps >= card.maxStamps : false;
   const remaining = card ? card.maxStamps - card.stamps : 0;

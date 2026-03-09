@@ -1,56 +1,102 @@
 "use server";
 
-import { createHmac, timingSafeEqual } from "crypto";
+import { createHmac, timingSafeEqual, randomBytes } from "crypto";
 import { headers, cookies } from "next/headers";
+import { getSupabaseServer } from "@/lib/supabase-server";
 
 const MAX_ATTEMPTS = 10;
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const COOKIE_MAX_AGE = 7200; // 2 hours
+
+// Secret for signing session cookies — falls back to a random key per process
+const COOKIE_SECRET =
+  process.env.ADMIN_HMAC_KEY ??
+  process.env.COOKIE_SECRET ??
+  randomBytes(32).toString("hex");
 
 const attemptMap = new Map<string, { count: number; resetAt: number }>();
 
+// ── Types ──────────────────────────────────────────────
+
 export type VerifyResult =
-  | { ok: true }
+  | { ok: true; nombre: string; rol: string }
   | { ok: false; blocked?: false }
   | { ok: false; blocked: true; retryAfter: number };
 
-async function getAdminConfig(): Promise<{ pinHmac: string }> {
-  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+export type SessionResult =
+  | { valid: true; nombre: string; rol: string }
+  | { valid: false };
 
-  const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/config/admin?key=${apiKey}`;
+// ── Helpers ────────────────────────────────────────────
 
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error("No se pudo leer la configuración de admin en Firestore");
-
-  const data = await res.json();
-
-  if (!data.fields?.pinHmac?.stringValue) {
-    throw new Error("Documento config/admin no encontrado. Ejecuta: node scripts/setAdminPin.mjs <pin>");
-  }
-
-  return { pinHmac: data.fields.pinHmac.stringValue };
+function signSessionPayload(payload: {
+  userId: string;
+  nombre: string;
+  rol: string;
+  exp: number;
+}): string {
+  const json = JSON.stringify(payload);
+  const data = Buffer.from(json).toString("base64url");
+  const sig = createHmac("sha256", COOKIE_SECRET)
+    .update(data)
+    .digest("base64url");
+  return `${data}.${sig}`;
 }
 
-export async function verifyAdminPin(pin: string): Promise<VerifyResult> {
-  const hmacKey = process.env.ADMIN_HMAC_KEY;
-  if (!hmacKey) throw new Error("ADMIN_HMAC_KEY no está configurado en las variables de entorno");
+function verifySessionToken(
+  token: string,
+): { userId: string; nombre: string; rol: string; exp: number } | null {
+  const parts = token.split(".");
+  if (parts.length !== 2) return null;
 
-  // Recovery code bypass (para acceso de emergencia sin HMAC)
-  const recoveryCode = process.env.ADMIN_RECOVERY_CODE;
-  if (recoveryCode && pin === recoveryCode) {
-    return { ok: true };
+  const [data, sig] = parts;
+  const expectedSig = createHmac("sha256", COOKIE_SECRET)
+    .update(data)
+    .digest("base64url");
+
+  // Timing-safe comparison of signatures
+  try {
+    const sigBuf = Buffer.from(sig, "base64url");
+    const expectedBuf = Buffer.from(expectedSig, "base64url");
+    if (sigBuf.length !== expectedBuf.length) return null;
+    if (!timingSafeEqual(sigBuf, expectedBuf)) return null;
+  } catch {
+    return null;
   }
 
+  try {
+    const json = Buffer.from(data, "base64url").toString("utf-8");
+    const payload = JSON.parse(json);
+
+    // Check expiration
+    if (!payload.exp || Date.now() > payload.exp) return null;
+
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+async function getClientIP(): Promise<string> {
   const headersList = await headers();
   const forwarded = headersList.get("x-forwarded-for");
-  const ip = forwarded ? forwarded.split(",")[0].trim() : "unknown";
+  return forwarded ? forwarded.split(",")[0].trim() : "unknown";
+}
 
+// ── Main: Verify PIN via usuarios table ────────────────
+
+export async function verifyAdminPin(pin: string): Promise<VerifyResult> {
+  const ip = await getClientIP();
   const now = Date.now();
   const entry = attemptMap.get(ip);
 
   // Check if currently blocked
   if (entry && entry.count >= MAX_ATTEMPTS && now < entry.resetAt) {
-    return { ok: false, blocked: true, retryAfter: Math.ceil((entry.resetAt - now) / 1000) };
+    return {
+      ok: false,
+      blocked: true,
+      retryAfter: Math.ceil((entry.resetAt - now) / 1000),
+    };
   }
 
   // Reset expired window
@@ -58,19 +104,27 @@ export async function verifyAdminPin(pin: string): Promise<VerifyResult> {
     attemptMap.delete(ip);
   }
 
-  const { pinHmac } = await getAdminConfig();
+  // Call the same RPC the POS uses — runs with service_role (bypasses RLS)
+  const sb = getSupabaseServer();
+  const { data, error } = await sb.rpc("login_por_pin", {
+    pin_input: pin,
+  });
 
-  // HMAC-SHA256 del PIN ingresado con la clave del servidor
-  const computed = createHmac("sha256", hmacKey).update(pin).digest("hex");
+  console.log("[verifyAdminPin] RPC result:", JSON.stringify(data));
+  if (error) {
+    console.error("[verifyAdminPin] RPC error:", error.message);
+  }
 
-  // Ambos son hex de SHA-256 (32 bytes) — misma longitud garantizada
-  const a = Buffer.from(computed, "hex");
-  const b = Buffer.from(pinHmac, "hex");
+  const result = data as {
+    success: boolean;
+    id?: string;
+    nombre?: string;
+    rol?: string;
+    error?: string;
+  } | null;
 
-  // timingSafeEqual previene timing attacks
-  const correct = timingSafeEqual(a, b);
-
-  if (!correct) {
+  if (!result?.success || !result.id || !result.nombre || !result.rol) {
+    // PIN incorrecto — registrar intento
     const existing = attemptMap.get(ip);
     if (existing) {
       existing.count += 1;
@@ -80,68 +134,45 @@ export async function verifyAdminPin(pin: string): Promise<VerifyResult> {
     return { ok: false };
   }
 
-  // PIN correcto — resetear intentos y emitir token de sesión como httpOnly cookie
+  // PIN correcto — resetear intentos y emitir cookie con rol
   attemptMap.delete(ip);
-  const epochHour = Math.floor(now / 3600000);
-  const token = createHmac("sha256", hmacKey)
-    .update(`barista-session:${epochHour}`)
-    .digest("hex");
+
+  const token = signSessionPayload({
+    userId: result.id,
+    nombre: result.nombre,
+    rol: result.rol,
+    exp: now + COOKIE_MAX_AGE * 1000,
+  });
 
   const cookieStore = await cookies();
   cookieStore.set("barista-session", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
-    maxAge: 7200, // 2 horas
+    maxAge: COOKIE_MAX_AGE,
     path: "/admin",
   });
 
-  return { ok: true };
+  return { ok: true, nombre: result.nombre, rol: result.rol };
 }
 
-function verifyToken(token: string, hmacKey: string): boolean {
-  if (!token || token.length !== 64) return false;
+// ── Check existing session ─────────────────────────────
 
-  let tokenBuf: Buffer;
-  try {
-    tokenBuf = Buffer.from(token, "hex");
-    if (tokenBuf.length !== 32) return false;
-  } catch {
-    return false;
-  }
-
-  const epochHour = Math.floor(Date.now() / 3600000);
-
-  for (const hour of [epochHour, epochHour - 1]) {
-    const expected = createHmac("sha256", hmacKey)
-      .update(`barista-session:${hour}`)
-      .digest("hex");
-    const expectedBuf = Buffer.from(expected, "hex");
-    if (timingSafeEqual(tokenBuf, expectedBuf)) return true;
-  }
-
-  return false;
-}
-
-/** Verifica el token desde la cookie httpOnly. Usar en el cliente para auto-auth en mount. */
-export async function checkBaristaSession(): Promise<boolean> {
-  const hmacKey = process.env.ADMIN_HMAC_KEY;
-  if (!hmacKey) return false;
-
+export async function checkBaristaSession(): Promise<SessionResult> {
   const cookieStore = await cookies();
   const token = cookieStore.get("barista-session")?.value ?? "";
-  return verifyToken(token, hmacKey);
+
+  if (!token) return { valid: false };
+
+  const payload = verifySessionToken(token);
+  if (!payload) return { valid: false };
+
+  return { valid: true, nombre: payload.nombre, rol: payload.rol };
 }
 
-/** Cierra la sesión del barista eliminando la cookie. */
+// ── Logout ─────────────────────────────────────────────
+
 export async function logoutBarista(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete("barista-session");
-}
-
-/** @deprecated Usar checkBaristaSession() — mantener por compatibilidad temporal */
-export async function verifyBaristaSession(token: string): Promise<boolean> {
-  const hmacKey = process.env.ADMIN_HMAC_KEY;
-  if (!hmacKey) return false;
-  return verifyToken(token, hmacKey);
 }
