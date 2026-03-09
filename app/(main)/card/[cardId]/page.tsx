@@ -7,11 +7,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { StampCardView } from "@/components/ui/stamp-card";
 import { DownloadCardButton } from "@/components/ui/DownloadCardButton";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { doc } from "firebase/firestore";
-import { useFirestore, useFirestoreDocData } from "reactfire";
 import { Customer } from "@/models/customer.model";
+import type { Card } from "@/models/card.model";
+import { Reward } from "@/models/reward.model";
 import { formatDate } from "@/lib/utils";
 import { getCardByCustomer } from "@/services/card.service";
+import { getDefaultReward } from "@/services/reward.service";
 import { PromoBannerInline, useActivePromos } from "@/components/ui/promos/PromoBanner";
 import {
   getCustomerSession,
@@ -32,52 +33,115 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
 
 
 export default function CardEntry() {
   const { cardId: cardIdParam } = useParams<{ cardId: string }>();
   const router = useRouter();
-  const firestore = useFirestore();
 
   const [loading, setLoading] = useState(true);
   const [cardId, setCardId] = useState<string | null>(null);
   const [resolvedCustomerId, setResolvedCustomerId] = useState<string | null>(null);
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [cardDoc, setCardDoc] = useState<Card | null>(null);
 
-  const customerRef = doc(
-    firestore,
-    "customers",
-    resolvedCustomerId ?? "_placeholder",
-  );
+  // Setup realtime subscription for customer data
+  useEffect(() => {
+    if (!resolvedCustomerId) return;
 
-  const { data: customer } = useFirestoreDocData(customerRef, {
-    suspense: false,
-  });
+    const supabase = getSupabase();
+    const channel = supabase
+      .channel(`customer-${resolvedCustomerId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "clientes",
+          filter: `id=eq.${resolvedCustomerId}`,
+        },
+        (payload) => {
+          const row = payload.new as any;
+          setCustomer({
+            name: row.nombre,
+            phone: row.telefono,
+            email: row.email,
+            active: row.activo,
+            totalVisits: row.total_visitas,
+            totalStamps: row.total_sellos,
+            createdAt: new Date(row.creado_en),
+            lastVisitAt: row.ultima_visita ? new Date(row.ultima_visita) : undefined,
+            consentWhatsApp: row.consentimiento_whatsapp,
+            consentEmail: row.consentimiento_email,
+            pinHmac: row.pin_hmac,
+            notes: row.notas,
+            referrerCustomerId: row.id_referidor,
+            referralBonusGiven: row.bono_referido_entregado,
+            schemaVersion: 1,
+          });
+        }
+      )
+      .subscribe();
 
-  // Escuchar estado de la tarjeta en tiempo real
-  const cardDocRef = doc(firestore, "cards", cardIdParam);
-  const { data: cardDoc } = useFirestoreDocData(cardDocRef, { suspense: false });
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [resolvedCustomerId]);
+
+  // Setup realtime subscription for card data
+  useEffect(() => {
+    if (!cardIdParam) return;
+
+    const supabase = getSupabase();
+    const channel = supabase
+      .channel(`card-${cardIdParam}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "tarjetas",
+          filter: `id=eq.${cardIdParam}`,
+        },
+        (payload) => {
+          const row = payload.new as any;
+          setCardDoc({
+            id: row.id,
+            stamps: row.sellos,
+            maxStamps: row.sellos_maximos,
+            status: row.estado,
+            createdAt: new Date(row.creado_en),
+          } as Card);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [cardIdParam]);
 
   // Auto-redirect a la página de canje cuando la tarjeta se completa
   useEffect(() => {
     if (!cardId) return;
-    if ((cardDoc as any)?.status !== "completed") return;
+    if (cardDoc?.status !== "completada") return;
     router.replace(`/card/${cardIdParam}/redeem`);
-  }, [(cardDoc as any)?.status, cardId, cardIdParam, router]);
+  }, [cardDoc?.status, cardId, cardIdParam, router]);
 
   // Si la tarjeta fue canjeada, buscar la nueva tarjeta activa y redirigir
   useEffect(() => {
-    if (!cardDoc || (cardDoc as any).status !== "redeemed") return;
+    if (!cardDoc || cardDoc.status !== "canjeada") return;
     if (!resolvedCustomerId) return;
 
-    const ref = doc(firestore, "customers", resolvedCustomerId);
-    getCardByCustomer(firestore, ref).then((newCard) => {
+    getCardByCustomer(resolvedCustomerId).then((newCard) => {
       if (newCard) {
         localStorage.setItem("cardId", newCard.id);
         setCustomerSession(resolvedCustomerId, newCard.id);
         router.replace(`/card/${newCard.id}`);
       }
     });
-  }, [(cardDoc as any)?.status, resolvedCustomerId, firestore, router]);
+  }, [cardDoc?.status, resolvedCustomerId, router]);
 
   // Session resolution: localStorage first, then cookie fallback
   useEffect(() => {
@@ -152,17 +216,24 @@ function Card({
   isCompleted?: boolean;
 }) {
   const router = useRouter();
-  const firestore = useFirestore();
   const name = customer?.name?.trim();
   const lastVisit = formatDate(customer?.lastVisitAt);
   const memberSince = formatDate(customer?.createdAt);
   const totalVisits = customer?.totalVisits ?? 0;
 
   // Reward info
-  const rewardRef = doc(firestore, "rewards", "default");
-  const { data: rewardDoc } = useFirestoreDocData(rewardRef, { suspense: false });
-  const rewardName: string = (rewardDoc as any)?.name ?? "Bebida gratis";
-  const requiredStamps: number = (rewardDoc as any)?.requiredStamps ?? 5;
+  const [rewardDoc, setRewardDoc] = useState<Reward | null>(null);
+
+  useEffect(() => {
+    getDefaultReward().then((reward) => {
+      if (reward) {
+        setRewardDoc(reward);
+      }
+    });
+  }, []);
+
+  const rewardName: string = rewardDoc?.name ?? "Bebida gratis";
+  const requiredStamps: number = rewardDoc?.requiredStamps ?? 5;
 
   // Promos
   const { promos, loaded: promosLoaded } = useActivePromos();

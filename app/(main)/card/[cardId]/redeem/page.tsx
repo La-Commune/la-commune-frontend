@@ -6,34 +6,72 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactCanvasConfetti from "react-canvas-confetti";
 import { QRCodeCanvas } from "qrcode.react";
-import { doc } from "firebase/firestore";
-import { useFirestore, useFirestoreDocData } from "reactfire";
+import { Card } from "@/models/card.model";
+import { Reward } from "@/models/reward.model";
 import { getCardByCustomer } from "@/services/card.service";
+import { getDefaultReward } from "@/services/reward.service";
 import { setCustomerSession } from "@/app/actions/customerSession";
+import { getSupabase } from "@/lib/supabase";
 
 type ConfettiInstance = (opts: any) => void;
 
 export default function RedeemPage() {
   const { cardId } = useParams<{ cardId: string }>();
   const router = useRouter();
-  const firestore = useFirestore();
 
   const confettiRef = useRef<ConfettiInstance | null>(null);
   const firedRef = useRef(false);
 
   const [toast, setToast] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [cardDoc, setCardDoc] = useState<Card | null>(null);
+  const [rewardDoc, setRewardDoc] = useState<Reward | null>(null);
 
-  // Firestore listeners
-  const cardRef = doc(firestore, "cards", cardId);
-  const rewardRef = doc(firestore, "rewards", "default");
+  // Load reward once
+  useEffect(() => {
+    getDefaultReward().then((reward) => {
+      if (reward) {
+        setRewardDoc(reward);
+      }
+    });
+  }, []);
 
-  const { data: cardDoc } = useFirestoreDocData(cardRef, { suspense: false });
-  const { data: rewardDoc } = useFirestoreDocData(rewardRef, { suspense: false });
+  // Setup realtime subscription for card
+  useEffect(() => {
+    if (!cardId) return;
 
-  const cardStatus = (cardDoc as any)?.status as string | undefined;
+    const supabase = getSupabase();
+    const channel = supabase
+      .channel(`card-${cardId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "tarjetas",
+          filter: `id=eq.${cardId}`,
+        },
+        (payload) => {
+          const row = payload.new as any;
+          setCardDoc({
+            id: row.id,
+            stamps: row.sellos,
+            maxStamps: row.sellos_maximos,
+            status: row.estado,
+            createdAt: new Date(row.creado_en),
+          } as Card);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [cardId]);
+
+  const cardStatus = cardDoc?.status as string | undefined;
   const rewardDescription: string =
-    (rewardDoc as any)?.description ?? "Una bebida de cortesia";
+    rewardDoc?.description ?? "Una bebida de cortesia";
 
   // Access control: verificar que esta tarjeta pertenece al cliente
   useEffect(() => {
@@ -47,7 +85,7 @@ export default function RedeemPage() {
   // Guard: si la tarjeta no esta completed ni redeemed, regresar con feedback
   useEffect(() => {
     if (!cardDoc) return;
-    if (cardStatus !== "completed" && cardStatus !== "redeemed") {
+    if (cardStatus !== "completada" && cardStatus !== "canjeada") {
       setToast("Tu tarjeta aun no esta completa");
       setTimeout(() => router.replace(`/card/${cardId}`), 1500);
     }
@@ -55,22 +93,21 @@ export default function RedeemPage() {
 
   // Si la tarjeta fue canjeada (barista confirmo), redirigir al nuevo card
   useEffect(() => {
-    if (cardStatus !== "redeemed") return;
+    if (cardStatus !== "canjeada") return;
     const customerId =
       typeof window !== "undefined"
         ? localStorage.getItem("customerId")
         : null;
     if (!customerId) return;
 
-    const customerRef = doc(firestore, "customers", customerId);
-    getCardByCustomer(firestore, customerRef).then((newCard) => {
+    getCardByCustomer(customerId).then((newCard) => {
       if (newCard) {
         localStorage.setItem("cardId", newCard.id);
         setCustomerSession(customerId!, newCard.id);
         router.replace(`/card/${newCard.id}`);
       }
     });
-  }, [cardStatus, firestore, router]);
+  }, [cardStatus, router]);
 
   const fireConfetti = useCallback(() => {
     confettiRef.current?.({

@@ -1,19 +1,7 @@
-import {
-  Firestore,
-  DocumentReference,
-  collection,
-  addDoc,
-  Timestamp,
-  query,
-  where,
-  getDocs,
-  doc,
-  updateDoc,
-} from "firebase/firestore";
+import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
 import { Customer } from "@/models/customer.model";
 
 export async function createCustomer(
-  firestore: Firestore,
   data: {
     name?: string;
     phone: string;
@@ -24,132 +12,184 @@ export async function createCustomer(
     pinHmac?: string;
   },
 ) {
-  const customerData: Customer = {
-    name: data.name,
-    phone: data.phone,
-    consentWhatsApp: data.consentWhatsApp,
-    active: true,
-    totalVisits: 0,
-    totalStamps: 0,
-    createdAt: Timestamp.now(),
-    lastVisitAt: Timestamp.now(),
-    notes: "",
-    schemaVersion: 1,
-    ...(data.email ? { email: data.email } : {}),
-    ...(data.consentEmail != null ? { consentEmail: data.consentEmail } : {}),
-    ...(data.referrerCustomerId ? { referrerCustomerId: data.referrerCustomerId } : {}),
-    ...(data.pinHmac ? { pinHmac: data.pinHmac } : {}),
+  const supabase = getSupabase();
+
+  const customerData = {
+    negocio_id: NEGOCIO_ID,
+    nombre: data.name || null,
+    telefono: data.phone,
+    email: data.email || null,
+    consentimiento_whatsapp: data.consentWhatsApp,
+    consentimiento_email: data.consentEmail || false,
+    activo: true,
+    total_visitas: 0,
+    total_sellos: 0,
+    creado_en: new Date().toISOString(),
+    ultima_visita: new Date().toISOString(),
+    notas: "",
+    pin_hmac: data.pinHmac || null,
+    ...(data.referrerCustomerId ? { id_referidor: data.referrerCustomerId } : {}),
   };
-  return addDoc(collection(firestore, "customers"), customerData);
+
+  const { data: result, error } = await supabase
+    .from("clientes")
+    .insert([customerData])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return result;
 }
 
-export async function getCustomerByPhone(firestore: Firestore, phone: string) {
-  const q = query(
-    collection(firestore, "customers"),
-    where("phone", "==", phone),
-    where("active", "==", true),
-  );
+export async function getCustomerByPhone(phone: string) {
+  const supabase = getSupabase();
 
-  const snap = await getDocs(q);
-  if (snap.empty) return null;
+  const { data, error } = await supabase
+    .from("clientes")
+    .select("*")
+    .eq("negocio_id", NEGOCIO_ID)
+    .eq("telefono", phone)
+    .eq("activo", true)
+    .order("creado_en", { ascending: false })
+    .limit(1)
+    .single();
 
-  // Sort client-side to get most recent (avoids composite index)
-  const docs = snap.docs
-    .map((d) => ({ id: d.id, ref: doc(firestore, "customers", d.id), ...d.data() }))
-    .sort((a, b) => {
-      const ta = (a as any).createdAt?.toMillis?.() ?? 0;
-      const tb = (b as any).createdAt?.toMillis?.() ?? 0;
-      return tb - ta;
-    });
-
-  return docs[0];
+  if (error && error.code !== "PGRST116") throw error; // PGRST116 = no rows
+  return data || null;
 }
 
-export async function getAllCustomers(
-  firestore: Firestore,
-): Promise<(Customer & { id: string })[]> {
-  const q = query(
-    collection(firestore, "customers"),
-    where("active", "==", true),
-  );
-  const snap = await getDocs(q);
-  const docs = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Customer) }));
-  // Ordenar en cliente para evitar índice compuesto en Firestore
-  return docs.sort((a, b) => {
-    const ta = a.createdAt?.toMillis?.() ?? 0;
-    const tb = b.createdAt?.toMillis?.() ?? 0;
-    return tb - ta;
-  });
+export async function getAllCustomers(): Promise<(Customer & { id: string })[]> {
+  const supabase = getSupabase();
+
+  const { data, error } = await supabase
+    .from("clientes")
+    .select("*")
+    .eq("negocio_id", NEGOCIO_ID)
+    .eq("activo", true)
+    .order("creado_en", { ascending: false });
+
+  if (error) throw error;
+
+  // Map Supabase columns to Customer model fields
+  return (data || []).map((row) => ({
+    id: row.id,
+    name: row.nombre,
+    phone: row.telefono,
+    email: row.email,
+    active: row.activo,
+    totalVisits: row.total_visitas,
+    totalStamps: row.total_sellos,
+    createdAt: new Date(row.creado_en),
+    lastVisitAt: row.ultima_visita ? new Date(row.ultima_visita) : undefined,
+    consentWhatsApp: row.consentimiento_whatsapp,
+    consentEmail: row.consentimiento_email,
+    pinHmac: row.pin_hmac,
+    notes: row.notas,
+    referrerCustomerId: row.id_referidor,
+    referralBonusGiven: row.bono_referido_entregado,
+    schemaVersion: 1,
+  }));
 }
 
 export async function updateCustomerNotes(
-  firestore: Firestore,
   customerId: string,
   notes: string,
 ): Promise<void> {
-  await updateDoc(doc(firestore, "customers", customerId), { notes });
+  const supabase = getSupabase();
+
+  const { error } = await supabase
+    .from("clientes")
+    .update({ notas: notes })
+    .eq("id", customerId)
+    .eq("negocio_id", NEGOCIO_ID);
+
+  if (error) throw error;
 }
 
 export async function deleteCustomer(
-  firestore: Firestore,
   customerId: string,
 ): Promise<void> {
-  await updateDoc(doc(firestore, "customers", customerId), { active: false });
+  const supabase = getSupabase();
+
+  const { error } = await supabase
+    .from("clientes")
+    .update({ activo: false })
+    .eq("id", customerId)
+    .eq("negocio_id", NEGOCIO_ID);
+
+  if (error) throw error;
 }
 
-export async function getCardByCustomer(firestore: Firestore, customerRef: DocumentReference) {
-  const q = query(
-    collection(firestore, "cards"),
-    where("customerId", "==", customerRef),
-    where("status", "==", "active"),
-  );
+export async function getCardByCustomer(customerRef: string) {
+  const supabase = getSupabase();
 
-  const snap = await getDocs(q);
+  const { data, error } = await supabase
+    .from("tarjetas")
+    .select("*")
+    .eq("negocio_id", NEGOCIO_ID)
+    .eq("cliente_id", customerRef)
+    .eq("estado", "activa")
+    .limit(1)
+    .single();
 
-  if (snap.empty) return null;
-
-  const d = snap.docs[0];
-  return { id: d.id, ...d.data() };
+  if (error && error.code !== "PGRST116") throw error;
+  return data || null;
 }
 
 /** Like getCardByCustomer but also finds completed cards (useful for recovery). */
-export async function getAnyCardByCustomer(firestore: Firestore, customerRef: DocumentReference) {
-  const q = query(
-    collection(firestore, "cards"),
-    where("customerId", "==", customerRef),
-  );
+export async function getAnyCardByCustomer(customerRef: string) {
+  const supabase = getSupabase();
 
-  const snap = await getDocs(q);
-  if (snap.empty) return null;
+  const { data, error } = await supabase
+    .from("tarjetas")
+    .select("*")
+    .eq("negocio_id", NEGOCIO_ID)
+    .eq("cliente_id", customerRef)
+    .order("creado_en", { ascending: false });
 
-  const cards = snap.docs.map((d) => ({ id: d.id, ...d.data() } as any));
+  if (error) throw error;
+  if (!data || data.length === 0) return null;
 
   // Prefer active > completed > anything else
-  const active = cards.find((c) => c.status === "active");
+  const active = data.find((c) => c.estado === "activa");
   if (active) return active;
 
-  const completed = cards.find((c) => c.status === "completed");
+  const completed = data.find((c) => c.estado === "completada");
   if (completed) return completed;
 
-  return cards[0];
+  return data[0];
 }
 
 export async function updateCustomerPhone(
-  firestore: Firestore,
   customerId: string,
   phone: string,
 ): Promise<void> {
-  await updateDoc(doc(firestore, "customers", customerId), { phone });
+  const supabase = getSupabase();
+
+  const { error } = await supabase
+    .from("clientes")
+    .update({ telefono: phone })
+    .eq("id", customerId)
+    .eq("negocio_id", NEGOCIO_ID);
+
+  if (error) throw error;
 }
 
 export async function updateCustomerEmail(
-  firestore: Firestore,
   customerId: string,
   email: string,
   consentEmail?: boolean,
 ): Promise<void> {
-  await updateDoc(doc(firestore, "customers", customerId), {
-    email,
-    ...(consentEmail != null ? { consentEmail } : {}),
-  });
+  const supabase = getSupabase();
+
+  const { error } = await supabase
+    .from("clientes")
+    .update({
+      email,
+      ...(consentEmail != null ? { consentimiento_email: consentEmail } : {}),
+    })
+    .eq("id", customerId)
+    .eq("negocio_id", NEGOCIO_ID);
+
+  if (error) throw error;
 }

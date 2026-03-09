@@ -3,8 +3,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { doc, getDoc, DocumentReference } from "firebase/firestore";
-import { useFirestore, useFirestoreDocData } from "reactfire";
 import { Card } from "@/models/card.model";
 import { Customer } from "@/models/customer.model";
 import { QrScanner } from "@/components/ui/QrScanner";
@@ -13,7 +11,7 @@ import { PromosAdmin } from "@/components/ui/promos/PromosAdmin";
 import { CustomerDirectory } from "@/components/ui/CustomerDirectory";
 import { AnalyticsDashboard } from "@/components/ui/AnalyticsDashboard";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { verifyAdminPin, checkBaristaSession, logoutBarista } from "@/app/actions/verifyAdminPin";
+import { verifyAdminPin, checkBaristaSession, logoutBarista, type SessionResult } from "@/app/actions/verifyAdminPin";
 import { addStamp, redeemCard, undoStamp } from "@/services/card.service";
 import { getDefaultReward, upsertDefaultReward } from "@/services/reward.service";
 import { Reward } from "@/models/reward.model";
@@ -21,6 +19,7 @@ import { getFullMenu } from "@/services/menu.service";
 import { timeAgo } from "@/lib/utils";
 import { toast } from "@/components/ui/use-toast";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
 import {
   enqueue,
   removeFromQueue,
@@ -35,9 +34,49 @@ import {
 
 type Screen = "pin" | "stamp" | "success" | "redeemed" | "queued";
 
-interface AdminConfig {
-  pinLength?: number;
-  pinHmac?: string;
+type AdminTabId = "stamps" | "menu" | "promos" | "customers" | "analytics" | "config";
+
+const ADMIN_ROLE_ACCESS: Record<AdminTabId, string[]> = {
+  stamps:    ["admin", "barista", "camarero"],
+  menu:      ["admin"],
+  promos:    ["admin"],
+  customers: ["admin", "barista"],
+  analytics: ["admin"],
+  config:    ["admin"],
+};
+
+const TAB_LABELS: Record<AdminTabId, string> = {
+  stamps: "Sellos",
+  menu: "Menu",
+  promos: "Promos",
+  customers: "Clientes",
+  analytics: "Analytics",
+  config: "Config",
+};
+
+const TAB_TITLES: Record<AdminTabId, string> = {
+  stamps: "Añadir sello",
+  menu: "Gestionar menu",
+  promos: "Promociones",
+  customers: "Clientes",
+  analytics: "Analytics",
+  config: "Configuracion",
+};
+
+function getTabsForRole(rol: string): AdminTabId[] {
+  return (Object.keys(ADMIN_ROLE_ACCESS) as AdminTabId[]).filter(
+    (tab) => ADMIN_ROLE_ACCESS[tab].includes(rol)
+  );
+}
+
+function getRoleLabel(rol: string): string {
+  switch (rol) {
+    case "admin": return "Administrador";
+    case "barista": return "Barista";
+    case "camarero": return "Camarero";
+    case "cocina": return "Cocina";
+    default: return rol;
+  }
 }
 
 interface LoadedCard {
@@ -45,7 +84,7 @@ interface LoadedCard {
   stamps: number;
   maxStamps: number;
   status: string;
-  customerId: DocumentReference | undefined;
+  customerId: string | undefined;
   customerName: string;
 }
 
@@ -157,7 +196,6 @@ interface StampEntry {
 
 /* -- Vista de anadir sello ----------------------------------- */
 function StampView({ onLogout }: { onLogout: () => void }) {
-  const firestore = useFirestore();
   const [cardInput, setCardInput] = useState("");
   const [card, setCard] = useState<LoadedCard | null>(null);
   const [loading, setLoading] = useState(false);
@@ -185,7 +223,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
 
   // Cargar bebidas disponibles del menu
   useEffect(() => {
-    getFullMenu(firestore)
+    getFullMenu()
       .then((sections) => {
         const drinks = sections
           .filter((s) => s.type === "drink" && s.active)
@@ -197,7 +235,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
       .catch(() => {
         toast({ variant: "destructive", title: "No se pudo cargar el menu de bebidas" });
       });
-  }, [firestore]);
+  }, []);
 
   // Cleanup al desmontar
   useEffect(() => {
@@ -220,11 +258,8 @@ function StampView({ onLogout }: { onLogout: () => void }) {
     let syncedCount = 0;
     for (const item of pending) {
       try {
-        const customerIdRef = item.customerId
-          ? doc(firestore, item.customerId)
-          : undefined;
-        await addStamp(firestore, item.cardId, {
-          customerId: customerIdRef,
+        await addStamp(item.cardId, {
+          customerId: item.customerId,
           addedBy: "barista",
           drinkType: item.drinkType,
           size: item.size,
@@ -259,7 +294,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
         setPendingQueue(getQueue());
       }, 3000);
     }
-  }, [firestore]);
+  }, []);
 
   // Auto-sync al recuperar conexion o al montar con pendientes
   useEffect(() => {
@@ -305,24 +340,37 @@ function StampView({ onLogout }: { onLogout: () => void }) {
     setError("");
     setCard(null);
     try {
-      const snap = await getDoc(doc(firestore, "cards", id));
-      if (!snap.exists()) {
+      const supabase = getSupabase();
+      const { data: cardData, error: cardError } = await supabase
+        .from("tarjetas")
+        .select("*")
+        .eq("id", id)
+        .eq("negocio_id", NEGOCIO_ID)
+        .single();
+
+      if (cardError || !cardData) {
         setError("Tarjeta no encontrada");
         setLoading(false);
         return;
       }
-      const data = snap.data() as Card;
+
       let customerName = "";
-      if (data.customerId) {
-        const custSnap = await getDoc(data.customerId);
-        if (custSnap.exists()) customerName = (custSnap.data() as Customer)?.name ?? "";
+      if (cardData.cliente_id) {
+        const { data: custData } = await supabase
+          .from("clientes")
+          .select("nombre")
+          .eq("id", cardData.cliente_id)
+          .eq("negocio_id", NEGOCIO_ID)
+          .single();
+        customerName = custData?.nombre ?? "";
       }
+
       setCard({
-        id: snap.id,
-        stamps: data.stamps,
-        maxStamps: data.maxStamps,
-        status: data.status,
-        customerId: data.customerId,
+        id: cardData.id,
+        stamps: cardData.sellos,
+        maxStamps: cardData.sellos_maximos,
+        status: cardData.estado,
+        customerId: cardData.cliente_id,
         customerName,
       });
     } catch {
@@ -333,7 +381,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
       );
     }
     setLoading(false);
-  }, [firestore]);
+  }, []);
 
   const handleQrScan = useCallback((value: string) => {
     setScanning(false);
@@ -364,7 +412,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
       const optimisticStamps = Math.min(card.stamps + 1, card.maxStamps);
       enqueue({
         cardId: card.id,
-        customerId: card.customerId?.path,
+        customerId: card.customerId,
         customerName: card.customerName,
         drinkType: finalDrink,
         size: stampSize || undefined,
@@ -385,7 +433,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
     setLoading(true);
     setError("");
     try {
-      const result = await addStamp(firestore, card.id, {
+      const result = await addStamp(card.id, {
         customerId: card.customerId ?? undefined,
         addedBy: "barista",
         drinkType: finalDrink,
@@ -418,22 +466,22 @@ function StampView({ onLogout }: { onLogout: () => void }) {
       setError("Error al anadir el sello. Intenta de nuevo.");
     }
     setLoading(false);
-  }, [card, firestore, selectedDrink, customDrink, stampSize, clearUndoCountdown, isOnline, resetStampForm]);
+  }, [card, selectedDrink, customDrink, stampSize, clearUndoCountdown, isOnline, resetStampForm]);
 
   const handleUndo = useCallback(async () => {
     if (!card || !lastEventId) return;
     setLoading(true);
     try {
-      await undoStamp(firestore, card.id, lastEventId);
+      await undoStamp(card.id, lastEventId);
       clearUndoCountdown();
-      setCard({ ...card, stamps: Math.max(0, card.stamps - 1), status: "active" });
+      setCard({ ...card, stamps: Math.max(0, card.stamps - 1), status: "activa" });
       setScreen("stamp");
       if (resetTimer.current) clearTimeout(resetTimer.current);
     } catch {
       setError("Error al deshacer el sello.");
     }
     setLoading(false);
-  }, [card, lastEventId, firestore, clearUndoCountdown]);
+  }, [card, lastEventId, clearUndoCountdown]);
 
   const handleRedeem = useCallback(async () => {
     if (!card) return;
@@ -442,12 +490,11 @@ function StampView({ onLogout }: { onLogout: () => void }) {
     setLoading(true);
     setError("");
     try {
-      const rewardRef = doc(firestore, "rewards", "default");
       if (!card.customerId) throw new Error("Cliente no encontrado");
-      await redeemCard(firestore, {
+      await redeemCard({
         oldCardId: card.id,
-        customerRef: card.customerId,
-        rewardRef,
+        customerId: card.customerId,
+        rewardRef: "default",
       });
       setScreen("redeemed");
       resetTimer.current = setTimeout(() => {
@@ -459,7 +506,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
       setError("Error al canjear. Intenta de nuevo.");
     }
     setLoading(false);
-  }, [card, firestore, clearUndoCountdown]);
+  }, [card, clearUndoCountdown]);
 
   const isComplete = card ? card.stamps >= card.maxStamps : false;
   const progress = card ? (card.stamps / card.maxStamps) * 100 : 0;
@@ -904,7 +951,6 @@ function StampView({ onLogout }: { onLogout: () => void }) {
 
 /* -- Config del reward ---------------------------------------- */
 function RewardConfig() {
-  const firestore = useFirestore();
   const [reward, setReward] = useState<(Reward & { id: string }) | null>(null);
   const [loadingReward, setLoadingReward] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -914,7 +960,7 @@ function RewardConfig() {
   const [rewardDesc, setRewardDesc] = useState("");
 
   useEffect(() => {
-    getDefaultReward(firestore).then((r) => {
+    getDefaultReward().then((r) => {
       if (r) {
         setReward(r);
         setStamps(r.requiredStamps);
@@ -923,13 +969,13 @@ function RewardConfig() {
       }
       setLoadingReward(false);
     });
-  }, [firestore]);
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
     setSaved(false);
     try {
-      await upsertDefaultReward(firestore, {
+      await upsertDefaultReward({
         name: rewardName || "Bebida gratis",
         description: rewardDesc || "Completa tu tarjeta y recibe una bebida gratis",
         requiredStamps: stamps,
@@ -1053,18 +1099,20 @@ function RewardConfig() {
 
 /* -- Pagina principal ---------------------------------------- */
 export default function AdminPage() {
-  const firestore = useFirestore();
-  const configRef = doc(firestore, "config", "admin");
-  const { data: adminConfig } = useFirestoreDocData(configRef, { suspense: false });
-  const pinLength = (adminConfig as AdminConfig)?.pinLength ?? 4;
+  const pinLength = 4;
 
   const [authed, setAuthed] = useState(false);
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
   const [pinLoading, setPinLoading] = useState(false);
-  const [adminTab, setAdminTab] = useState<"stamps" | "menu" | "promos" | "customers" | "analytics" | "config">("stamps");
+  const [adminTab, setAdminTab] = useState<AdminTabId>("stamps");
   const [lockout, setLockout] = useState(0);
+  const [userName, setUserName] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const pinLoadingRef = useRef(false);
+
+  // Tabs disponibles segun el rol
+  const allowedTabs = userRole ? getTabsForRole(userRole) : [];
 
   // Countdown del lockout
   useEffect(() => {
@@ -1077,8 +1125,15 @@ export default function AdminPage() {
 
   // Auto-auth si la cookie de sesion sigue siendo valida
   useEffect(() => {
-    checkBaristaSession().then((valid) => {
-      if (valid) setAuthed(true);
+    checkBaristaSession().then((session) => {
+      if (session.valid) {
+        setAuthed(true);
+        setUserName(session.nombre);
+        setUserRole(session.rol);
+        // Set initial tab to first allowed
+        const tabs = getTabsForRole(session.rol);
+        if (tabs.length > 0) setAdminTab(tabs[0]);
+      }
     });
   }, []);
 
@@ -1090,7 +1145,12 @@ export default function AdminPage() {
       const result = await verifyAdminPin(pinValue);
       if (result.ok) {
         setAuthed(true);
+        setUserName(result.nombre);
+        setUserRole(result.rol);
         setPinError("");
+        // Set initial tab to first allowed
+        const tabs = getTabsForRole(result.rol);
+        if (tabs.length > 0) setAdminTab(tabs[0]);
       } else if (result.blocked) {
         setLockout(result.retryAfter);
         setPinError("");
@@ -1147,13 +1207,13 @@ export default function AdminPage() {
             >
               <div className="text-center space-y-2">
                 <p className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">
-                  Acceso barista
+                  Ingresa tu PIN
                 </p>
                 <h1
                   className="text-4xl font-light tracking-wide text-stone-700 dark:text-stone-200"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
-                  Panel de sellos
+                  Panel Admin
                 </h1>
               </div>
 
@@ -1179,46 +1239,38 @@ export default function AdminPage() {
               {/* Header */}
               <div className="text-center space-y-2">
                 <p className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">
-                  Barista
+                  {userName ? `Hola, ${userName}` : "Panel"} {userRole ? `· ${getRoleLabel(userRole)}` : ""}
                 </p>
                 <h1
                   className="text-4xl font-light tracking-wide text-stone-700 dark:text-stone-200"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
-                  {adminTab === "stamps" ? "Anadir sello"
-                    : adminTab === "menu" ? "Gestionar menu"
-                    : adminTab === "promos" ? "Promociones"
-                    : adminTab === "customers" ? "Clientes"
-                    : adminTab === "config" ? "Configuracion"
-                    : "Analytics"}
+                  {TAB_TITLES[adminTab] ?? "Panel"}
                 </h1>
               </div>
 
-              {/* Tabs */}
-              <div className="flex gap-1 p-1 bg-stone-100 dark:bg-neutral-900 border border-stone-200 dark:border-stone-800 rounded-xl flex-wrap justify-center">
-                {(["stamps", "menu", "promos", "customers", "analytics", "config"] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setAdminTab(tab)}
-                    className={`px-4 py-2 rounded-lg text-[10px] uppercase tracking-[0.3em] transition-all duration-200 ${
-                      adminTab === tab
-                        ? "bg-stone-800 text-white dark:bg-stone-200 dark:text-neutral-900"
-                        : "text-stone-400 dark:text-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
-                    }`}
-                  >
-                    {tab === "stamps" ? "Sellos"
-                      : tab === "menu" ? "Menu"
-                      : tab === "promos" ? "Promos"
-                      : tab === "customers" ? "Clientes"
-                      : tab === "analytics" ? "Analytics"
-                      : "Config"}
-                  </button>
-                ))}
-              </div>
+              {/* Tabs — solo mostrar si hay mas de 1 tab */}
+              {allowedTabs.length > 1 && (
+                <div className="flex gap-1 p-1 bg-stone-100 dark:bg-neutral-900 border border-stone-200 dark:border-stone-800 rounded-xl flex-wrap justify-center">
+                  {allowedTabs.map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setAdminTab(tab)}
+                      className={`px-4 py-2 rounded-lg text-[10px] uppercase tracking-[0.3em] transition-all duration-200 ${
+                        adminTab === tab
+                          ? "bg-stone-800 text-white dark:bg-stone-200 dark:text-neutral-900"
+                          : "text-stone-400 dark:text-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
+                      }`}
+                    >
+                      {TAB_LABELS[tab]}
+                    </button>
+                  ))}
+                </div>
+              )}
 
-              {/* Contenido */}
+              {/* Contenido — solo renderiza tabs permitidas */}
               <AnimatePresence mode="wait">
-                {adminTab === "stamps" && (
+                {adminTab === "stamps" && allowedTabs.includes("stamps") && (
                   <motion.div
                     key="stamps-view"
                     initial={{ opacity: 0, x: -8 }}
@@ -1227,10 +1279,10 @@ export default function AdminPage() {
                     transition={{ duration: 0.2 }}
                     className="w-full"
                   >
-                    <StampView onLogout={() => { logoutBarista(); setAuthed(false); setPin(""); }} />
+                    <StampView onLogout={() => { logoutBarista(); setAuthed(false); setPin(""); setUserName(null); setUserRole(null); }} />
                   </motion.div>
                 )}
-                {adminTab === "menu" && (
+                {adminTab === "menu" && allowedTabs.includes("menu") && (
                   <motion.div
                     key="menu-view"
                     initial={{ opacity: 0, x: 8 }}
@@ -1242,7 +1294,7 @@ export default function AdminPage() {
                     <MenuAdmin />
                   </motion.div>
                 )}
-                {adminTab === "promos" && (
+                {adminTab === "promos" && allowedTabs.includes("promos") && (
                   <motion.div
                     key="promos-view"
                     initial={{ opacity: 0, x: 8 }}
@@ -1254,7 +1306,7 @@ export default function AdminPage() {
                     <PromosAdmin />
                   </motion.div>
                 )}
-                {adminTab === "customers" && (
+                {adminTab === "customers" && allowedTabs.includes("customers") && (
                   <motion.div
                     key="customers-view"
                     initial={{ opacity: 0, x: 8 }}
@@ -1266,7 +1318,7 @@ export default function AdminPage() {
                     <CustomerDirectory />
                   </motion.div>
                 )}
-                {adminTab === "analytics" && (
+                {adminTab === "analytics" && allowedTabs.includes("analytics") && (
                   <motion.div
                     key="analytics-view"
                     initial={{ opacity: 0, x: 8 }}
@@ -1278,7 +1330,7 @@ export default function AdminPage() {
                     <AnalyticsDashboard />
                   </motion.div>
                 )}
-                {adminTab === "config" && (
+                {adminTab === "config" && allowedTabs.includes("config") && (
                   <motion.div
                     key="config-view"
                     initial={{ opacity: 0, x: 8 }}

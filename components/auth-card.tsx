@@ -1,7 +1,9 @@
 "use client";
 
-import { SignInForm } from "@/components/auth/sign-in-form";
-import { SignUpForm } from "@/components/auth/sign-up-form";
+// TODO: This component uses Firebase Auth which is no longer being used.
+// The loyalty app uses PIN-based authentication via Supabase instead.
+// This file is kept for reference but should be replaced with appropriate auth UI.
+
 import {
   Card,
   CardContent,
@@ -9,37 +11,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useUser } from "reactfire";
 
 export const AuthCard = () => {
-  const [isShowingSignUp, setIsShowingSignUp] = useState<boolean>(false);
-  const { data: user } = useUser();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (user) {
-      router.push("/app");
-    }
-  }, [user]);
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle>{isShowingSignUp ? "Sign Up" : "Sign In"}</CardTitle>
-          <CardDescription>
-            Give them a reason to {isShowingSignUp ? "sign up" : "sign in"}.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isShowingSignUp ? (
-            <SignUpForm onShowLogin={() => setIsShowingSignUp(false)} />
-          ) : (
-            <SignInForm onShowSignUp={() => setIsShowingSignUp(true)} />
-          )}
-        </CardContent>
-      </Card>
-    </>
+    <Card>
+      <CardHeader>
+        <CardTitle>Authentication Placeholder</CardTitle>
+        <CardDescription>
+          Firebase Auth is no longer used. This page should implement PIN-based Supabase authentication.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground">
+          This component needs to be updated to use Supabase PIN authentication instead of Firebase Auth.
+        </p>
+      </CardContent>
+    </Card>
   );
 };

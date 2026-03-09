@@ -9,10 +9,16 @@ export const isBrowser = () => typeof window !== "undefined"
 
 export function formatDate(date?: any) {
   if (!date) return null;
+  // Soportar Firebase Timestamp (.toDate()), Date, y strings ISO
+  const d = typeof date?.toDate === "function"
+    ? date.toDate()
+    : date instanceof Date
+      ? date
+      : new Date(date);
   return new Intl.DateTimeFormat("es-MX", {
     day: "numeric",
     month: "short",
-  }).format(date.toDate());
+  }).format(d);
 }
 
 export function timeAgo(date: Date): string {

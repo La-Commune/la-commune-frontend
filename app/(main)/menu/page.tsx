@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useFirestore } from "reactfire";
 import { MenuSection } from "@/models/menu.model";
 import { getFullMenu } from "@/services/menu.service";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -27,7 +26,6 @@ function MenuItemImage({ src, alt }: { src: string; alt: string }) {
 }
 
 export default function CafeMenu() {
-  const firestore = useFirestore();
   const [sections, setSections] = useState<MenuSection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -58,7 +56,7 @@ export default function CafeMenu() {
       if (error) {
         setError(false);
         setLoading(true);
-        getFullMenu(firestore)
+        getFullMenu()
           .then((data) => setSections(data.filter((s) => s.active)))
           .catch(() => setError(true))
           .finally(() => setLoading(false));
@@ -71,14 +69,14 @@ export default function CafeMenu() {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [error, firestore]);
+  }, [error]);
 
   useEffect(() => {
-    getFullMenu(firestore)
+    getFullMenu()
       .then((data) => setSections(data.filter((s) => s.active)))
       .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, [firestore]);
+  }, []);
 
   const hasFood = sections.some((s) => s.type === "food");
   const hasDrinks = sections.some((s) => s.type === "drink");
@@ -224,7 +222,7 @@ export default function CafeMenu() {
                 onClick={() => {
                   setError(false);
                   setLoading(true);
-                  getFullMenu(firestore)
+                  getFullMenu()
                     .then((data) => setSections(data.filter((s) => s.active)))
                     .catch(() => setError(true))
                     .finally(() => setLoading(false));

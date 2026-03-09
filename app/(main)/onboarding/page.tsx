@@ -6,12 +6,11 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useFirestore } from "reactfire";
 import { createCustomer, getCustomerByPhone } from "@/services/customer.service";
-import { doc, getDoc, DocumentReference } from "firebase/firestore";
 import { createCard, getCardByCustomer } from "@/services/card.service";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { hashCustomerPin, setCustomerSession } from "@/app/actions/customerSession";
+import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
 
 export default function OnboardingPage() {
   return (
@@ -25,7 +24,6 @@ function OnboardingForm() {
   const params = useSearchParams();
   const router = useRouter();
   const cardId = params!.get("cardId");
-  const firestore = useFirestore();
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -54,8 +52,10 @@ function OnboardingForm() {
     setError(null);
 
     try {
+      const supabase = getSupabase();
+
       // Check if phone already registered — don't auto-login, require recovery with PIN
-      const existing = await getCustomerByPhone(firestore, phone);
+      const existing = await getCustomerByPhone(phone);
 
       if (existing) {
         setError("Ya existe una cuenta con este numero. Usa \"Recuperar mi tarjeta\" para acceder.");
@@ -66,11 +66,13 @@ function OnboardingForm() {
       let referrerCustomerId: string | undefined;
       if (cardId) {
         try {
-          const referrerCardSnap = await getDoc(doc(firestore, "cards", cardId));
-          if (referrerCardSnap.exists()) {
-            const ref = referrerCardSnap.data().customerId as DocumentReference | undefined;
-            referrerCustomerId = ref?.id;
-          }
+          const { data: referrerCard } = await supabase
+            .from("tarjetas")
+            .select("cliente_id")
+            .eq("negocio_id", NEGOCIO_ID)
+            .eq("id", cardId)
+            .single();
+          referrerCustomerId = referrerCard?.cliente_id;
         } catch {
           // No bloquear el registro si el lookup falla
         }
@@ -79,7 +81,7 @@ function OnboardingForm() {
       // Hash PIN server-side before storing
       const pinHmac = await hashCustomerPin(pin);
 
-      const customerRef = await createCustomer(firestore, {
+      const customer = await createCustomer({
         name,
         phone,
         ...(email ? { email } : {}),
@@ -89,19 +91,17 @@ function OnboardingForm() {
         ...(referrerCustomerId ? { referrerCustomerId } : {}),
       });
 
-      const rewardRef = doc(firestore, "rewards", "default");
-
-      const cardRef = await createCard(firestore, {
-        customerRef,
-        rewardRef,
+      const card = await createCard({
+        customerRef: customer.id,
+        rewardRef: "default",
       });
 
       // Set both localStorage and httpOnly cookie
-      localStorage.setItem("customerId", customerRef.id);
-      localStorage.setItem("cardId", cardRef.id);
-      await setCustomerSession(customerRef.id, cardRef.id);
+      localStorage.setItem("customerId", customer.id);
+      localStorage.setItem("cardId", card.id);
+      await setCustomerSession(customer.id, card.id);
 
-      router.replace("/card/" + cardRef.id);
+      router.replace("/card/" + card.id);
     } catch (e: any) {
       const offline = typeof navigator !== "undefined" && !navigator.onLine;
       if (offline) {

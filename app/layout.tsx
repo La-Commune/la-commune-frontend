@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Work_Sans, Cormorant_Garamond } from "next/font/google";
 import "@/app/globals.css";
 import { cn } from "@/lib/utils";
-import { MyFirebaseProvider } from "@/components/firebase-providers";
 import { Toaster } from "@/components/ui/toaster";
 import { PwaRegister } from "@/components/ui/PwaRegister";
 import { ThemeProvider } from "@/components/ui/ThemeProvider";
@@ -44,14 +43,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="es" suppressHydrationWarning>
       <body className={cn(sans.variable, display.variable, sans.className)}>
         <ThemeProvider>
-          <MyFirebaseProvider>
-            <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-3 focus:py-1.5 focus:rounded-md focus:bg-stone-800 focus:text-white focus:text-xs focus:uppercase focus:tracking-widest">
-              Saltar al contenido
-            </a>
-            {children}
-            <Toaster />
-            <PwaRegister />
-          </MyFirebaseProvider>
+          <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-3 focus:py-1.5 focus:rounded-md focus:bg-stone-800 focus:text-white focus:text-xs focus:uppercase focus:tracking-widest">
+            Saltar al contenido
+          </a>
+          {children}
+          <Toaster />
+          <PwaRegister />
         </ThemeProvider>
       </body>
     </html>

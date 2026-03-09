@@ -1,125 +1,132 @@
-import {
-  Firestore,
-  collection,
-  getDocs,
-  getCountFromServer,
-  query,
-  where,
-  orderBy,
-  limit,
-  startAfter,
-  Timestamp,
-  DocumentReference,
-  QueryDocumentSnapshot,
-} from "firebase/firestore";
+import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
 
 export interface StampEventRaw {
   id: string;
-  createdAt: Timestamp;
+  createdAt: Date;
   source: string;
   drinkType?: string;
 }
 
-// ---------------------------------------------------------------------------
-// Paginación interna — trae TODOS los docs en batches para no truncar datos
-// ---------------------------------------------------------------------------
-
 const BATCH_SIZE = 500;
 
+/**
+ * Fetch all stamp events from Supabase with optional date range filter.
+ * Uses cursor-based pagination to handle large datasets.
+ */
 async function fetchAllStampEventsPaginated(
-  firestore: Firestore,
-  filters: ReturnType<typeof where>[],
+  whereClause?: { column: string; value: unknown; operator?: string }
 ): Promise<StampEventRaw[]> {
+  const supabase = getSupabase();
   const results: StampEventRaw[] = [];
-  let lastDoc: QueryDocumentSnapshot | undefined;
+  let offset = 0;
 
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    const constraints = [
-      ...filters,
-      orderBy("createdAt", "asc"),
-      limit(BATCH_SIZE),
-      ...(lastDoc ? [startAfter(lastDoc)] : []),
-    ];
+    let query = supabase
+      .from("eventos_sello")
+      .select("id, creado_en, origen, tipo_bebida")
+      .eq("negocio_id", NEGOCIO_ID)
+      .order("creado_en", { ascending: true })
+      .range(offset, offset + BATCH_SIZE - 1);
 
-    const q = query(collection(firestore, "stamp-events"), ...constraints);
-    const snap = await getDocs(q);
+    if (whereClause) {
+      if (whereClause.operator === ">=") {
+        query = query.gte(whereClause.column, whereClause.value);
+      } else {
+        query = query.eq(whereClause.column, whereClause.value);
+      }
+    }
 
-    snap.docs.forEach((d) => {
-      results.push({ id: d.id, ...(d.data() as Omit<StampEventRaw, "id">) });
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) break;
+
+    data.forEach((row) => {
+      results.push({
+        id: row.id,
+        createdAt: new Date(row.creado_en),
+        source: row.origen,
+        drinkType: row.tipo_bebida,
+      });
     });
 
-    if (snap.docs.length < BATCH_SIZE) break; // última página
-    lastDoc = snap.docs[snap.docs.length - 1];
+    if (data.length < BATCH_SIZE) break;
+    offset += BATCH_SIZE;
   }
 
   return results;
 }
 
-// ---------------------------------------------------------------------------
-// Queries públicas
-// ---------------------------------------------------------------------------
-
+/**
+ * Get stamp events created on or after a specific date
+ */
 export async function getStampEventsInRange(
-  firestore: Firestore,
-  fromDate: Date,
+  fromDate: Date
 ): Promise<StampEventRaw[]> {
-  return fetchAllStampEventsPaginated(firestore, [
-    where("createdAt", ">=", Timestamp.fromDate(fromDate)),
-  ]);
+  return fetchAllStampEventsPaginated({
+    column: "creado_en",
+    value: fromDate.toISOString(),
+    operator: ">=",
+  });
 }
 
 /**
- * Obtiene TODOS los stamp events usando paginación cursor-based.
- * Ya no hay limit(1000) — itera en batches de 500 hasta agotar la colección.
+ * Get ALL stamp events using cursor-based pagination.
+ * Iterates in batches of 500 until all data is fetched.
  */
-export async function getAllStampEvents(
-  firestore: Firestore,
-): Promise<StampEventRaw[]> {
-  return fetchAllStampEventsPaginated(firestore, []);
+export async function getAllStampEvents(): Promise<StampEventRaw[]> {
+  return fetchAllStampEventsPaginated();
 }
 
 /**
- * Usa getCountFromServer para contar sin traer documentos completos.
- * Más eficiente que getDocs + snap.size para colecciones grandes.
+ * Count total active customers without fetching full documents
  */
-export async function getTotalCustomers(
-  firestore: Firestore,
-): Promise<number> {
-  const q = query(
-    collection(firestore, "customers"),
-    where("active", "==", true),
-  );
-  const snap = await getCountFromServer(q);
-  return snap.data().count;
+export async function getTotalCustomers(): Promise<number> {
+  const supabase = getSupabase();
+
+  const { count, error } = await supabase
+    .from("clientes")
+    .select("id", { count: "exact", head: true })
+    .eq("negocio_id", NEGOCIO_ID)
+    .eq("activo", true);
+
+  if (error) throw error;
+  return count || 0;
 }
 
 /**
- * Usa getCountFromServer para contar redemptions sin descargar los docs.
+ * Count total redemptions without fetching full documents
  */
-export async function getTotalRedemptions(
-  firestore: Firestore,
-): Promise<number> {
-  const q = query(
-    collection(firestore, "stamp-events"),
-    where("source", "==", "redemption"),
-  );
-  const snap = await getCountFromServer(q);
-  return snap.data().count;
+export async function getTotalRedemptions(): Promise<number> {
+  const supabase = getSupabase();
+
+  const { count, error } = await supabase
+    .from("eventos_sello")
+    .select("id", { count: "exact", head: true })
+    .eq("negocio_id", NEGOCIO_ID)
+    .eq("origen", "canje");
+
+  if (error) throw error;
+  return count || 0;
 }
 
+/**
+ * Get top drinks ordered by a specific customer
+ */
 export async function getCustomerTopDrinks(
-  firestore: Firestore,
-  customerId: DocumentReference,
-  limitN = 3,
+  customerId: string,
+  limitN = 3
 ): Promise<{ drink: string; count: number }[]> {
-  const events = await fetchAllStampEventsPaginated(firestore, [
-    where("customerId", "==", customerId),
-  ]);
+  const events = await fetchAllStampEventsPaginated({
+    column: "cliente_id",
+    value: customerId,
+  });
 
   const drinkCount: Record<string, number> = {};
   events.forEach((e) => {
-    if (e.drinkType && e.source !== "redemption") {
+    if (e.drinkType && e.source !== "canje") {
       drinkCount[e.drinkType] = (drinkCount[e.drinkType] ?? 0) + 1;
     }
   });

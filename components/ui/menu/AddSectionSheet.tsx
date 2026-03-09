@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useFirestore } from "reactfire";
 import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
 import { addMenuSection } from "@/services/menu.service";
 import { SECTION_TYPES } from "./menu-admin.constants";
@@ -16,7 +15,6 @@ export function AddSectionSheet({
   onCancel: () => void;
   nextOrder: number;
 }) {
-  const firestore = useFirestore();
   const keyboardOffset = useKeyboardOffset();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -26,7 +24,7 @@ export function AddSectionSheet({
   const handleSave = async () => {
     if (!title.trim()) return;
     setSaving(true);
-    await addMenuSection(firestore, {
+    await addMenuSection({
       title: title.trim(),
       description: description.trim(),
       type,

@@ -13,6 +13,7 @@ export interface MenuItem {
   note?: string;
   imageUrl?: string;
   available: boolean;
+  visible: boolean;
   tags: string[];
   highlight: boolean;
   seasonal: boolean;

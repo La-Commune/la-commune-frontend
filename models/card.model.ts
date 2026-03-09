@@ -1,22 +1,22 @@
-import { Timestamp, DocumentReference } from "firebase/firestore";
-
 export interface Card {
-  customerId: DocumentReference;
-  rewardId: DocumentReference;
+  id?: string;
+  customerId?: string;    // cliente_id UUID
+  rewardId?: string;      // recompensa_id UUID
 
   stamps: number;
   maxStamps: number;
 
-  status: "active" | "completed" | "redeemed" | "expired";
+  status: "activa" | "completada" | "canjeada" | "expirada" |
+          "active" | "completed" | "redeemed" | "expired"; // backwards compat
 
   /** Control */
-  createdAt: Timestamp;
-  lastStampAt?: Timestamp;
-  completedAt?: Timestamp;
-  redeemedAt?: Timestamp;
+  createdAt?: string | Date;
+  lastStampAt?: string | Date;
+  completedAt?: string | Date;
+  redeemedAt?: string | Date;
 
   /** Seguridad */
-  pinHash?: string; // para vista barista
+  pinHash?: string;
 
-  schemaVersion: number;
+  schemaVersion?: number;
 }

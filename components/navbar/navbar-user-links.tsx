@@ -1,23 +1,23 @@
 "use client";
 
-import { UserNav } from "@/components/navbar/user-nav";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+// TODO: This component uses Firebase Auth which is no longer being used.
+// The loyalty app uses PIN-based authentication via Supabase instead.
+
 import { Button, buttonVariants } from "@/components/ui/button";
 import Link from "next/link";
 import { FC } from "react";
-import { useUser } from "reactfire";
 
 export const NavbarUserLinks: FC = () => {
-  const { data, hasEmitted } = useUser();
+  // TODO: Replace with actual Supabase auth check
+  const isAuthenticated = false;
 
   return (
     <>
-      {hasEmitted && data ? (
+      {isAuthenticated ? (
         <>
           <Link href="/app" className={buttonVariants()}>
             Dashboard
           </Link>
-          <UserNav />
         </>
       ) : (
         <>

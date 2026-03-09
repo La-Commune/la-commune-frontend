@@ -1,37 +1,92 @@
-import {
-  Firestore,
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-} from "firebase/firestore";
+import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
 import { Reward } from "@/models/reward.model";
 
-const COL = "rewards";
-const DEFAULT_ID = "default";
+export async function getDefaultReward(): Promise<
+  (Reward & { id: string }) | null
+> {
+  const supabase = getSupabase();
 
-export async function getDefaultReward(
-  firestore: Firestore,
-): Promise<(Reward & { id: string }) | null> {
-  const snap = await getDoc(doc(firestore, COL, DEFAULT_ID));
-  if (!snap.exists()) return null;
-  return { id: snap.id, ...(snap.data() as Reward) };
+  const { data, error } = await supabase
+    .from("recompensas")
+    .select("*")
+    .eq("negocio_id", NEGOCIO_ID)
+    .eq("es_default", true)
+    .limit(1)
+    .single();
+
+  if (error && error.code !== "PGRST116") throw error;
+  if (!data) return null;
+
+  return {
+    id: data.id,
+    name: data.nombre,
+    description: data.descripcion,
+    requiredStamps: data.sellos_requeridos,
+    type: data.tipo,
+    active: data.activa,
+  };
 }
 
 /**
  * Crea o actualiza el reward "default".
- * Usa setDoc con merge para que funcione tanto la primera vez como en updates.
  */
 export async function upsertDefaultReward(
-  firestore: Firestore,
   data: Partial<Reward>,
 ): Promise<void> {
-  await setDoc(doc(firestore, COL, DEFAULT_ID), data, { merge: true });
+  const supabase = getSupabase();
+
+  // First, get the current default reward
+  const { data: existingReward } = await supabase
+    .from("recompensas")
+    .select("id")
+    .eq("negocio_id", NEGOCIO_ID)
+    .eq("es_default", true)
+    .limit(1)
+    .single();
+
+  const updateData = {
+    nombre: data.name,
+    descripcion: data.description,
+    sellos_requeridos: data.requiredStamps,
+    tipo: data.type,
+    activa: data.active,
+  };
+
+  if (existingReward) {
+    // Update existing
+    const { error } = await supabase
+      .from("recompensas")
+      .update(updateData)
+      .eq("id", existingReward.id)
+      .eq("negocio_id", NEGOCIO_ID);
+
+    if (error) throw error;
+  } else {
+    // Create new
+    const { error } = await supabase
+      .from("recompensas")
+      .insert([
+        {
+          negocio_id: NEGOCIO_ID,
+          ...updateData,
+          es_default: true,
+        },
+      ]);
+
+    if (error) throw error;
+  }
 }
 
 export async function updateRewardStamps(
-  firestore: Firestore,
   requiredStamps: number,
 ): Promise<void> {
-  await updateDoc(doc(firestore, COL, DEFAULT_ID), { requiredStamps });
+  const supabase = getSupabase();
+
+  const { error } = await supabase
+    .from("recompensas")
+    .update({ sellos_requeridos: requiredStamps })
+    .eq("negocio_id", NEGOCIO_ID)
+    .eq("es_default", true);
+
+  if (error) throw error;
 }
