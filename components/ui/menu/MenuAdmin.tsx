@@ -16,6 +16,7 @@ import { ItemDrawer } from "./ItemDrawer";
 import { EditItemModal } from "./EditItemModal";
 import { AddItemSheet } from "./AddItemSheet";
 import { AddSectionSheet } from "./AddSectionSheet";
+import { EditSectionSheet } from "./EditSectionSheet";
 import { ConfirmSheet } from "./ConfirmSheet";
 import { DeleteTarget } from "./menu-admin.constants";
 
@@ -24,6 +25,7 @@ type SectionCardProps = {
   onItemClick: (item: MenuItem, sectionId: string) => void;
   onToggleActive: (section: MenuSection) => void;
   onDeleteSection: (section: MenuSection) => void;
+  onEditSection: (section: MenuSection) => void;
   onAddItem: (sectionId: string) => void;
 };
 
@@ -32,6 +34,7 @@ const SectionCard = memo(function SectionCard({
   onItemClick,
   onToggleActive,
   onDeleteSection,
+  onEditSection,
   onAddItem,
 }: SectionCardProps) {
   return (
@@ -42,14 +45,15 @@ const SectionCard = memo(function SectionCard({
     >
       {/* Header sección */}
       <div className="flex items-center justify-between px-5 py-5 bg-white dark:bg-neutral-900">
-        <div className="min-w-0">
+        <button className="min-w-0 text-left" onClick={() => onEditSection(section)}>
           <p className={`text-[11px] uppercase tracking-[0.4em] font-medium ${
             section.type === "food" ? "text-amber-500" : "text-stone-600 dark:text-stone-300"
           }`}>
             {section.title}
+            <span className="ml-2 text-stone-300 dark:text-stone-700 text-[9px] tracking-wider normal-case">editar</span>
           </p>
-          <p className="text-[11px] text-stone-400 dark:text-stone-600 mt-1 truncate">{section.description}</p>
-        </div>
+          <p className="text-[11px] text-stone-400 dark:text-stone-600 mt-1 truncate">{section.description || "Sin descripción"}</p>
+        </button>
         <div className="flex items-center gap-3 shrink-0 ml-4">
           <Toggle
             checked={section.active}
@@ -191,6 +195,7 @@ export function MenuAdmin() {
   const [editItem, setEditItem] = useState<{ item: MenuItem; sectionId: string } | null>(null);
   const [addingItemTo, setAddingItemTo] = useState<string | null>(null);
   const [addingSection, setAddingSection] = useState(false);
+  const [editingSection, setEditingSection] = useState<MenuSection | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
 
   const reload = useCallback(() => {
@@ -317,6 +322,7 @@ export function MenuAdmin() {
             onItemClick={handleItemClick}
             onToggleActive={handleToggleSectionActive}
             onDeleteSection={handleDeleteSectionRequest}
+            onEditSection={setEditingSection}
             onAddItem={setAddingItemTo}
           />
         ))}
@@ -393,6 +399,16 @@ export function MenuAdmin() {
             }
             onAdded={() => { setAddingItemTo(null); reload(); }}
             onCancel={() => setAddingItemTo(null)}
+          />
+        )}
+
+        {/* Sheet editar sección */}
+        {editingSection && (
+          <EditSectionSheet
+            key="edit-section"
+            section={editingSection}
+            onSaved={() => { setEditingSection(null); reload(); }}
+            onCancel={() => setEditingSection(null)}
           />
         )}
 
