@@ -110,9 +110,11 @@ export async function verifyAdminPin(pin: string): Promise<VerifyResult> {
     pin_input: pin,
   });
 
-  console.log("[verifyAdminPin] RPC result:", JSON.stringify(data));
   if (error) {
-    console.error("[verifyAdminPin] RPC error:", error.message);
+    // Log only in development
+    if (process.env.NODE_ENV === "development") {
+      console.error("[verifyAdminPin] RPC error:", error.message);
+    }
   }
 
   const result = data as {

@@ -7,7 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   test: {
     globals: true,
-    environment: "node",
+    environment: "happy-dom",
   },
   resolve: {
     alias: {

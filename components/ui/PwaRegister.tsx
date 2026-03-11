@@ -51,7 +51,11 @@ export function PwaRegister() {
             };
           };
         })
-        .catch((err) => console.warn("SW registration failed:", err));
+        .catch((err) => {
+          if (process.env.NODE_ENV === "development") {
+            console.warn("SW registration failed:", err);
+          }
+        });
 
       // Escuchar mensaje de SW_UPDATED desde el SW al activarse
       // (solo si ya había controller — misma lógica)
