@@ -55,8 +55,8 @@ self.addEventListener("fetch", (event) => {
   // Solo GET y mismo origen
   if (request.method !== "GET" || url.origin !== location.origin) return;
 
-  // Ignorar peticiones de Firebase / APIs externas
-  if (url.hostname.includes("firestore") || url.hostname.includes("googleapis")) return;
+  // Ignorar peticiones a APIs externas (Supabase, Google, etc.)
+  if (url.hostname.includes("supabase") || url.hostname.includes("googleapis")) return;
 
   // Ignorar videos — siempre devuelven 206 (range request) y no se pueden cachear
   if (UNCACHEABLE_EXTENSIONS.test(url.pathname)) return;
@@ -145,7 +145,7 @@ self.addEventListener("periodicsync", (event) => {
 
 async function flushOfflineStamps() {
   // Pedir a TODOS los clientes activos que procesen la cola.
-  // El primero que tenga Firestore inicializado procesará los sellos.
+  // El primero que tenga Supabase inicializado procesará los sellos.
   const clients = await self.clients.matchAll({ type: "window" });
   if (clients.length === 0) return;
 

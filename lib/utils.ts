@@ -9,7 +9,7 @@ export const isBrowser = () => typeof window !== "undefined"
 
 export function formatDate(date?: any) {
   if (!date) return null;
-  // Soportar Firebase Timestamp (.toDate()), Date, y strings ISO
+  // Soportar Date objects, strings ISO, y objetos con .toDate()
   const d = typeof date?.toDate === "function"
     ? date.toDate()
     : date instanceof Date

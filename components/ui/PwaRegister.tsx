@@ -29,18 +29,22 @@ export function PwaRegister() {
   useEffect(() => {
     // Registrar service worker
     if ("serviceWorker" in navigator) {
+      // Guardar si ya había un SW controlando ANTES de registrar el nuevo.
+      // Si no había controller, es la primera instalación → no mostrar banner.
+      const hadController = !!navigator.serviceWorker.controller;
+
       const buildId = process.env.NEXT_PUBLIC_BUILD_ID || "v1";
       navigator.serviceWorker
         .register(`/sw.js?v=${buildId}`)
         .then((registration) => {
-          // Detectar cuando un nuevo SW se instala
+          // Solo mostrar banner de actualización si ya existía un SW previo
           registration.onupdatefound = () => {
             const newWorker = registration.installing;
             if (!newWorker) return;
             newWorker.onstatechange = () => {
               if (
                 newWorker.state === "activated" &&
-                navigator.serviceWorker.controller
+                hadController
               ) {
                 setShowUpdateBanner(true);
               }
@@ -50,8 +54,9 @@ export function PwaRegister() {
         .catch((err) => console.warn("SW registration failed:", err));
 
       // Escuchar mensaje de SW_UPDATED desde el SW al activarse
+      // (solo si ya había controller — misma lógica)
       navigator.serviceWorker.addEventListener("message", (event) => {
-        if (event.data?.type === "SW_UPDATED") {
+        if (event.data?.type === "SW_UPDATED" && hadController) {
           setShowUpdateBanner(true);
         }
       });
