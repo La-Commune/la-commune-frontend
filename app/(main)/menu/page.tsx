@@ -7,6 +7,7 @@ import { MenuSection } from "@/models/menu.model";
 import { getFullMenu } from "@/services/menu.service";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { PromoBannerSticky } from "@/components/ui/promos/PromoBanner";
+import { checkBaristaSession } from "@/app/actions/verifyAdminPin";
 
 function MenuItemImage({ src, alt }: { src: string; alt: string }) {
   const [loaded, setLoaded] = useState(false);
@@ -32,6 +33,13 @@ export default function CafeMenu() {
   const [isOnline, setIsOnline] = useState(true);
   const [activeFilter, setActiveFilterState] = useState<string | null>(null);
   const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    checkBaristaSession().then((session) => {
+      if (session.valid && session.rol === "admin") setIsAdmin(true);
+    });
+  }, []);
 
   useEffect(() => {
     const saved = sessionStorage.getItem("menu-tab-filter");
@@ -418,7 +426,7 @@ export default function CafeMenu() {
         )}
 
         {/* Métodos de pago — oculto al imprimir */}
-        {!loading && !error && (
+        {/* {!loading && !error && (
           <div className="mt-16 flex justify-center print:hidden">
             <div className="flex items-center gap-5 text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600">
               <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
@@ -427,10 +435,10 @@ export default function CafeMenu() {
               <span>Tarjeta vía Mercado Pago</span>
             </div>
           </div>
-        )}
+        )} */}
 
-        {/* Botón de descarga — oculto al imprimir */}
-        {!loading && !error && (
+        {/* Botón de descarga — solo admin, oculto al imprimir */}
+        {!loading && !error && isAdmin && (
           <div className="mt-8 flex justify-center print:hidden">
             <button
               onClick={() => window.print()}
