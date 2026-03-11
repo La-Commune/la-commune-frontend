@@ -47,8 +47,6 @@ export default function CafeMenu() {
   }, []);
 
   function setActiveFilter(value: string | null) {
-    console.log("setActiveFilter", value);
-
     setActiveFilterState(value);
     if (value) {
       sessionStorage.setItem("menu-tab-filter", value);
