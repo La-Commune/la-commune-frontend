@@ -17,7 +17,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run lint
+      - run: npx next lint --dir .
       - run: npx tsc --noEmit
 
   unit-tests:
