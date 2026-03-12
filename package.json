@@ -11,7 +11,10 @@
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
@@ -50,6 +53,7 @@
   "devDependencies": {
     "@faker-js/faker": "^8.4.1",
     "@netlify/plugin-nextjs": "^5.15.8",
+    "@playwright/test": "^1.58.2",
     "@types/node": "^22.15.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
