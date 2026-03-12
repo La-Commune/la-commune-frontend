@@ -171,7 +171,20 @@ Ver `.env.example`. Variables requeridas:
 - **Framer Motion**: usar `AnimatePresence` con `key` único en cada child
 - **UI en español**
 
+## Tests E2E (Playwright)
+
+- `e2e/landing.spec.ts` — Landing page, links a onboarding y menú (4)
+- `e2e/onboarding.spec.ts` — Registro completo, validación teléfono/email/PIN, checkboxes, submit (11)
+- `e2e/admin-pin.spec.ts` — PIN pad admin, dots, backspace, navegación (4)
+- `e2e/card-view.spec.ts` — Vista tarjeta con sellos, QR code (2)
+- `e2e/menu-public.spec.ts` — Menú público, categorías, productos con precios (3)
+- `e2e/fixtures/supabase-mock.ts` — Interceptores de Supabase REST API para tests sin backend
+- Total: 50 tests E2E (25 specs × 2 projects: chromium + mobile iPhone 14)
+- Framework: Playwright
+- Modo: interceptores de red (page.route) para mockear Supabase
+- Comandos: `npm run test:e2e`, `npm run test:e2e:ui`, `npm run test:e2e:headed`
+
 ## Pendiente
 
-1. Tests de integración y E2E
-2. Crear iconos PWA reales si se necesitan nuevos
+1. Crear iconos PWA reales si se necesitan nuevos
+2. Tests E2E contra Supabase staging (auth real, flujo completo con persistencia)
