@@ -105,6 +105,78 @@
   }
 }
 
+/* Custom scrollbar — modern overlay style */
+
+/* Firefox / standard */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(168 162 158 / 0) transparent;
+}
+
+*:hover,
+*:active {
+  scrollbar-color: rgba(168 162 158 / 0.45) transparent;
+}
+
+.dark * {
+  scrollbar-color: rgba(168 162 158 / 0) transparent;
+}
+
+.dark *:hover,
+.dark *:active {
+  scrollbar-color: rgba(120 113 108 / 0.4) transparent;
+}
+
+/* Safari dark mode awareness */
+.dark {
+  color-scheme: dark;
+}
+
+/* WebKit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(168 162 158 / 0);
+  border-radius: 9999px;
+  transition: background 0.3s ease;
+}
+
+*:hover::-webkit-scrollbar-thumb {
+  background: rgba(168 162 158 / 0.4);
+}
+
+*:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(120 113 108 / 0.6);
+}
+
+*:hover::-webkit-scrollbar-thumb:active {
+  background: rgba(87 83 78 / 0.7);
+}
+
+/* Dark mode — WebKit */
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(168 162 158 / 0);
+}
+
+.dark *:hover::-webkit-scrollbar-thumb {
+  background: rgba(168 162 158 / 0.15);
+}
+
+.dark *:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(168 162 158 / 0.3);
+}
+
+.dark *:hover::-webkit-scrollbar-thumb:active {
+  background: rgba(168 162 158 / 0.45);
+}
+
 .perspective {
   perspective: 1000px;
 }

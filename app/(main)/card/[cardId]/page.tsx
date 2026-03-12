@@ -62,22 +62,22 @@ export default function CardEntry() {
           filter: `id=eq.${resolvedCustomerId}`,
         },
         (payload) => {
-          const row = payload.new as any;
+          const row = payload.new as Record<string, unknown>;
           setCustomer({
-            name: row.nombre,
-            phone: row.telefono,
-            email: row.email,
-            active: row.activo,
-            totalVisits: row.total_visitas,
-            totalStamps: row.total_sellos,
-            createdAt: new Date(row.creado_en),
-            lastVisitAt: row.ultima_visita ? new Date(row.ultima_visita) : undefined,
-            consentWhatsApp: row.consentimiento_whatsapp,
-            consentEmail: row.consentimiento_email,
-            pinHmac: row.pin_hmac,
-            notes: row.notas,
-            referrerCustomerId: row.id_referidor,
-            referralBonusGiven: row.bono_referido_entregado,
+            name: row.nombre as string,
+            phone: row.telefono as string,
+            email: row.email as string | undefined,
+            active: row.activo as boolean,
+            totalVisits: row.total_visitas as number,
+            totalStamps: row.total_sellos as number,
+            createdAt: new Date(row.creado_en as string),
+            lastVisitAt: row.ultima_visita ? new Date(row.ultima_visita as string) : undefined,
+            consentWhatsApp: row.consentimiento_whatsapp as boolean | undefined,
+            consentEmail: row.consentimiento_email as boolean | undefined,
+            pinHmac: row.pin_hmac as string | undefined,
+            notes: row.notas as string | undefined,
+            referrerCustomerId: row.id_referidor as string | undefined,
+            referralBonusGiven: row.bono_referido_entregado as boolean | undefined,
             schemaVersion: 1,
           });
         }
@@ -105,14 +105,14 @@ export default function CardEntry() {
           filter: `id=eq.${cardIdParam}`,
         },
         (payload) => {
-          const row = payload.new as any;
+          const row = payload.new as Record<string, unknown>;
           setCardDoc({
-            id: row.id,
-            stamps: row.sellos,
-            maxStamps: row.sellos_maximos,
-            status: row.estado,
-            createdAt: new Date(row.creado_en),
-          } as Card);
+            id: row.id as string,
+            stamps: row.sellos as number,
+            maxStamps: row.sellos_maximos as number,
+            status: row.estado as Card["status"],
+            createdAt: new Date(row.creado_en as string),
+          });
         }
       )
       .subscribe();
@@ -200,7 +200,7 @@ if (loading || !cardId) {
     );
   }
 
-  const isCompleted = (cardDoc as any)?.status === "completed";
+  const isCompleted = cardDoc?.status === "completada" || cardDoc?.status === "completed";
 
   return <Card cardId={cardId} customer={customer as Customer} isCompleted={isCompleted} />;
 }

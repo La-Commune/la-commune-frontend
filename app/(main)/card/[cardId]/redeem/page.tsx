@@ -52,14 +52,14 @@ export default function RedeemPage() {
           filter: `id=eq.${cardId}`,
         },
         (payload) => {
-          const row = payload.new as any;
+          const row = payload.new as Record<string, unknown>;
           setCardDoc({
-            id: row.id,
-            stamps: row.sellos,
-            maxStamps: row.sellos_maximos,
-            status: row.estado,
-            createdAt: new Date(row.creado_en),
-          } as Card);
+            id: row.id as string,
+            stamps: row.sellos as number,
+            maxStamps: row.sellos_maximos as number,
+            status: row.estado as Card["status"],
+            createdAt: new Date(row.creado_en as string),
+          });
         }
       )
       .subscribe();
