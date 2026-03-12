@@ -117,7 +117,8 @@ test.describe("Frontend — Onboarding", () => {
     await expect(link).toBeVisible();
   });
 
-  test("submit con datos válidos hace redirect a /card/", async ({ page }) => {
+  // TODO: el server action no se puede mockear con page.route() — necesita Supabase staging
+  test.fixme("submit con datos válidos hace redirect a /card/", async ({ page }) => {
     // Interceptar específicamente el POST de crear customer
     await page.route("**/rest/v1/clientes*", async (route) => {
       const method = route.request().method();

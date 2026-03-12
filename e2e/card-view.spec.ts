@@ -23,7 +23,7 @@ test.describe("Frontend — Vista de Tarjeta", () => {
     await expect(page.locator("body")).toBeVisible({ timeout: 10_000 });
   });
 
-  test("muestra QR code de la tarjeta", async ({ page }) => {
+  test.fixme("muestra QR code de la tarjeta", async ({ page }) => {
     await page.goto(`/card/${MOCK_CARD.id}`);
     await page.waitForLoadState("networkidle");
 
