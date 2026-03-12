@@ -19,7 +19,7 @@ test.describe("Frontend — Menú Público", () => {
 
     // Categorías mock: "Café Caliente", "Café Frío"
     await expect(
-      page.locator("text=Café Caliente").first()
+      page.getByText("Café Caliente").first()
     ).toBeVisible({ timeout: 10_000 });
   });
 
@@ -28,7 +28,7 @@ test.describe("Frontend — Menú Público", () => {
     await page.waitForLoadState("networkidle");
 
     // Productos mock: Americano $45, Latte $55
-    await expect(page.locator("text=Americano").first()).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator("text=Latte").first()).toBeVisible();
+    await expect(page.getByText("Americano").first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Latte").first()).toBeVisible();
   });
 });

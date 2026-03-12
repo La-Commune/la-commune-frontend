@@ -8,8 +8,8 @@ test.describe("Frontend — Onboarding", () => {
 
   test("muestra la pantalla de registro", async ({ page }) => {
     await page.goto("/onboarding");
-    await expect(page.locator("text=Tu tarjeta, siempre contigo")).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator("text=Programa de fidelidad")).toBeVisible();
+    await expect(page.getByText("Tu tarjeta, siempre contigo")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Programa de fidelidad")).toBeVisible();
   });
 
   test("muestra los campos del formulario", async ({ page }) => {
@@ -35,7 +35,7 @@ test.describe("Frontend — Onboarding", () => {
     await phoneInput.fill("55512");
     await phoneInput.blur();
 
-    await expect(page.locator("text=Ingresa los 10 digitos")).toBeVisible();
+    await expect(page.getByText("Ingresa los 10 digitos")).toBeVisible();
   });
 
   test("contador de teléfono muestra progreso", async ({ page }) => {
@@ -44,10 +44,10 @@ test.describe("Frontend — Onboarding", () => {
     await phoneInput.waitFor({ timeout: 10_000 });
 
     await phoneInput.fill("55512");
-    await expect(page.locator("text=5/10")).toBeVisible();
+    await expect(page.getByText("5/10")).toBeVisible();
 
     await phoneInput.fill("5551234567");
-    await expect(page.locator("text=10/10")).toBeVisible();
+    await expect(page.getByText("10/10")).toBeVisible();
   });
 
   test("PIN muestra dots de progreso", async ({ page }) => {
@@ -70,7 +70,7 @@ test.describe("Frontend — Onboarding", () => {
     await emailInput.fill("invalido");
     await emailInput.blur();
 
-    await expect(page.locator("text=Ingresa un email valido")).toBeVisible();
+    await expect(page.getByText("Ingresa un email valido")).toBeVisible();
   });
 
   test("botón se habilita con teléfono y PIN válidos", async ({ page }) => {
@@ -87,7 +87,7 @@ test.describe("Frontend — Onboarding", () => {
   test("checkbox de WhatsApp aparece en el formulario", async ({ page }) => {
     await page.goto("/onboarding");
     await expect(
-      page.locator("text=Acepto recibir mensajes por WhatsApp")
+      page.getByText("Acepto recibir mensajes por WhatsApp")
     ).toBeVisible({ timeout: 10_000 });
   });
 
@@ -97,20 +97,20 @@ test.describe("Frontend — Onboarding", () => {
 
     // No visible sin email
     await expect(
-      page.locator("text=Acepto recibir correos")
+      page.getByText("Acepto recibir correos")
     ).not.toBeVisible();
 
     // Visible al llenar email
     await page.locator("#email").fill("test@example.com");
     await expect(
-      page.locator("text=Acepto recibir correos")
+      page.getByText("Acepto recibir correos")
     ).toBeVisible();
   });
 
   test("link a recuperar cuenta existe", async ({ page }) => {
     await page.goto("/onboarding");
     await expect(
-      page.locator("text=Ya tengo cuenta, recuperar mi tarjeta")
+      page.getByText("Ya tengo cuenta, recuperar mi tarjeta")
     ).toBeVisible({ timeout: 10_000 });
 
     const link = page.locator("a[href='/recover']");

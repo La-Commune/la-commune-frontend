@@ -53,7 +53,7 @@ test.describe("Frontend — Admin PIN Login", () => {
   test("link de volver a inicio existe", async ({ page }) => {
     await page.goto("/admin");
     await expect(
-      page.locator("a[href='/'], text=Inicio").first()
+      page.locator("a[href='/']").or(page.getByText("Inicio")).first()
     ).toBeVisible({ timeout: 10_000 });
   });
 });
