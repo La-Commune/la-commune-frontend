@@ -19,7 +19,7 @@ export default defineConfig({
         { name: "mobile", use: { ...devices["iPhone 14"] } },
       ],
   webServer: {
-    command: process.env.CI ? "npm run build && npm run start -- -p 3003" : "npm run dev",
+    command: "npm run dev",
     url: "http://localhost:3003",
     reuseExistingServer: !process.env.CI,
     timeout: process.env.CI ? 120_000 : 30_000,

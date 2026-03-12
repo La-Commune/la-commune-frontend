@@ -28,8 +28,8 @@ test.describe("Frontend — Vista de Tarjeta", () => {
     await page.waitForLoadState("networkidle");
 
     // La tarjeta muestra un QR para que el barista lo escanee
-    // Verificar que hay un canvas o svg de QR code
-    const qr = page.locator("canvas, svg[class*='qr'], [data-testid='qr']");
+    // QR puede ser canvas, svg, img o un div con data-testid
+    const qr = page.locator("canvas, svg[class*='qr'], [data-testid='qr'], img[alt*='QR'], img[src*='qr']");
     // QR puede tomar un momento en renderizar
     await expect(qr.first()).toBeVisible({ timeout: 15_000 });
   });
