@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 test.describe("Frontend — Landing Page", () => {
   test("carga la landing page", async ({ page }) => {
     await page.goto("/");
-    await expect(page.locator("text=La Commune")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("La Commune")).toBeVisible({ timeout: 10_000 });
   });
 
   test("tiene link al programa de fidelidad / onboarding", async ({ page }) => {
