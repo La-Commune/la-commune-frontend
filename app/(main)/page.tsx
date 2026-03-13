@@ -293,7 +293,7 @@ const PremiumSection: React.FC<SectionProps> = ({
             transition={{ duration: 1.2, delay: 0.75 }}
             className={`mt-10 ${align === "center" ? "mx-auto" : ""} max-w-sm`}
           >
-            <div className="w-6 h-px bg-stone-700 mb-4" />
+            <div aria-hidden="true" className="w-6 h-px bg-stone-700 mb-4" />
             <p className="text-[13px] italic font-light text-stone-500 leading-relaxed tracking-wide">
               &ldquo;{manifesto}&rdquo;
             </p>
@@ -313,7 +313,7 @@ const PremiumSection: React.FC<SectionProps> = ({
               onClick={() => router.push(ctaLink)}
               className="inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.35em] text-stone-200 hover:text-white transition-colors duration-300 group"
             >
-              <span className="w-6 h-px bg-stone-400 group-hover:w-10 group-hover:bg-white transition-all duration-500" />
+              <span aria-hidden="true" className="w-6 h-px bg-stone-400 group-hover:w-10 group-hover:bg-white transition-all duration-500" />
               {ctaText}
             </button>
 
@@ -470,7 +470,7 @@ export default function Home() {
             <p className="font-display text-3xl font-light tracking-[0.45em] uppercase text-stone-200">
               La Commune
             </p>
-            <div className="w-6 h-px bg-stone-700 mx-auto mt-5" />
+            <div aria-hidden="true" className="w-6 h-px bg-stone-700 mx-auto mt-5" />
           </div>
 
           {/* Horarios + Ubicación */}

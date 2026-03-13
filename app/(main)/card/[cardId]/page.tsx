@@ -375,7 +375,7 @@ function Card({
           href="/"
           className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors duration-300 group"
         >
-          <span className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
+          <span aria-hidden="true" className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
           Inicio
         </Link>
         <span className="text-[10px] uppercase tracking-[0.45em] text-stone-400 dark:text-stone-500">
@@ -388,7 +388,7 @@ function Card({
             className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors duration-300 group"
           >
             Menu
-            <span className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
+            <span aria-hidden="true" className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
           </Link>
         </div>
       </nav>
@@ -475,11 +475,11 @@ function Card({
           ) : promosLoaded && !isCompleted && rewardDoc ? (
             <div className="text-center space-y-1.5">
               <div className="flex items-center justify-center gap-3">
-                <span className="w-5 h-px bg-stone-300/40 dark:bg-stone-700/40" />
+                <span aria-hidden="true" className="w-5 h-px bg-stone-300/40 dark:bg-stone-700/40" />
                 <p className="text-[10px] uppercase tracking-[0.35em] text-stone-400/80 dark:text-stone-500/70">
                   Recompensa
                 </p>
-                <span className="w-5 h-px bg-stone-300/40 dark:bg-stone-700/40" />
+                <span aria-hidden="true" className="w-5 h-px bg-stone-300/40 dark:bg-stone-700/40" />
               </div>
               <p className="font-display text-lg sm:text-xl font-light tracking-wide text-stone-700 dark:text-stone-200">
                 {rewardName}
