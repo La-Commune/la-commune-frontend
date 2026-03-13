@@ -617,9 +617,9 @@ function StampView({ onLogout }: { onLogout: () => void }) {
         {/* Separador */}
         {!scanning && (
           <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-stone-200 dark:bg-stone-800" />
+            <div aria-hidden="true" className="flex-1 h-px bg-stone-200 dark:bg-stone-800" />
             <span className="text-[10px] uppercase tracking-widest text-stone-300 dark:text-stone-700">o</span>
-            <div className="flex-1 h-px bg-stone-200 dark:bg-stone-800" />
+            <div aria-hidden="true" className="flex-1 h-px bg-stone-200 dark:bg-stone-800" />
           </div>
         )}
 
@@ -1183,7 +1183,7 @@ export default function AdminPage() {
           href="/"
           className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors duration-300 group"
         >
-          <span className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
+          <span aria-hidden="true" className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
           Inicio
         </Link>
         <span className="text-[10px] uppercase tracking-[0.45em] text-stone-400 dark:text-stone-500">

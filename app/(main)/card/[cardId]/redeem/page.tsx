@@ -196,7 +196,7 @@ export default function RedeemPage() {
           href={`/card/${cardId}`}
           className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-400 hover:text-white transition-colors duration-300 group"
         >
-          <span className="w-4 h-px bg-stone-500 group-hover:w-7 group-hover:bg-white transition-all duration-500" />
+          <span aria-hidden="true" className="w-4 h-px bg-stone-500 group-hover:w-7 group-hover:bg-white transition-all duration-500" />
           Mi tarjeta
         </Link>
         <span className="text-[10px] uppercase tracking-[0.45em] text-stone-500">
@@ -231,7 +231,7 @@ export default function RedeemPage() {
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{ opacity: 1, scaleX: 1 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="w-24 h-px bg-stone-700"
+          aria-hidden="true" className="w-24 h-px bg-stone-700"
         />
 
         {/* Instruccion + QR */}
@@ -261,7 +261,7 @@ export default function RedeemPage() {
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{ opacity: 1, scaleX: 1 }}
           transition={{ duration: 0.6, delay: 0.6 }}
-          className="w-24 h-px bg-stone-700"
+          aria-hidden="true" className="w-24 h-px bg-stone-700"
         />
 
         {/* Boton compartir — siempre visible con fallback a clipboard */}
