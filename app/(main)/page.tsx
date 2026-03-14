@@ -39,7 +39,7 @@ const AnimatedLines = ({
             ease: [0.16, 1, 0.3, 1],
           }}
         >
-          <h2 className="font-display text-4xl sm:text-5xl md:text-6xl font-light leading-[1.1] tracking-wide">
+          <h2 className="font-display text-5xl sm:text-7xl md:text-8xl font-light leading-[1.05] tracking-wide">
             {line}
           </h2>
         </motion.div>
@@ -265,7 +265,7 @@ const PremiumSection: React.FC<SectionProps> = ({
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="mb-6 text-[10px] uppercase tracking-[0.35em] text-stone-300"
+            className="mb-6 text-[10px] uppercase tracking-[0.35em] text-[#a89f90]"
           >
             {eyebrow}
           </motion.p>
@@ -279,7 +279,7 @@ const PremiumSection: React.FC<SectionProps> = ({
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 1, delay: 0.45 }}
-            className="mt-6 text-base sm:text-lg text-stone-300 max-w-xl leading-relaxed font-light"
+            className="mt-8 text-lg sm:text-xl text-[#a89f90] max-w-xl leading-relaxed font-light"
           >
             {subtitle}
           </motion.p>
@@ -293,8 +293,8 @@ const PremiumSection: React.FC<SectionProps> = ({
             transition={{ duration: 1.2, delay: 0.75 }}
             className={`mt-10 ${align === "center" ? "mx-auto" : ""} max-w-sm`}
           >
-            <div aria-hidden="true" className="w-6 h-px bg-stone-700 mb-4" />
-            <p className="text-[13px] italic font-light text-stone-500 leading-relaxed tracking-wide">
+            <div aria-hidden="true" className="w-6 h-px bg-[#2a2722] mb-4" />
+            <p className="text-[13px] italic font-light text-[#6b6458] leading-relaxed tracking-wide">
               &ldquo;{manifesto}&rdquo;
             </p>
           </motion.div>
@@ -311,9 +311,9 @@ const PremiumSection: React.FC<SectionProps> = ({
           >
             <button
               onClick={() => router.push(ctaLink)}
-              className="inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.35em] text-stone-200 hover:text-white transition-colors duration-300 group"
+              className="inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.35em] text-[#e8e0d2] hover:text-[#e8e0d2] transition-colors duration-300 group"
             >
-              <span aria-hidden="true" className="w-6 h-px bg-stone-400 group-hover:w-10 group-hover:bg-white transition-all duration-500" />
+              <span aria-hidden="true" className="w-6 h-px bg-[#6b6458] group-hover:w-10 group-hover:bg-white transition-all duration-500" />
               {ctaText}
             </button>
 
@@ -321,14 +321,14 @@ const PremiumSection: React.FC<SectionProps> = ({
               onSecondaryCtaClick ? (
                 <button
                   onClick={onSecondaryCtaClick}
-                  className="text-[10px] uppercase tracking-[0.3em] text-stone-500 hover:text-stone-300 transition-colors duration-300"
+                  className="text-[10px] uppercase tracking-[0.3em] text-[#6b6458] hover:text-[#a89f90] transition-colors duration-300"
                 >
                   {secondaryCtaText}
                 </button>
               ) : secondaryCtaLink ? (
                 <Link
                   href={secondaryCtaLink}
-                  className="text-[10px] uppercase tracking-[0.3em] text-stone-500 hover:text-stone-300 transition-colors duration-300"
+                  className="text-[10px] uppercase tracking-[0.3em] text-[#6b6458] hover:text-[#a89f90] transition-colors duration-300"
                 >
                   {secondaryCtaText}
                 </Link>
@@ -338,22 +338,24 @@ const PremiumSection: React.FC<SectionProps> = ({
         )}
       </div>
 
-      {/* Scroll indicator */}
+      {/* Scroll indicator — Mouse Outline */}
       {scrollIndicator && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 2.5, duration: 1 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2"
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-3"
         >
-          <span className="text-[10px] uppercase tracking-[0.3em] text-stone-400">
+          <div className="w-[22px] h-[36px] rounded-[11px] border-[1.5px] border-[#3a3630] flex justify-center">
+            <motion.div
+              animate={prefersReduced ? {} : { y: [0, 8, 0], opacity: [1, 0.3, 1] }}
+              transition={prefersReduced ? {} : { duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              className="w-[2px] h-[6px] bg-[#c8956c] rounded-sm mt-2"
+            />
+          </div>
+          <span className="text-[9px] uppercase tracking-[0.35em] text-[#3a3630]">
             Scroll
           </span>
-          <motion.div
-            animate={prefersReduced ? {} : { y: [0, 6, 0] }}
-            transition={prefersReduced ? {} : { duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-            className="w-px h-6 bg-gradient-to-b from-stone-400 to-transparent"
-          />
         </motion.div>
       )}
     </section>
@@ -409,12 +411,34 @@ export default function Home() {
     : { text: "Registrar mi tarjeta", link: "/onboarding" };
 
   return (
-    <main id="main-content" className="h-[100dvh] overflow-y-scroll snap-y snap-mandatory bg-neutral-950">
+    <main id="main-content" className="h-[100dvh] overflow-y-scroll snap-y snap-mandatory bg-[#0c0b09]">
       <SplashScreen />
+
+      {/* Nav editorial — fijo arriba */}
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 sm:px-10 py-5">
+        <span className="font-mono text-[0.65rem] font-medium tracking-[0.25em] uppercase text-[#e8e0d2]">
+          La Commune
+        </span>
+        <div className="hidden sm:flex gap-8">
+          {[
+            { label: "Menú", href: "/menu" },
+            { label: "Fidelidad", href: loyaltyCta.link },
+          ].map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="font-mono text-[0.6rem] tracking-[0.12em] uppercase text-[#6b6458] hover:text-[#c8956c] transition-colors duration-300 relative group"
+            >
+              {item.label}
+              <span className="absolute bottom-[-2px] left-0 w-0 h-px bg-[#c8956c] group-hover:w-full transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]" />
+            </Link>
+          ))}
+        </div>
+      </nav>
 
       {/* Hero — centrado, marca como eyebrow */}
       <PremiumSection
-        eyebrow="La Commune"
+        eyebrow="Hidalgo, MX"
         title={`Café\nen común`}
         subtitle="Un espacio que pertenece a los que están."
         videoSrc="/videos/coffee-free.mp4"
@@ -456,130 +480,61 @@ export default function Home() {
         lazy
       /> */}
 
-      {/* Footer con horarios y ubicación */}
-      <footer className="snap-start h-[100dvh] flex flex-col items-center justify-center bg-neutral-950 px-8">
+      {/* Footer — limpio, editorial */}
+      <footer className="snap-start h-[100dvh] flex flex-col items-center justify-center bg-[#0c0b09] px-8">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 1 }}
-          className="w-full max-w-md"
+          className="flex flex-col items-center text-center"
         >
           {/* Wordmark */}
-          <div className="text-center mb-12">
-            <p className="font-display text-3xl font-light tracking-[0.45em] uppercase text-stone-200">
-              La Commune
-            </p>
-            <div aria-hidden="true" className="w-6 h-px bg-stone-700 mx-auto mt-5" />
-          </div>
+          <p className="font-mono text-2xl sm:text-3xl font-medium tracking-[0.3em] uppercase text-[#e8e0d2]">
+            La Commune
+          </p>
+          <div aria-hidden="true" className="w-8 h-px bg-[#c8956c] mt-6 mb-8" />
 
-          {/* Horarios + Ubicación */}
-          <div className="grid grid-cols-2 gap-10 mb-12">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.35em] text-stone-500 mb-5">
-                Horarios
+          {/* Horario + estado */}
+          <p className="text-sm text-[#a89f90] tracking-wide">
+            Todos los días · 10:00 – 20:00
+          </p>
+          {openStatus && (
+            <div className="flex items-center gap-2 mt-3">
+              <span
+                className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                  openStatus.open ? "bg-emerald-400" : "bg-red-500"
+                }`}
+              />
+              <p className="text-xs tracking-wide text-[#6b6458]">
+                {openStatus.label}
               </p>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-[11px] text-stone-500 uppercase tracking-wider">Lun – Vie</p>
-                  <p className="text-sm text-stone-200 mt-0.5">10:00 – 20:00</p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-stone-500 uppercase tracking-wider">Sáb – Dom</p>
-                  <p className="text-sm text-stone-200 mt-0.5">10:00 – 20:00</p>
-                </div>
-              </div>
-              {openStatus && (
-                <div className="flex items-center gap-2 mt-5">
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                      openStatus.open ? "bg-emerald-400" : "bg-red-500"
-                    }`}
-                  />
-                  <p className="text-[10px] tracking-wide text-stone-500">
-                    {openStatus.label}
-                  </p>
-                </div>
-              )}
             </div>
+          )}
 
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.35em] text-stone-500 mb-5">
-                Encuéntranos
-              </p>
-              <a
-                href="https://maps.google.com/?q=Santa+Natividad+135,+La+Providencia,+Mineral+de+la+Reforma,+Hidalgo"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group block space-y-1"
-              >
-                <p className="text-sm text-stone-200 group-hover:text-white transition-colors duration-300">
-                  Santa Natividad 135
-                </p>
-                <p className="text-[11px] text-stone-500">Col. La Providencia</p>
-                <p className="text-[11px] text-stone-500">Mineral de la Reforma, Hidalgo</p>
-                <p className="text-[10px] uppercase tracking-[0.25em] text-stone-600 group-hover:text-stone-400 transition-colors duration-300 mt-2">
-                  Cómo llegar →
-                </p>
-              </a>
-            </div>
-          </div>
-
-          {/* Métodos de pago */}
-          <div className="mb-10">
-            <p className="text-[10px] uppercase tracking-[0.35em] text-stone-500 mb-5">
-              Pagos
+          {/* Ubicación */}
+          <a
+            href="https://maps.google.com/?q=Santa+Natividad+135,+La+Providencia,+Mineral+de+la+Reforma,+Hidalgo"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-8 group"
+          >
+            <p className="text-sm text-[#6b6458] group-hover:text-[#a89f90] transition-colors duration-300">
+              Santa Natividad 135, Mineral de la Reforma
             </p>
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-stone-500"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-                <span className="text-sm text-stone-200">Efectivo</span>
-              </div>
-              <span className="w-px h-3 bg-stone-800" />
-              <div className="flex items-center gap-2">
-                <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-stone-500"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-                <span className="text-sm text-stone-200">Tarjeta</span>
-                <span className="text-[10px] uppercase tracking-wider text-stone-500">vía Mercado Pago</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Divisor + copyright + links */}
-          <div className="border-t border-stone-800 pt-6 flex flex-col items-center gap-3">
-            <p className="text-[10px] tracking-[0.3em] uppercase text-stone-600 text-center" suppressHydrationWarning>
-              © {new Date().getFullYear()} · La Commune · En construcción permanente
+            <p className="text-[10px] uppercase tracking-[0.25em] text-[#3a3630] group-hover:text-[#6b6458] transition-colors duration-300 mt-2">
+              Cómo llegar →
             </p>
-            <nav aria-label="Enlaces del pie de página" className="flex items-center justify-center gap-0">
-              <Link href="/menu" className="text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300">
-                Menú
-              </Link>
-              <span className="w-px h-3 bg-stone-800 mx-5" />
-              <Link href="/card/preview" className="text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300">
-                Simulador de tarjeta
-              </Link>
-              <span className="hidden sm:block w-px h-3 bg-stone-800 mx-5" />
-              <Link href="/onboarding" className="hidden sm:block text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300">
-                Registrarse
-              </Link>
-              <span className="hidden sm:block w-px h-3 bg-stone-800 mx-5" />
-              <Link href="/recover" className="hidden sm:block text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300">
-                Recuperar tarjeta
-              </Link>
-              <span className="hidden sm:block w-px h-3 bg-stone-800 mx-5" />
-              <a
-                href="https://wa.me/527711006533"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Abrir WhatsApp de La Commune"
-                className="hidden sm:block text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300"
-              >
-                WhatsApp
-              </a>
-            </nav>
-            {/* Acceso discreto para personal */}
+          </a>
+
+          {/* Copyright + admin */}
+          <div className="mt-16 flex flex-col items-center gap-4">
+            <p className="text-[10px] tracking-[0.3em] uppercase text-[#2a2722]" suppressHydrationWarning>
+              © {new Date().getFullYear()} La Commune
+            </p>
             <Link
               href="/admin"
-              className="mt-2 text-[10px] tracking-[0.3em] uppercase text-stone-800 hover:text-stone-600 transition-colors duration-300"
+              className="text-[10px] tracking-[0.3em] uppercase text-[#1a1917] hover:text-[#3a3630] transition-colors duration-300"
             >
               Personal
             </Link>
