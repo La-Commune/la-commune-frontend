@@ -8,9 +8,18 @@ const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
 type PushState = "prompt" | "granted" | "denied" | "unsupported";
 
 /**
+ * Mapea Notification.permission ("default"|"granted"|"denied") a nuestro PushState
+ */
+function mapPermission(perm: NotificationPermission): PushState {
+  if (perm === "granted") return "granted";
+  if (perm === "denied") return "denied";
+  return "prompt"; // "default" → "prompt"
+}
+
+/**
  * Hook para gestionar push notifications.
  *
- * - Detecta soporte del navegador
+ * - Detecta soporte del navegador (incluido iOS PWA standalone)
  * - Solicita permiso al usuario
  * - Registra la suscripción en el servidor
  * - Permite desuscribirse
@@ -22,17 +31,30 @@ export function usePushNotifications(clienteId?: string) {
 
   // Detectar estado inicial
   useEffect(() => {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    // Verificar soporte: SW + PushManager + Notification API
+    const hasServiceWorker = "serviceWorker" in navigator;
+    const hasPushManager = "PushManager" in window;
+    const hasNotification = "Notification" in window;
+
+    if (!hasServiceWorker || !hasPushManager || !hasNotification) {
       setPermission("unsupported");
+      if (process.env.NODE_ENV === "development") {
+        console.log("[Push] No soportado:", {
+          sw: hasServiceWorker,
+          push: hasPushManager,
+          notif: hasNotification,
+        });
+      }
       return;
     }
 
-    setPermission(Notification.permission as PushState);
+    setPermission(mapPermission(Notification.permission));
 
     // Verificar si ya está suscrito
     navigator.serviceWorker.ready.then((reg) => {
       reg.pushManager.getSubscription().then((sub) => {
         setIsSubscribed(!!sub);
+        if (sub) setPermission("granted");
       });
     });
   }, []);
