@@ -54,12 +54,27 @@ function OnboardingForm() {
     try {
       const supabase = getSupabase();
 
-      // Check if phone already registered — don't auto-login, require recovery with PIN
+      // Check if phone already registered
       const existing = await getCustomerByPhone(phone);
 
       if (existing) {
-        setError("Ya existe una cuenta con este numero. Usa \"Recuperar mi tarjeta\" para acceder.");
-        setLoading(false);
+        // Check if they already have a card → send to recover
+        const existingCard = await getCardByCustomer(existing.id);
+        if (existingCard) {
+          setError(null);
+          router.replace("/recover");
+          return;
+        }
+
+        // Client exists but no card (previous partial signup) → create card and continue
+        const card = await createCard({
+          customerRef: existing.id,
+        });
+
+        localStorage.setItem("customerId", existing.id);
+        localStorage.setItem("cardId", card.id);
+        await setCustomerSession(existing.id, card.id);
+        router.replace("/card/" + card.id);
         return;
       }
 
@@ -93,7 +108,6 @@ function OnboardingForm() {
 
       const card = await createCard({
         customerRef: customer.id,
-        rewardRef: "default",
       });
 
       // Set both localStorage and httpOnly cookie
@@ -102,11 +116,15 @@ function OnboardingForm() {
       await setCustomerSession(customer.id, card.id);
 
       router.replace("/card/" + card.id);
-    } catch (e: any) {
+    } catch (e: unknown) {
+      if (process.env.NODE_ENV === "development") {
+        console.error("Onboarding error:", e);
+      }
       const offline = typeof navigator !== "undefined" && !navigator.onLine;
+      const code = e instanceof Object && "code" in e ? (e as { code: string }).code : undefined;
       if (offline) {
         setError("Sin conexion a internet. Verifica tu red e intenta de nuevo.");
-      } else if (e?.code === "permission-denied") {
+      } else if (code === "permission-denied") {
         setError("No se pudo acceder al servicio. Intenta mas tarde.");
       } else {
         setError("Algo salio mal. Intenta de nuevo o visitanos en barra.");

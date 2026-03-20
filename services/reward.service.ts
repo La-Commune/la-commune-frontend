@@ -1,5 +1,5 @@
 import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
-import { Reward } from "@/models/reward.model";
+import { Reward, RecompensaRow, mapRecompensaToReward } from "@/models/reward.model";
 
 export async function getDefaultReward(): Promise<
   (Reward & { id: string }) | null
@@ -17,14 +17,7 @@ export async function getDefaultReward(): Promise<
   if (error && error.code !== "PGRST116") throw error;
   if (!data) return null;
 
-  return {
-    id: data.id,
-    name: data.nombre,
-    description: data.descripcion,
-    requiredStamps: data.sellos_requeridos,
-    type: data.tipo,
-    active: data.activa,
-  };
+  return mapRecompensaToReward(data as RecompensaRow);
 }
 
 /**
