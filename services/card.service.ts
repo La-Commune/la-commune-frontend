@@ -1,4 +1,5 @@
 import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
 import { StampEvent } from "@/models/stamp-event.model";
 
 /** Fallback si el reward no existe o no tiene requiredStamps */
@@ -38,7 +39,7 @@ export async function createCard(params: {
       .maybeSingle();
 
     if (defaultError || !defaultReward) {
-      console.error("Error buscando recompensa default:", defaultError);
+      logger.error("card-service", "Error buscando recompensa default", defaultError);
       throw new Error("No hay recompensa default configurada para este negocio.");
     }
 
@@ -63,7 +64,7 @@ export async function createCard(params: {
     .single();
 
   if (error) {
-    console.error("Error creando tarjeta:", error);
+    logger.error("card-service", "Error creando tarjeta", error);
     throw error;
   }
   return data;

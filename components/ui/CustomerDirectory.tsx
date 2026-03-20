@@ -88,7 +88,7 @@ function CustomerDrawer({
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (e) {
-      console.error("Error al guardar nota:", e);
+      if (process.env.NODE_ENV === "development") console.error("Error al guardar nota:", e);
       toast({
         variant: "destructive",
         title: "No se pudo guardar la nota",
@@ -106,7 +106,7 @@ function CustomerDrawer({
       await deleteCustomer(customer.id);
       onDeleted(customer.id);
     } catch (e) {
-      console.error("Error al eliminar cliente:", e);
+      if (process.env.NODE_ENV === "development") console.error("Error al eliminar cliente:", e);
       toast({
         variant: "destructive",
         title: "No se pudo eliminar el cliente",
@@ -337,7 +337,7 @@ export function CustomerDirectory() {
     getAllCustomers()
       .then(setCustomers)
       .catch((e) => {
-        console.error("Error al cargar clientes:", e);
+        if (process.env.NODE_ENV === "development") console.error("Error al cargar clientes:", e);
         toast({
           variant: "destructive",
           title: "No se pudo cargar el directorio",
