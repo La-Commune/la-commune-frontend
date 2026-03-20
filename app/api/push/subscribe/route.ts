@@ -1,12 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
-// Usamos service role para INSERT en push_subscriptions
-// (el frontend llama esta ruta con anon key, pero la ruta usa service role internamente)
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy init — evita que Next.js ejecute createClient en build time
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,6 +20,8 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    const supabase = getSupabase();
 
     // Upsert: si el endpoint ya existe, actualiza las keys y reactiva
     const { error } = await supabase
@@ -65,6 +68,8 @@ export async function DELETE(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    const supabase = getSupabase();
 
     const { error } = await supabase
       .from("push_subscriptions")
