@@ -1,6 +1,4 @@
 import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
-import { Card } from "@/models/card.model";
-import { Reward } from "@/models/reward.model";
 import { StampEvent } from "@/models/stamp-event.model";
 
 /** Fallback si el reward no existe o no tiene requiredStamps */
@@ -8,24 +6,50 @@ const DEFAULT_MAX_STAMPS = 5;
 
 export async function createCard(params: {
   customerRef: string;
-  rewardRef: string;
+  rewardRef?: string;
 }) {
   const supabase = getSupabase();
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-  // Leer requiredStamps del reward en vez de hardcodear
-  const { data: rewardData } = await supabase
-    .from("recompensas")
-    .select("sellos_requeridos")
-    .eq("id", params.rewardRef)
-    .eq("negocio_id", NEGOCIO_ID)
-    .single();
+  let rewardId: string | undefined;
+  let maxStamps = DEFAULT_MAX_STAMPS;
 
-  const maxStamps = rewardData?.sellos_requeridos ?? DEFAULT_MAX_STAMPS;
+  // Si se pasa un UUID válido, usarlo directamente
+  if (params.rewardRef && uuidRegex.test(params.rewardRef)) {
+    rewardId = params.rewardRef;
+    const { data: rewardData } = await supabase
+      .from("recompensas")
+      .select("sellos_requeridos")
+      .eq("id", rewardId)
+      .eq("negocio_id", NEGOCIO_ID)
+      .single();
+    maxStamps = rewardData?.sellos_requeridos ?? DEFAULT_MAX_STAMPS;
+  }
+
+  // Si no tenemos un rewardId válido, buscar la recompensa default
+  if (!rewardId) {
+    const { data: defaultReward, error: defaultError } = await supabase
+      .from("recompensas")
+      .select("id, sellos_requeridos")
+      .eq("negocio_id", NEGOCIO_ID)
+      .eq("es_default", true)
+      .eq("activa", true)
+      .limit(1)
+      .maybeSingle();
+
+    if (defaultError || !defaultReward) {
+      console.error("Error buscando recompensa default:", defaultError);
+      throw new Error("No hay recompensa default configurada para este negocio.");
+    }
+
+    rewardId = defaultReward.id;
+    maxStamps = defaultReward.sellos_requeridos;
+  }
 
   const cardData = {
     negocio_id: NEGOCIO_ID,
     cliente_id: params.customerRef,
-    recompensa_id: params.rewardRef,
+    recompensa_id: rewardId,
     sellos: 0,
     sellos_maximos: maxStamps,
     estado: "activa",
@@ -38,7 +62,10 @@ export async function createCard(params: {
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error("Error creando tarjeta:", error);
+    throw error;
+  }
   return data;
 }
 

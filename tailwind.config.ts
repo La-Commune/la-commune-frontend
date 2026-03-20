@@ -18,7 +18,8 @@ module.exports = {
     extend: {
       fontFamily: {
         display: ["var(--font-display)", "Georgia", "serif"],
-        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
+        sans: ["var(--font-mono)", "ui-monospace", "monospace"], // Mono as default body
       },
       colors: {
         border: "hsl(var(--border))",
@@ -54,6 +55,19 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Design System — Oscuro + Cálido
+        commune: {
+          bg: "#0c0b09",
+          elevated: "#141311",
+          surface: "#1a1917",
+          text: "#e8e0d2",
+          text2: "#a89f90",
+          text3: "#6b6458",
+          warm: "#c8956c",
+          "warm-dim": "#a47752",
+          border: "#2a2722",
+          "border-light": "#3a3630",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -69,10 +83,15 @@ module.exports = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: 0 },
         },
+        "bob": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(6px)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "bob": "bob 2s ease-in-out infinite",
       },
     },
   },

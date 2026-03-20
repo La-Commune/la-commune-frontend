@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Work_Sans, Cormorant_Garamond } from "next/font/google";
+import { Roboto_Mono, Instrument_Serif } from "next/font/google";
 import "@/app/globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
@@ -7,14 +7,16 @@ import { PwaRegister } from "@/components/ui/PwaRegister";
 import { ThemeProvider } from "@/components/ui/ThemeProvider";
 import { ReactNode } from "react";
 
-const sans = Work_Sans({
-  subsets: ["latin"],
-  variable: "--font-sans",
-});
-
-const display = Cormorant_Garamond({
+const mono = Roboto_Mono({
   subsets: ["latin"],
   weight: ["300", "400", "500"],
+  variable: "--font-mono",
+});
+
+const display = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  style: "italic",
   variable: "--font-display",
 });
 
@@ -41,9 +43,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={cn(sans.variable, display.variable, sans.className)}>
+      <body className={cn(mono.variable, display.variable, mono.className)}>
         <ThemeProvider>
-          <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-3 focus:py-1.5 focus:rounded-md focus:bg-stone-800 focus:text-white focus:text-xs focus:uppercase focus:tracking-widest">
+          <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-3 focus:py-1.5 focus:rounded-md focus:bg-commune-carbon focus:text-commune-cream focus:text-xs focus:uppercase focus:tracking-widest">
             Saltar al contenido
           </a>
           {children}

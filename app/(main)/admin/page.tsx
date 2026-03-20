@@ -491,10 +491,20 @@ function StampView({ onLogout }: { onLogout: () => void }) {
     setError("");
     try {
       if (!card.customerId) throw new Error("Cliente no encontrado");
+      // Obtener la recompensa default para crear la nueva tarjeta
+      const { data: defaultReward } = await getSupabase()
+        .from("recompensas")
+        .select("id")
+        .eq("negocio_id", NEGOCIO_ID)
+        .eq("es_default", true)
+        .eq("activa", true)
+        .single();
+      if (!defaultReward) throw new Error("No hay recompensa default configurada");
+
       await redeemCard({
         oldCardId: card.id,
         customerId: card.customerId,
-        rewardRef: "default",
+        rewardRef: defaultReward.id,
       });
       setScreen("redeemed");
       resetTimer.current = setTimeout(() => {

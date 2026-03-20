@@ -1,7 +1,7 @@
 "use client";
 
-import { Card } from "@/models/card.model";
-import { Reward } from "@/models/reward.model";
+import { Card, TarjetaRow, mapTarjetaToCard } from "@/models/card.model";
+import { Reward, RecompensaRow, mapRecompensaToReward } from "@/models/reward.model";
 import { CoffeeBean } from "./CoffeeBean";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
@@ -43,7 +43,7 @@ export function StampCardFront({
   const [card, setCard] = useState<Card | undefined>(undefined);
   const [reward, setReward] = useState<Reward | undefined>(undefined);
 
-  // Setup realtime subscription for card
+  // Realtime + fetch inicial de la tarjeta
   useEffect(() => {
     const sb = getSupabase();
     const channel = sb
@@ -52,18 +52,17 @@ export function StampCardFront({
         "postgres_changes",
         { event: "*", schema: "public", table: "tarjetas", filter: `id=eq.${cardId}` },
         (payload) => {
-          setCard(payload.new as Card);
+          setCard(mapTarjetaToCard(payload.new as TarjetaRow));
         }
       )
       .subscribe();
 
-    // Initial fetch
     sb.from("tarjetas")
       .select("*")
       .eq("id", cardId)
       .single()
       .then(({ data }) => {
-        if (data) setCard(data as Card);
+        if (data) setCard(mapTarjetaToCard(data as TarjetaRow));
       });
 
     return () => {
@@ -71,33 +70,35 @@ export function StampCardFront({
     };
   }, [cardId]);
 
-  // Setup realtime subscription for reward
+  // Realtime + fetch de la recompensa asociada a la tarjeta
+  const rewardId = card?.rewardId;
   useEffect(() => {
+    if (!rewardId) return;
+
     const sb = getSupabase();
     const channel = sb
-      .channel("reward-default")
+      .channel(`reward-${rewardId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "recompensas", filter: `id=eq.default` },
+        { event: "*", schema: "public", table: "recompensas", filter: `id=eq.${rewardId}` },
         (payload) => {
-          setReward(payload.new as Reward);
+          setReward(mapRecompensaToReward(payload.new as RecompensaRow));
         }
       )
       .subscribe();
 
-    // Initial fetch
     sb.from("recompensas")
       .select("*")
-      .eq("id", "default")
+      .eq("id", rewardId)
       .single()
       .then(({ data }) => {
-        if (data) setReward(data as Reward);
+        if (data) setReward(mapRecompensaToReward(data as RecompensaRow));
       });
 
     return () => {
       sb.removeChannel(channel);
     };
-  }, []);
+  }, [rewardId]);
 
   const rewardName = reward?.name ?? "Bebida de cortesía";
 
