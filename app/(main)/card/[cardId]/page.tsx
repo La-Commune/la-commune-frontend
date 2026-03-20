@@ -34,6 +34,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
+import { PushPrompt } from "@/components/ui/PushPrompt";
 
 
 export default function CardEntry() {
@@ -218,16 +219,18 @@ if (loading || !cardId) {
 
   const isCompleted = cardDoc?.status === "completada";
 
-  return <Card cardId={cardId} customer={customer as Customer} isCompleted={isCompleted} />;
+  return <Card cardId={cardId} customerId={resolvedCustomerId!} customer={customer as Customer} isCompleted={isCompleted} />;
 }
 
 
 function Card({
   cardId,
+  customerId,
   customer,
   isCompleted,
 }: {
   cardId: string;
+  customerId: string;
   customer?: Customer;
   isCompleted?: boolean;
 }) {
@@ -484,7 +487,7 @@ function Card({
               <PromoBannerInline />
               {!isCompleted && rewardDoc && (
                 <p className="text-[11px] text-stone-400 dark:text-stone-500 tracking-wide text-center">
-                  Completa {requiredStamps} sellos y gana: <span className="text-stone-600 dark:text-stone-300">{rewardName}</span>
+                  Completa {requiredStamps + 1} sellos y gana: <span className="text-stone-600 dark:text-stone-300">{rewardName}</span>
                 </p>
               )}
             </div>
@@ -501,7 +504,7 @@ function Card({
                 {rewardName}
               </p>
               <p className="text-[11px] text-stone-400 dark:text-stone-600 leading-snug">
-                Completa {requiredStamps} sellos para obtenerla
+                Completa {requiredStamps + 1} sellos para obtenerla
               </p>
             </div>
           ) : null}
@@ -515,6 +518,9 @@ function Card({
         >
           <StampCardView cardId={cardId} />
         </motion.div>
+
+        {/* Push notification prompt — se muestra una vez, desaparece al aceptar/cerrar */}
+        <PushPrompt clienteId={customerId} />
 
         {/* CTA de canje cuando tarjeta completa */}
         <AnimatePresence>
