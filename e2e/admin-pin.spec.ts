@@ -9,8 +9,8 @@ test.describe("Frontend — Admin PIN Login", () => {
   test("muestra la pantalla de PIN al acceder a /admin", async ({ page }) => {
     await page.goto("/admin");
 
-    // El PinPad tiene botones numéricos y botón "Entrar"
-    await expect(page.locator("button:has-text('Entrar')")).toBeVisible({ timeout: 10_000 });
+    // El PinPad tiene botones numéricos (auto-submit, sin botón Entrar)
+    await page.locator("button:has-text('1')").first().waitFor({ timeout: 10_000 });
 
     // Verificar que los dígitos del pad están presentes
     for (const digit of ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]) {
@@ -29,10 +29,9 @@ test.describe("Frontend — Admin PIN Login", () => {
     await page.locator("button:has-text('2')").first().click();
     await page.locator("button:has-text('3')").first().click();
 
-    // Debería haber 3 dots llenos (de 4 total)
-    const filledDots = page.locator(".rounded-full.bg-stone-800, .rounded-full.bg-stone-200, .w-3.h-3.rounded-full");
-    // Al menos verificar que hay dots visibles
-    await expect(filledDots.first()).toBeVisible();
+    // Debería haber indicadores visibles (dots + líneas base)
+    const indicators = page.locator(".rounded-full.w-2\\.5");
+    await expect(indicators.first()).toBeVisible();
   });
 
   test("backspace borra el último dígito", async ({ page }) => {
