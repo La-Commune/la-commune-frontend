@@ -93,6 +93,7 @@ const PremiumSection: React.FC<SectionProps> = ({
   const loopFadingOut = useRef(false);
   const rafRef = useRef<number | null>(null);
   const FADE_SECS = 1.8;
+  const prefersReduced = useReducedMotion();
 
   // rAF a 60 fps — lee currentTime cada frame para opacidad perfectamente continua
   useEffect(() => {
@@ -183,7 +184,7 @@ const PremiumSection: React.FC<SectionProps> = ({
       {!videoFailed ? (
         <motion.video
           ref={videoRef}
-          autoPlay={!lazy}
+          autoPlay={!lazy && !prefersReduced}
           muted
           playsInline
           preload={lazy ? "none" : "auto"}
@@ -197,13 +198,13 @@ const PremiumSection: React.FC<SectionProps> = ({
           }}
           onEnded={handleVideoEnded}
           className="absolute inset-0 w-full h-[116%] object-cover"
-          style={{ y: smoothY, filter: "saturate(0.6) hue-rotate(-15deg) contrast(1.15)" }}
+          style={{ y: prefersReduced ? 0 : smoothY, filter: "saturate(0.6) hue-rotate(-15deg) contrast(1.15)" }}
         >
           <source src={videoSrc} type="video/mp4" />
         </motion.video>
       ) : (
         <motion.div
-          style={{ y: smoothY }}
+          style={{ y: prefersReduced ? 0 : smoothY }}
           className="absolute inset-0 w-full h-[116%]"
         >
           {videoPoster && (
@@ -292,7 +293,7 @@ const PremiumSection: React.FC<SectionProps> = ({
             transition={{ duration: 1.2, delay: 0.75 }}
             className={`mt-10 ${align === "center" ? "mx-auto" : ""} max-w-sm`}
           >
-            <div className="w-6 h-px bg-stone-700 mb-4" />
+            <div aria-hidden="true" className="w-6 h-px bg-stone-700 mb-4" />
             <p className="text-[13px] italic font-light text-stone-500 leading-relaxed tracking-wide">
               &ldquo;{manifesto}&rdquo;
             </p>
@@ -312,7 +313,7 @@ const PremiumSection: React.FC<SectionProps> = ({
               onClick={() => router.push(ctaLink)}
               className="inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.35em] text-stone-200 hover:text-white transition-colors duration-300 group"
             >
-              <span className="w-6 h-px bg-stone-400 group-hover:w-10 group-hover:bg-white transition-all duration-500" />
+              <span aria-hidden="true" className="w-6 h-px bg-stone-400 group-hover:w-10 group-hover:bg-white transition-all duration-500" />
               {ctaText}
             </button>
 
@@ -349,8 +350,8 @@ const PremiumSection: React.FC<SectionProps> = ({
             Scroll
           </span>
           <motion.div
-            animate={{ y: [0, 6, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            animate={prefersReduced ? {} : { y: [0, 6, 0] }}
+            transition={prefersReduced ? {} : { duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
             className="w-px h-6 bg-gradient-to-b from-stone-400 to-transparent"
           />
         </motion.div>
@@ -469,7 +470,7 @@ export default function Home() {
             <p className="font-display text-3xl font-light tracking-[0.45em] uppercase text-stone-200">
               La Commune
             </p>
-            <div className="w-6 h-px bg-stone-700 mx-auto mt-5" />
+            <div aria-hidden="true" className="w-6 h-px bg-stone-700 mx-auto mt-5" />
           </div>
 
           {/* Horarios + Ubicación */}
@@ -531,12 +532,12 @@ export default function Home() {
             </p>
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-stone-500"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-stone-500"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
                 <span className="text-sm text-stone-200">Efectivo</span>
               </div>
               <span className="w-px h-3 bg-stone-800" />
               <div className="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-stone-500"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-stone-500"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
                 <span className="text-sm text-stone-200">Tarjeta</span>
                 <span className="text-[10px] uppercase tracking-wider text-stone-500">vía Mercado Pago</span>
               </div>
@@ -548,7 +549,7 @@ export default function Home() {
             <p className="text-[10px] tracking-[0.3em] uppercase text-stone-600 text-center" suppressHydrationWarning>
               © {new Date().getFullYear()} · La Commune · En construcción permanente
             </p>
-            <nav className="flex items-center justify-center gap-0">
+            <nav aria-label="Enlaces del pie de página" className="flex items-center justify-center gap-0">
               <Link href="/menu" className="text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300">
                 Menú
               </Link>
@@ -569,6 +570,7 @@ export default function Home() {
                 href="https://wa.me/527711006533"
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="Abrir WhatsApp de La Commune"
                 className="hidden sm:block text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300"
               >
                 WhatsApp
