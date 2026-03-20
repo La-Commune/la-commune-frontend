@@ -484,7 +484,7 @@ function Card({
               <PromoBannerInline />
               {!isCompleted && rewardDoc && (
                 <p className="text-[11px] text-stone-400 dark:text-stone-500 tracking-wide text-center">
-                  Completa {requiredStamps} sellos y gana: <span className="text-stone-600 dark:text-stone-300">{rewardName}</span>
+                  Completa {requiredStamps + 1} sellos y gana: <span className="text-stone-600 dark:text-stone-300">{rewardName}</span>
                 </p>
               )}
             </div>
@@ -501,7 +501,7 @@ function Card({
                 {rewardName}
               </p>
               <p className="text-[11px] text-stone-400 dark:text-stone-600 leading-snug">
-                Completa {requiredStamps} sellos para obtenerla
+                Completa {requiredStamps + 1} sellos para obtenerla
               </p>
             </div>
           ) : null}
