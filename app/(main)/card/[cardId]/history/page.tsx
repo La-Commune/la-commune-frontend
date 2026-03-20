@@ -115,7 +115,7 @@ export default function HistoryPage() {
           href={`/card/${cardId}`}
           className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-400 hover:text-white transition-colors duration-300 group"
         >
-          <span className="w-4 h-px bg-stone-500 group-hover:w-7 group-hover:bg-white transition-all duration-500" />
+          <span aria-hidden="true" className="w-4 h-px bg-stone-500 group-hover:w-7 group-hover:bg-white transition-all duration-500" />
           Mi tarjeta
         </Link>
         <span className="text-[10px] uppercase tracking-[0.45em] text-stone-500">
@@ -163,7 +163,7 @@ export default function HistoryPage() {
               href={`/card/${cardId}`}
               className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest text-stone-500 hover:text-white transition-colors mt-2"
             >
-              <span className="w-4 h-px bg-stone-700" />
+              <span aria-hidden="true" className="w-4 h-px bg-stone-700" />
               Ver mi tarjeta
             </Link>
           </div>
@@ -178,7 +178,7 @@ export default function HistoryPage() {
                   <span className="text-[10px] uppercase tracking-widest text-stone-500 shrink-0">
                     {group.dateLabel}
                   </span>
-                  <div className="flex-1 h-px bg-stone-800/60" />
+                  <div aria-hidden="true" className="flex-1 h-px bg-stone-800/60" />
                 </div>
 
                 {/* Eventos del grupo */}

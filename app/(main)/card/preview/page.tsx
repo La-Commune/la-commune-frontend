@@ -92,7 +92,7 @@ function MockCardBack() {
         >
           La Commune
         </p>
-        <div className="w-5 h-px bg-[#C7B7A3] mx-auto" />
+        <div aria-hidden="true" className="w-5 h-px bg-[#C7B7A3] mx-auto" />
       </div>
 
       {/* QR decorativo */}
@@ -228,7 +228,7 @@ export default function CardPreviewPage() {
           href="/"
           className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors duration-300 group"
         >
-          <span className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
+          <span aria-hidden="true" className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
           Inicio
         </Link>
         <span className="text-[10px] uppercase tracking-[0.45em] text-stone-400 dark:text-stone-500">
@@ -275,7 +275,7 @@ export default function CardPreviewPage() {
             href="/onboarding"
             className="inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.35em] text-stone-700 dark:text-stone-200 hover:text-stone-900 dark:hover:text-white transition-colors duration-300 group"
           >
-            <span className="w-6 h-px bg-stone-400 group-hover:w-10 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
+            <span aria-hidden="true" className="w-6 h-px bg-stone-400 group-hover:w-10 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
             Crear mi tarjeta real
           </Link>
           <p className="text-[10px] text-stone-400 dark:text-stone-600 tracking-wide">

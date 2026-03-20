@@ -128,7 +128,7 @@ export default function CafeMenu() {
           href="/"
           className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors duration-300 group"
         >
-          <span className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
+          <span aria-hidden="true" className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
           Inicio
         </Link>
         <span className="text-[10px] uppercase tracking-[0.45em] text-stone-400 dark:text-stone-500">
@@ -148,11 +148,11 @@ export default function CafeMenu() {
             Menu
           </h1>
           <div className="flex items-center justify-center gap-4">
-            <span className="w-8 h-px bg-stone-300 dark:bg-stone-700 print:bg-neutral-300" />
+            <span aria-hidden="true" className="w-8 h-px bg-stone-300 dark:bg-stone-700 print:bg-neutral-300" />
             <p className="text-[10px] tracking-[0.35em] uppercase text-stone-400 dark:text-stone-500 print:text-neutral-400">
               Bebidas
             </p>
-            <span className="w-8 h-px bg-stone-300 dark:bg-stone-700 print:bg-neutral-300" />
+            <span aria-hidden="true" className="w-8 h-px bg-stone-300 dark:bg-stone-700 print:bg-neutral-300" />
           </div>
         </header>
 
@@ -215,13 +215,13 @@ export default function CafeMenu() {
               {isOnline ? "Algo salió mal" : "Sin internet"}
             </p>
             <div className="flex items-center gap-4">
-              <span className="w-8 h-px bg-stone-200 dark:bg-stone-800" />
+              <span aria-hidden="true" className="w-8 h-px bg-stone-200 dark:bg-stone-800" />
               <p className="text-sm text-stone-400 dark:text-stone-600 max-w-[22ch] leading-relaxed">
                 {isOnline
                   ? "No pudimos cargar el menú. Intenta de nuevo."
                   : "Conéctate a internet para ver el menú."}
               </p>
-              <span className="w-8 h-px bg-stone-200 dark:bg-stone-800" />
+              <span aria-hidden="true" className="w-8 h-px bg-stone-200 dark:bg-stone-800" />
             </div>
             {isOnline && (
               <button
@@ -442,9 +442,9 @@ export default function CafeMenu() {
               onClick={() => window.print()}
               className="inline-flex items-center gap-4 text-[11px] uppercase tracking-[0.35em] text-stone-400 dark:text-stone-500 hover:text-stone-900 dark:hover:text-white transition-colors duration-300 group"
             >
-              <span className="w-8 h-px bg-stone-300 dark:bg-stone-700 group-hover:w-12 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
+              <span aria-hidden="true" className="w-8 h-px bg-stone-300 dark:bg-stone-700 group-hover:w-12 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
               Descargar menú
-              <span className="w-8 h-px bg-stone-300 dark:bg-stone-700 group-hover:w-12 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
+              <span aria-hidden="true" className="w-8 h-px bg-stone-300 dark:bg-stone-700 group-hover:w-12 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
             </button>
           </div>
         )}
@@ -452,11 +452,11 @@ export default function CafeMenu() {
         {/* Pie de página para impresión */}
         <div className="hidden print:flex flex-col items-center justify-center mt-12 pt-6 border-t border-neutral-200 gap-3">
           <div className="flex items-center gap-4">
-            <span className="w-8 h-px bg-neutral-300" />
+            <span aria-hidden="true" className="w-8 h-px bg-neutral-300" />
             <p className="text-[10px] uppercase tracking-[0.4em] text-neutral-400">
               La Commune · {new Date().getFullYear()}
             </p>
-            <span className="w-8 h-px bg-neutral-300" />
+            <span aria-hidden="true" className="w-8 h-px bg-neutral-300" />
           </div>
           <p className="text-[10px] uppercase tracking-[0.3em] text-neutral-400">
             Efectivo · Tarjeta via Mercado Pago
