@@ -222,6 +222,36 @@ export async function getStampEventsByCard(
   }));
 }
 
+export async function getLastStampEvent(
+  cardId: string,
+): Promise<(StampEvent & { id: string }) | null> {
+  const supabase = getSupabase();
+
+  const { data, error } = await supabase
+    .from("eventos_sello")
+    .select("*")
+    .eq("negocio_id", NEGOCIO_ID)
+    .eq("tarjeta_id", cardId)
+    .order("creado_en", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  return {
+    id: data.id,
+    cardId: data.tarjeta_id,
+    customerId: data.cliente_id,
+    createdAt: new Date(data.creado_en),
+    drinkType: data.tipo_bebida,
+    size: data.tamano,
+    addedBy: data.agregado_por,
+    baristaId: data.id_barista,
+    notes: data.notas,
+    source: data.origen,
+  };
+}
+
 export async function getCardByCustomer(customerRef: string) {
   const supabase = getSupabase();
 

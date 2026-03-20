@@ -6,7 +6,7 @@ import { CoffeeBean } from "./CoffeeBean";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
-import { getSupabase } from "@/lib/supabase";
+import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
 
 function useCountUp(target: number, duration = 500) {
   const [count, setCount] = useState(target);
@@ -102,6 +102,49 @@ export function StampCardFront({
 
   const rewardName = reward?.name ?? "Bebida de cortesía";
 
+  // Último evento de sello — para mensajes personalizados con nombre de bebida
+  const [lastDrink, setLastDrink] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!cardId) return;
+
+    const sb = getSupabase();
+
+    // Fetch inicial del último evento
+    sb.from("eventos_sello")
+      .select("tipo_bebida")
+      .eq("negocio_id", NEGOCIO_ID)
+      .eq("tarjeta_id", cardId)
+      .order("creado_en", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.tipo_bebida) setLastDrink(data.tipo_bebida);
+      });
+
+    // Realtime: actualizar cuando se agrega un nuevo sello
+    const channel = sb
+      .channel(`stamps-${cardId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "eventos_sello",
+          filter: `tarjeta_id=eq.${cardId}`,
+        },
+        (payload) => {
+          const drink = (payload.new as Record<string, unknown>).tipo_bebida as string | null;
+          if (drink) setLastDrink(drink);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      sb.removeChannel(channel);
+    };
+  }, [cardId]);
+
   const hasCompletedRef = useRef(false);
   const prevStampsRef = useRef<number | undefined>(undefined);
   const [newStampIdx, setNewStampIdx] = useState<number | null>(null);
@@ -116,17 +159,28 @@ export function StampCardFront({
   const remaining = card ? card.maxStamps - card.stamps : 0;
   const progress = card ? (visualStamps / visualMax) * 100 : 0;
 
+  // Mensajes personalizados con nombre de bebida
+  const drinkLabel = lastDrink ? `¡Tu ${lastDrink} sumó!` : null;
+
   const progressMessage = card
     ? card.stamps >= card.maxStamps
       ? `¡${rewardName} lista!`
       : card.stamps === card.maxStamps - 1
-        ? "¡Solo falta uno!"
+        ? drinkLabel
+          ? `${drinkLabel} ¡Solo falta uno!`
+          : "¡Solo falta uno!"
         : card.stamps === Math.floor(card.maxStamps / 2)
-          ? "¡Ya vas a la mitad!"
+          ? drinkLabel
+            ? `${drinkLabel} ¡Ya vas a la mitad!`
+            : "¡Ya vas a la mitad!"
           : card.stamps === 1
-            ? "¡Primer sello!"
+            ? drinkLabel
+              ? `${drinkLabel} ¡Primer sello!`
+              : "¡Primer sello!"
             : card.stamps > 1
-              ? "¡Vas avanzando!"
+              ? drinkLabel
+                ? `${drinkLabel} Te faltan ${remaining}`
+                : "¡Vas avanzando!"
               : "¡Bienvenido! Pide tu primer café"
     : null;
 
