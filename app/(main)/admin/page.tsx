@@ -221,14 +221,13 @@ function StampView({ onLogout }: { onLogout: () => void }) {
   const [pendingQueue, setPendingQueue] = useState<QueuedStamp[]>([]);
   const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "error">("idle");
 
-  // Cargar bebidas disponibles del menu
+  // Cargar TODAS las bebidas del menu (admin ve todo, incluyendo deshabilitadas)
   useEffect(() => {
-    getFullMenu()
+    getFullMenu({ forAdmin: true })
       .then((sections) => {
         const drinks = sections
-          .filter((s) => s.type === "drink" && s.active)
+          .filter((s) => s.type === "drink")
           .flatMap((s) => s.items ?? [])
-          .filter((item) => item.available !== false)
           .map((item) => item.name);
         setMenuDrinks(drinks);
       })
