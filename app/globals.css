@@ -1,71 +1,68 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* ═══ Design System G — "Oscuro + Cálido" ═══ */
+    /* Dark base + warm copper accent               */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
- 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
- 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
- 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
- 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
- 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
- 
+    /* shadcn-compatible tokens (HSL) */
+    --background: 40 12% 4%;            /* #0c0b09 deep dark */
+    --foreground: 34 18% 87%;           /* #e8e0d2 warm white */
+
+    --card: 40 10% 7%;                  /* #141311 elevated */
+    --card-foreground: 34 18% 87%;
+
+    --popover: 40 10% 7%;
+    --popover-foreground: 34 18% 87%;
+
+    --primary: 27 45% 60%;              /* #c8956c warm copper */
+    --primary-foreground: 40 12% 4%;
+
+    --secondary: 40 8% 10%;             /* #1a1917 surface */
+    --secondary-foreground: 34 18% 87%;
+
+    --muted: 40 8% 10%;
+    --muted-foreground: 34 10% 50%;     /* #8a7f72 */
+
+    --accent: 27 45% 60%;              /* copper */
+    --accent-foreground: 40 12% 4%;
+
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 34 18% 87%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
- 
-    --radius: 0.5rem;
+    --border: 35 8% 16%;               /* #2a2722 */
+    --input: 35 8% 16%;
+    --ring: 27 45% 60%;
+
+    --radius: 100px;                   /* pill shape */
   }
- 
+
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
- 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
- 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
- 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
- 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
- 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
- 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
- 
+    /* Already dark by default — same values */
+    --background: 40 12% 4%;
+    --foreground: 34 18% 87%;
+    --card: 40 10% 7%;
+    --card-foreground: 34 18% 87%;
+    --popover: 40 10% 7%;
+    --popover-foreground: 34 18% 87%;
+    --primary: 27 45% 60%;
+    --primary-foreground: 40 12% 4%;
+    --secondary: 40 8% 10%;
+    --secondary-foreground: 34 18% 87%;
+    --muted: 40 8% 10%;
+    --muted-foreground: 34 10% 50%;
+    --accent: 27 45% 60%;
+    --accent-foreground: 40 12% 4%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
- 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --destructive-foreground: 34 18% 87%;
+    --border: 35 8% 16%;
+    --input: 35 8% 16%;
+    --ring: 27 45% 60%;
   }
 }
- 
+
 @layer base {
   * {
     @apply border-border;
@@ -87,52 +84,31 @@
   }
 }
 
-
 @media print {
   @page {
     size: A4 portrait;
     margin: 1.8cm 2cm;
   }
-
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-
-  /* Evita que el nav fijo aparezca al imprimir */
   nav {
     position: static !important;
   }
 }
 
-/* Custom scrollbar — modern overlay style */
-
-/* Firefox / standard */
+/* Custom scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(168 162 158 / 0) transparent;
+  scrollbar-color: rgba(200 149 108 / 0) transparent;
 }
 
 *:hover,
 *:active {
-  scrollbar-color: rgba(168 162 158 / 0.45) transparent;
+  scrollbar-color: rgba(200 149 108 / 0.25) transparent;
 }
 
-.dark * {
-  scrollbar-color: rgba(168 162 158 / 0) transparent;
-}
-
-.dark *:hover,
-.dark *:active {
-  scrollbar-color: rgba(120 113 108 / 0.4) transparent;
-}
-
-/* Safari dark mode awareness */
-.dark {
-  color-scheme: dark;
-}
-
-/* WebKit (Chrome, Safari, Edge) */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -143,38 +119,21 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(168 162 158 / 0);
+  background: rgba(200 149 108 / 0);
   border-radius: 9999px;
   transition: background 0.3s ease;
 }
 
 *:hover::-webkit-scrollbar-thumb {
-  background: rgba(168 162 158 / 0.4);
+  background: rgba(200 149 108 / 0.2);
 }
 
 *:hover::-webkit-scrollbar-thumb:hover {
-  background: rgba(120 113 108 / 0.6);
+  background: rgba(200 149 108 / 0.35);
 }
 
 *:hover::-webkit-scrollbar-thumb:active {
-  background: rgba(87 83 78 / 0.7);
-}
-
-/* Dark mode — WebKit */
-.dark ::-webkit-scrollbar-thumb {
-  background: rgba(168 162 158 / 0);
-}
-
-.dark *:hover::-webkit-scrollbar-thumb {
-  background: rgba(168 162 158 / 0.15);
-}
-
-.dark *:hover::-webkit-scrollbar-thumb:hover {
-  background: rgba(168 162 158 / 0.3);
-}
-
-.dark *:hover::-webkit-scrollbar-thumb:active {
-  background: rgba(168 162 158 / 0.45);
+  background: rgba(200 149 108 / 0.5);
 }
 
 .perspective {

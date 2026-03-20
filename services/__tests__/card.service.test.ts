@@ -16,6 +16,7 @@ function chainMock() {
   const chain: any = {
     select: vi.fn().mockReturnThis(),
     single: mockSingle,
+    maybeSingle: vi.fn(),
     eq: vi.fn().mockReturnThis(),
     is: vi.fn().mockReturnThis(),
     limit: vi.fn().mockReturnThis(),
@@ -241,10 +242,10 @@ describe("card.service", () => {
 
   describe("createCard", () => {
     it("crea tarjeta con sellos_maximos del reward", async () => {
-      // Mock recompensas query
+      // Mock recompensas query (default reward path uses maybeSingle)
       const rewardChain = chainMock();
-      rewardChain.single.mockResolvedValue({
-        data: { sellos_requeridos: 8 },
+      rewardChain.maybeSingle.mockResolvedValue({
+        data: { id: "default-reward-id", sellos_requeridos: 8 },
         error: null,
       });
 
@@ -263,7 +264,6 @@ describe("card.service", () => {
 
       const card = await createCard({
         customerRef: "cust-1",
-        rewardRef: "reward-1",
       });
 
       expect(card).toMatchObject({ id: "new-card", sellos: 0 });

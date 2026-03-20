@@ -16,7 +16,7 @@ export async function createCustomer(
 
   const customerData = {
     negocio_id: NEGOCIO_ID,
-    nombre: data.name || null,
+    nombre: data.name || data.phone,
     telefono: data.phone,
     email: data.email || null,
     consentimiento_whatsapp: data.consentWhatsApp,
