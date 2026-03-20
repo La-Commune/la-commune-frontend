@@ -105,10 +105,16 @@ export function StampCardFront({
   const hasCompletedRef = useRef(false);
   const prevStampsRef = useRef<number | undefined>(undefined);
   const [newStampIdx, setNewStampIdx] = useState<number | null>(null);
-  const animatedStamps = useCountUp(card?.stamps ?? 0);
+
+  // Endowed Progress Effect: +1 sello visual de bienvenida
+  // Backend: 0/5 real → Frontend: 1/6 visual (primer slot = regalo)
+  const visualStamps = (card?.stamps ?? 0) + 1;
+  const visualMax = (card?.maxStamps ?? 5) + 1;
+
+  const animatedStamps = useCountUp(visualStamps);
   const isComplete = card ? card.stamps >= card.maxStamps : false;
   const remaining = card ? card.maxStamps - card.stamps : 0;
-  const progress = card ? (card.stamps / card.maxStamps) * 100 : 0;
+  const progress = card ? (visualStamps / visualMax) * 100 : 0;
 
   const progressMessage = card
     ? card.stamps >= card.maxStamps
@@ -121,17 +127,17 @@ export function StampCardFront({
             ? "¡Primer sello!"
             : card.stamps > 1
               ? "¡Vas avanzando!"
-              : "Pide tu café y pide tu sello en barra"
+              : "¡Bienvenido! Pide tu primer café"
     : null;
 
-  // Detectar sello nuevo
+  // Detectar sello nuevo (el índice visual es +1 por el sello de bienvenida)
   useEffect(() => {
     if (!card) return;
     const prev = prevStampsRef.current;
     prevStampsRef.current = card.stamps;
 
     if (prev !== undefined && card.stamps > prev) {
-      setNewStampIdx(card.stamps - 1);
+      setNewStampIdx(card.stamps); // +1 offset visual (slot 0 = bienvenida)
       onStampAdded();
       const t = setTimeout(() => setNewStampIdx(null), 1200);
       return () => clearTimeout(t);
@@ -189,11 +195,12 @@ export function StampCardFront({
         </div>
 
         <div className="flex justify-between">
-          {Array.from({ length: card.maxStamps }).map((_, i) => (
+          {Array.from({ length: visualMax }).map((_, i) => (
             <CoffeeBean
               key={i}
-              active={i < card.stamps}
+              active={i < visualStamps}
               isNew={i === newStampIdx}
+              isGift={i === 0}
             />
           ))}
         </div>
@@ -222,7 +229,7 @@ export function StampCardFront({
         </div>
         <div className="flex justify-between">
           <p className="text-[10px] tracking-widest uppercase" style={{ color: isDark ? "#7A706A" : "#A89E97" }}>
-            {animatedStamps} de {card.maxStamps} visitas
+            {animatedStamps} de {visualMax} visitas
           </p>
           <p className="text-[10px]" style={{ color: isDark ? "#7A706A" : "#A89E97" }}>
             {isComplete
