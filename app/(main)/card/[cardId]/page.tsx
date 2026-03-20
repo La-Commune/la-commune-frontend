@@ -219,16 +219,18 @@ if (loading || !cardId) {
 
   const isCompleted = cardDoc?.status === "completada";
 
-  return <Card cardId={cardId} customer={customer as Customer} isCompleted={isCompleted} />;
+  return <Card cardId={cardId} customerId={resolvedCustomerId!} customer={customer as Customer} isCompleted={isCompleted} />;
 }
 
 
 function Card({
   cardId,
+  customerId,
   customer,
   isCompleted,
 }: {
   cardId: string;
+  customerId: string;
   customer?: Customer;
   isCompleted?: boolean;
 }) {
@@ -518,7 +520,7 @@ function Card({
         </motion.div>
 
         {/* Push notification prompt — se muestra una vez, desaparece al aceptar/cerrar */}
-        <PushPrompt clienteId={customer?.id} />
+        <PushPrompt clienteId={customerId} />
 
         {/* CTA de canje cuando tarjeta completa */}
         <AnimatePresence>
