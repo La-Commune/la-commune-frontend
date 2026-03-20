@@ -79,8 +79,12 @@ function verifySessionToken(
 
 async function getClientIP(): Promise<string> {
   const headersList = await headers();
-  const forwarded = headersList.get("x-forwarded-for");
-  return forwarded ? forwarded.split(",")[0].trim() : "unknown";
+  // Vercel: x-real-ip (más confiable) > x-forwarded-for > fallback
+  return (
+    headersList.get("x-real-ip")?.trim() ||
+    headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    "0.0.0.0"
+  );
 }
 
 // ── Main: Verify PIN via usuarios table ────────────────
@@ -108,6 +112,7 @@ export async function verifyAdminPin(pin: string): Promise<VerifyResult> {
   const sb = getSupabaseServer();
   const { data, error } = await sb.rpc("login_por_pin", {
     pin_input: pin,
+    client_ip: ip,
   });
 
   if (error) {
