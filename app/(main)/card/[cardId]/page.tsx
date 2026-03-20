@@ -46,11 +46,44 @@ export default function CardEntry() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [cardDoc, setCardDoc] = useState<Card | null>(null);
 
-  // Setup realtime subscription for customer data
+  // Realtime + fetch inicial de datos del cliente
   useEffect(() => {
     if (!resolvedCustomerId) return;
 
     const supabase = getSupabase();
+
+    function mapClienteRow(row: Record<string, unknown>): Customer {
+      return {
+        name: row.nombre as string,
+        phone: row.telefono as string,
+        email: row.email as string | undefined,
+        active: row.activo as boolean,
+        totalVisits: row.total_visitas as number,
+        totalStamps: row.total_sellos as number,
+        createdAt: new Date(row.creado_en as string),
+        lastVisitAt: row.ultima_visita ? new Date(row.ultima_visita as string) : undefined,
+        consentWhatsApp: row.consentimiento_whatsapp as boolean | undefined,
+        consentEmail: row.consentimiento_email as boolean | undefined,
+        pinHmac: row.pin_hmac as string | undefined,
+        notes: row.notas as string | undefined,
+        referrerCustomerId: row.id_referidor as string | undefined,
+        referralBonusGiven: row.bono_referido_entregado as boolean | undefined,
+        schemaVersion: 1,
+      };
+    }
+
+    // Fetch inicial
+    supabase
+      .from("clientes")
+      .select("*")
+      .eq("id", resolvedCustomerId)
+      .eq("negocio_id", NEGOCIO_ID)
+      .single()
+      .then(({ data }) => {
+        if (data) setCustomer(mapClienteRow(data as Record<string, unknown>));
+      });
+
+    // Suscripción realtime para cambios futuros
     const channel = supabase
       .channel(`customer-${resolvedCustomerId}`)
       .on(
@@ -62,24 +95,7 @@ export default function CardEntry() {
           filter: `id=eq.${resolvedCustomerId}`,
         },
         (payload) => {
-          const row = payload.new as Record<string, unknown>;
-          setCustomer({
-            name: row.nombre as string,
-            phone: row.telefono as string,
-            email: row.email as string | undefined,
-            active: row.activo as boolean,
-            totalVisits: row.total_visitas as number,
-            totalStamps: row.total_sellos as number,
-            createdAt: new Date(row.creado_en as string),
-            lastVisitAt: row.ultima_visita ? new Date(row.ultima_visita as string) : undefined,
-            consentWhatsApp: row.consentimiento_whatsapp as boolean | undefined,
-            consentEmail: row.consentimiento_email as boolean | undefined,
-            pinHmac: row.pin_hmac as string | undefined,
-            notes: row.notas as string | undefined,
-            referrerCustomerId: row.id_referidor as string | undefined,
-            referralBonusGiven: row.bono_referido_entregado as boolean | undefined,
-            schemaVersion: 1,
-          });
+          setCustomer(mapClienteRow(payload.new as Record<string, unknown>));
         }
       )
       .subscribe();
@@ -200,7 +216,7 @@ if (loading || !cardId) {
     );
   }
 
-  const isCompleted = cardDoc?.status === "completada" || cardDoc?.status === "completed";
+  const isCompleted = cardDoc?.status === "completada";
 
   return <Card cardId={cardId} customer={customer as Customer} isCompleted={isCompleted} />;
 }
