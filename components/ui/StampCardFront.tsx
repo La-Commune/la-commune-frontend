@@ -6,7 +6,7 @@ import { CoffeeBean } from "./CoffeeBean";
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
-import { getSupabase } from "@/lib/supabase";
+import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
 
 function useCountUp(target: number, duration = 500) {
   const [count, setCount] = useState(target);
@@ -102,36 +102,96 @@ export function StampCardFront({
 
   const rewardName = reward?.name ?? "Bebida de cortesía";
 
+  // Último evento de sello — para mensajes personalizados con nombre de bebida
+  const [lastDrink, setLastDrink] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!cardId) return;
+
+    const sb = getSupabase();
+
+    // Fetch inicial del último evento
+    sb.from("eventos_sello")
+      .select("tipo_bebida")
+      .eq("negocio_id", NEGOCIO_ID)
+      .eq("tarjeta_id", cardId)
+      .order("creado_en", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.tipo_bebida) setLastDrink(data.tipo_bebida);
+      });
+
+    // Realtime: actualizar cuando se agrega un nuevo sello
+    const channel = sb
+      .channel(`stamps-${cardId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "eventos_sello",
+          filter: `tarjeta_id=eq.${cardId}`,
+        },
+        (payload) => {
+          const drink = (payload.new as Record<string, unknown>).tipo_bebida as string | null;
+          if (drink) setLastDrink(drink);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      sb.removeChannel(channel);
+    };
+  }, [cardId]);
+
   const hasCompletedRef = useRef(false);
   const prevStampsRef = useRef<number | undefined>(undefined);
   const [newStampIdx, setNewStampIdx] = useState<number | null>(null);
-  const animatedStamps = useCountUp(card?.stamps ?? 0);
+
+  // Endowed Progress Effect: +1 sello visual de bienvenida
+  // Backend: 0/5 real → Frontend: 1/6 visual (primer slot = regalo)
+  const visualStamps = (card?.stamps ?? 0) + 1;
+  const visualMax = (card?.maxStamps ?? 5) + 1;
+
+  const animatedStamps = useCountUp(visualStamps);
   const isComplete = card ? card.stamps >= card.maxStamps : false;
   const remaining = card ? card.maxStamps - card.stamps : 0;
-  const progress = card ? (card.stamps / card.maxStamps) * 100 : 0;
+  const progress = card ? (visualStamps / visualMax) * 100 : 0;
+
+  // Mensajes personalizados con nombre de bebida
+  const drinkLabel = lastDrink ? `¡Tu ${lastDrink} sumó!` : null;
 
   const progressMessage = card
     ? card.stamps >= card.maxStamps
       ? `¡${rewardName} lista!`
       : card.stamps === card.maxStamps - 1
-        ? "¡Solo falta uno!"
+        ? drinkLabel
+          ? `${drinkLabel} ¡Solo falta uno!`
+          : "¡Solo falta uno!"
         : card.stamps === Math.floor(card.maxStamps / 2)
-          ? "¡Ya vas a la mitad!"
+          ? drinkLabel
+            ? `${drinkLabel} ¡Ya vas a la mitad!`
+            : "¡Ya vas a la mitad!"
           : card.stamps === 1
-            ? "¡Primer sello!"
+            ? drinkLabel
+              ? `${drinkLabel} ¡Primer sello!`
+              : "¡Primer sello!"
             : card.stamps > 1
-              ? "¡Vas avanzando!"
-              : "Pide tu café y pide tu sello en barra"
+              ? drinkLabel
+                ? `${drinkLabel} Te faltan ${remaining}`
+                : "¡Vas avanzando!"
+              : "¡Bienvenido! Pide tu primer café"
     : null;
 
-  // Detectar sello nuevo
+  // Detectar sello nuevo (el índice visual es +1 por el sello de bienvenida)
   useEffect(() => {
     if (!card) return;
     const prev = prevStampsRef.current;
     prevStampsRef.current = card.stamps;
 
     if (prev !== undefined && card.stamps > prev) {
-      setNewStampIdx(card.stamps - 1);
+      setNewStampIdx(card.stamps); // +1 offset visual (slot 0 = bienvenida)
       onStampAdded();
       const t = setTimeout(() => setNewStampIdx(null), 1200);
       return () => clearTimeout(t);
@@ -189,11 +249,12 @@ export function StampCardFront({
         </div>
 
         <div className="flex justify-between">
-          {Array.from({ length: card.maxStamps }).map((_, i) => (
+          {Array.from({ length: visualMax }).map((_, i) => (
             <CoffeeBean
               key={i}
-              active={i < card.stamps}
+              active={i < visualStamps}
               isNew={i === newStampIdx}
+              isGift={i === 0}
             />
           ))}
         </div>
@@ -222,7 +283,7 @@ export function StampCardFront({
         </div>
         <div className="flex justify-between">
           <p className="text-[10px] tracking-widest uppercase" style={{ color: isDark ? "#7A706A" : "#A89E97" }}>
-            {animatedStamps} de {card.maxStamps} visitas
+            {animatedStamps} de {visualMax} visitas
           </p>
           <p className="text-[10px]" style={{ color: isDark ? "#7A706A" : "#A89E97" }}>
             {isComplete

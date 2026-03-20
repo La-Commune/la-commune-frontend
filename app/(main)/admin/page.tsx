@@ -92,7 +92,6 @@ interface LoadedCard {
 function PinPad({
   value,
   onChange,
-  onSubmit,
   error,
   loading,
   pinLength = 4,
@@ -106,10 +105,32 @@ function PinPad({
   pinLength?: number;
   lockoutSeconds?: number;
 }) {
+  const [shaking, setShaking] = useState(false);
+  const prevError = useRef(error);
+
   const press = (digit: string) => {
-    if (value.length < pinLength) onChange(value + digit);
+    if (value.length < pinLength && !loading && lockoutSeconds <= 0) {
+      onChange(value + digit);
+      if (navigator.vibrate) navigator.vibrate(20);
+    }
   };
-  const del = () => onChange(value.slice(0, -1));
+  const del = () => {
+    if (!loading && lockoutSeconds <= 0) {
+      onChange(value.slice(0, -1));
+      if (navigator.vibrate) navigator.vibrate(10);
+    }
+  };
+
+  // Shake en error
+  useEffect(() => {
+    if (error && !prevError.current) {
+      setShaking(true);
+      if (navigator.vibrate) navigator.vibrate([40, 30, 40, 30, 40]);
+      const t = setTimeout(() => setShaking(false), 600);
+      return () => clearTimeout(t);
+    }
+    prevError.current = error;
+  }, [error]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -118,71 +139,117 @@ function PinPad({
         if (value.length < pinLength) onChange(value + e.key);
       } else if (e.key === "Backspace") {
         onChange(value.slice(0, -1));
-      } else if (e.key === "Enter" && value.length >= pinLength) {
-        onSubmit();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [value, pinLength, onChange, onSubmit, loading, lockoutSeconds]);
+  }, [value, pinLength, onChange, loading, lockoutSeconds]);
+
+  const isLocked = lockoutSeconds > 0;
+  const lockLabel = `Bloqueado ${String(Math.floor(lockoutSeconds / 60)).padStart(2, "0")}:${String(lockoutSeconds % 60).padStart(2, "0")}`;
 
   return (
     <div className="flex flex-col items-center gap-8">
-      {/* Indicadores dinamicos */}
-      <div className="flex gap-3 flex-wrap justify-center max-w-[260px]">
-        {Array.from({ length: pinLength }).map((_, i) => (
-          <div
-            key={i}
-            className={`w-3 h-3 rounded-full border transition-all duration-200 ${
-              i < value.length
-                ? "bg-stone-700 border-stone-700 dark:bg-stone-200 dark:border-stone-200"
-                : "bg-transparent border-stone-300 dark:border-stone-700"
-            }`}
-          />
-        ))}
+      {/* Indicador editorial: guiones bajos → dots */}
+      <motion.div
+        className="flex gap-5 justify-center items-end"
+        animate={shaking ? { x: [0, -14, 14, -10, 10, -4, 0] } : { x: 0 }}
+        transition={shaking ? { duration: 0.5, ease: "easeInOut" } : {}}
+      >
+        {Array.from({ length: pinLength }).map((_, i) => {
+          const filled = i < value.length;
+          const isError = shaking;
+          return (
+            <div key={i} className="flex flex-col items-center gap-1">
+              {/* Dot que aparece con spring */}
+              <motion.div
+                className="w-2.5 h-2.5 rounded-full"
+                initial={false}
+                animate={{
+                  scale: filled ? 1 : 0,
+                  opacity: filled ? 1 : 0,
+                }}
+                transition={{ type: "spring", stiffness: 500, damping: 20 }}
+              >
+                <div className={`w-full h-full rounded-full ${
+                  isError
+                    ? "bg-red-500"
+                    : "bg-stone-800 dark:bg-stone-100"
+                }`} />
+              </motion.div>
+              {/* Línea base */}
+              <motion.div
+                className={`w-7 h-px ${
+                  isError
+                    ? "bg-red-500"
+                    : filled
+                    ? "bg-stone-800 dark:bg-stone-100"
+                    : "bg-stone-300 dark:bg-stone-700"
+                }`}
+                animate={{
+                  scaleX: filled ? 1 : 0.6,
+                  opacity: isError ? [1, 0.4, 1] : 1,
+                }}
+                transition={{
+                  scaleX: { type: "spring", stiffness: 300, damping: 20 },
+                  opacity: isError ? { duration: 0.3, repeat: 1 } : {},
+                }}
+              />
+            </div>
+          );
+        })}
+      </motion.div>
+
+      {/* Error / Lockout / Loading */}
+      <div className="h-5 flex items-center justify-center">
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <motion.p
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              className="text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-500 font-mono"
+            >
+              Verificando
+            </motion.p>
+          ) : (error || isLocked) ? (
+            <motion.p
+              key={error || lockLabel}
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="text-[10px] uppercase tracking-[0.3em] font-mono text-red-500 dark:text-red-400"
+            >
+              {isLocked ? lockLabel : error}
+            </motion.p>
+          ) : null}
+        </AnimatePresence>
       </div>
 
-      {/* Error */}
-      <AnimatePresence>
-        {error && (
-          <motion.p
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="text-[10px] uppercase tracking-widest text-red-500 dark:text-red-400"
-          >
-            {error}
-          </motion.p>
-        )}
-      </AnimatePresence>
-
-      {/* Teclado */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* Teclado — limpio, sin bordes, tipografía bold */}
+      <div className="grid grid-cols-3 gap-1 w-full max-w-[280px] mx-auto">
         {["1","2","3","4","5","6","7","8","9","","0","⌫"].map((k, i) => {
-          if (k === "") return <div key={i} />;
+          if (k === "") return <div key={i} className="aspect-square" />;
+          const disabled = loading || isLocked;
           return (
-            <button
+            <motion.button
               key={i}
               onClick={() => (k === "⌫" ? del() : press(k))}
-              className="w-16 h-16 rounded-2xl border border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-300 text-lg font-light hover:border-stone-400 dark:hover:border-stone-600 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-900 active:scale-95 transition-all duration-150"
+              disabled={disabled}
+              whileTap={disabled ? {} : { scale: 0.85 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              className={`aspect-square rounded-full flex items-center justify-center select-none transition-colors duration-100 disabled:opacity-20 disabled:cursor-not-allowed ${
+                k === "⌫"
+                  ? "text-lg text-stone-400 dark:text-stone-500 active:text-stone-600 dark:active:text-stone-300"
+                  : "text-[26px] sm:text-[30px] font-medium text-stone-700 dark:text-stone-200 active:bg-stone-200/60 dark:active:bg-stone-700/40"
+              }`}
             >
               {k}
-            </button>
+            </motion.button>
           );
         })}
       </div>
-
-      <button
-        onClick={onSubmit}
-        disabled={value.length < pinLength || loading || lockoutSeconds > 0}
-        className="mt-2 w-full max-w-[220px] py-3 rounded-full bg-stone-800 text-white dark:bg-stone-200 dark:text-neutral-900 text-[11px] uppercase tracking-[0.35em] hover:bg-stone-900 dark:hover:bg-white transition-colors duration-200 disabled:opacity-20 disabled:cursor-not-allowed"
-      >
-        {loading
-          ? "Verificando…"
-          : lockoutSeconds > 0
-          ? `Bloqueado ${String(Math.floor(lockoutSeconds / 60)).padStart(2, "0")}:${String(lockoutSeconds % 60).padStart(2, "0")}`
-          : "Entrar"}
-      </button>
     </div>
   );
 }
@@ -221,14 +288,13 @@ function StampView({ onLogout }: { onLogout: () => void }) {
   const [pendingQueue, setPendingQueue] = useState<QueuedStamp[]>([]);
   const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "error">("idle");
 
-  // Cargar bebidas disponibles del menu
+  // Cargar TODAS las bebidas del menu (admin ve todo, incluyendo deshabilitadas)
   useEffect(() => {
-    getFullMenu()
+    getFullMenu({ forAdmin: true })
       .then((sections) => {
         const drinks = sections
-          .filter((s) => s.type === "drink" && s.active)
+          .filter((s) => s.type === "drink")
           .flatMap((s) => s.items ?? [])
-          .filter((item) => item.available !== false)
           .map((item) => item.name);
         setMenuDrinks(drinks);
       })
@@ -1215,16 +1281,16 @@ export default function AdminPage() {
               transition={{ duration: 0.5 }}
               className="flex flex-col items-center gap-8 w-full"
             >
-              <div className="text-center space-y-2">
-                <p className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">
-                  Ingresa tu PIN
-                </p>
+              <div className="text-center space-y-3">
                 <h1
-                  className="text-4xl font-light tracking-wide text-stone-700 dark:text-stone-200"
+                  className="text-3xl sm:text-4xl font-semibold tracking-tight text-stone-800 dark:text-stone-100"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
-                  Panel Admin
+                  La Commune
                 </h1>
+                <p className="text-[10px] uppercase tracking-[0.35em] text-stone-400 dark:text-stone-600 font-mono">
+                  Ingresa tu PIN
+                </p>
               </div>
 
               <PinPad
