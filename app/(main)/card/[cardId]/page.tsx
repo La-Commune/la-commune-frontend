@@ -34,6 +34,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
+import { PushPrompt } from "@/components/ui/PushPrompt";
 
 
 export default function CardEntry() {
@@ -515,6 +516,9 @@ function Card({
         >
           <StampCardView cardId={cardId} />
         </motion.div>
+
+        {/* Push notification prompt — se muestra una vez, desaparece al aceptar/cerrar */}
+        <PushPrompt clienteId={customer?.id} />
 
         {/* CTA de canje cuando tarjeta completa */}
         <AnimatePresence>
