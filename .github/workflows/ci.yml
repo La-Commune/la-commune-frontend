@@ -84,6 +84,13 @@ jobs:
       - name: Install Playwright system deps
         if: steps.pw-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
+      - name: Build Next.js
+        run: npm run build
+        env:
+          # Variables dummy — los tests usan mocks, no Supabase real
+          NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy-anon-key
+          NEXT_PUBLIC_NEGOCIO_ID: 00000000-0000-0000-0000-000000000000
       - name: Run E2E tests (mock mode)
         run: npx playwright test
         env:

@@ -4,3 +4,15 @@
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+# Service Worker: nunca cachear en CDN — el browser debe revalidar en cada visita
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+# Manifest: revalidar en cada visita para reflejar cambios de iconos/shortcuts
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Cache-Control = "no-cache, must-revalidate"
