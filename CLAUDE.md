@@ -165,7 +165,7 @@ Ver `.env.example`. Variables requeridas:
 
 ## Convenciones
 
-- **Console.logs**: envueltos en `process.env.NODE_ENV === "development"` — no loguear en producción
+- **Console.logs**: `card.service.ts` usa `logger` de `lib/logger.ts`; demás client-side envueltos en `process.env.NODE_ENV === "development"` — 0 logs sensibles en producción
 - **`available` vs `active`**: `available` es toggle diario del barista en items; `active` es visibilidad de sección
 - **Hydration errors**: borrar `.next/` + hard refresh (Cmd+Shift+R)
 - **Framer Motion**: usar `AnimatePresence` con `key` único en cada child
@@ -183,6 +183,28 @@ Ver `.env.example`. Variables requeridas:
 - Framework: Playwright
 - Modo: interceptores de red (page.route) para mockear Supabase
 - Comandos: `npm run test:e2e`, `npm run test:e2e:ui`, `npm run test:e2e:headed`
+
+## Auditoría de Seguridad (Marzo 2026) ✅
+
+### PIN Login Fix ✅
+- `login_por_pin()` necesitaba `GRANT EXECUTE` a `service_role` y `anon` en Supabase
+- `verifyAdminPin.ts` actualizado: `getClientIP()` prioriza `x-real-ip` sobre `x-forwarded-for`
+
+### Admin Menu Fix ✅
+- RLS policies de `productos` y `categorias_menu` para `anon` filtraban `disponible=true`/`activo=true` a nivel BD
+- Eliminadas esas condiciones — ahora `getFullMenu({ forAdmin: true })` retorna todo sin filtro RLS
+- `admin/page.tsx` usa `getFullMenu({ forAdmin: true })` en lugar de filtrar client-side
+
+### A3: Console.logs exponiendo datos sensibles ✅
+- Creado `lib/logger.ts` — logger centralizado (idéntico patrón al POS):
+  - Dev: imprime todo (contexto + mensaje + datos)
+  - Producción: solo `console.error(context, message)` sin datos sensibles
+- `services/card.service.ts` — usa `logger.error("card-service", ...)` en lugar de `console.error`
+- `components/ui/CustomerDirectory.tsx` — 3 console.error envueltos en `process.env.NODE_ENV === "development"`
+- Ya protegidos previamente: `verifyAdminPin.ts`, `onboarding/page.tsx`, `PwaRegister.tsx`
+
+### Archivos nuevos de la auditoría:
+- `lib/logger.ts` — logger centralizado (dev vs producción)
 
 ## Pendiente
 
