@@ -85,46 +85,33 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Cachear dinámicamente rutas /card/[cardId] en la primera visita online.
-  // Stale-while-revalidate: sirve del caché inmediatamente si existe, y en
-  // paralelo lanza el fetch para actualizar. Si no hay caché, espera la red.
+  // Network-first para rutas /card/[cardId].
+  // Siempre intenta la red para obtener datos frescos; caché solo como fallback offline.
   if (isCardRoute(url.pathname)) {
     event.respondWith(
       caches.open(CACHE).then((cache) =>
-        cache.match(request).then((cached) => {
-          const networkFetch = fetch(request).then((res) => {
+        fetch(request)
+          .then((res) => {
             if (isCacheable(res)) cache.put(request, res.clone());
             return res;
-          });
-          // Si hay caché lo servimos de inmediato; la red actualiza en background
-          return cached || networkFetch.catch(() => cache.match("/offline.html"));
-        })
+          })
+          .catch(() => cache.match(request).then((cached) => cached || cache.match("/offline.html")))
       )
     );
     return;
   }
 
-  // Stale-while-revalidate para el resto de navegación HTML.
-  // Sirve del caché al instante si existe; actualiza en background.
-  // Si no hay caché, espera la red; si falla, muestra offline.html.
+  // Network-first para navegación HTML.
+  // Siempre intenta la red primero para obtener el HTML más reciente (con BUILD_ID actualizado).
+  // Solo usa caché como fallback si la red falla (offline).
   event.respondWith(
     caches.open(CACHE).then((cache) =>
-      cache.match(request).then((cached) => {
-        const networkFetch = fetch(request).then((res) => {
+      fetch(request)
+        .then((res) => {
           if (isCacheable(res)) cache.put(request, res.clone());
           return res;
-        });
-
-        if (cached) {
-          // Revalidar en background sin bloquear la respuesta
-          networkFetch.catch(() => {});
-          return cached;
-        }
-
-        return networkFetch.catch(
-          () => cache.match("/offline.html")
-        );
-      })
+        })
+        .catch(() => cache.match(request).then((cached) => cached || cache.match("/offline.html")))
     )
   );
 });
