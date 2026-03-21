@@ -11,6 +11,7 @@ import {
 } from "framer-motion";
 import React, { useRef, useState, useEffect } from "react";
 import { SplashScreen } from "@/components/ui/SplashScreen";
+import { HowItWorksAnimation } from "@/components/ui/HowItWorksAnimation";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 /* ===============================
@@ -465,7 +466,7 @@ export default function Home() {
         lazy
       />
 
-      {/* Cómo funciona — 3 pasos del programa de fidelidad */}
+      {/* Cómo funciona — animación real de la tarjeta */}
       <section className="snap-start min-h-[100dvh] flex flex-col items-center justify-center bg-[#0c0b09] px-6 sm:px-10 py-20 relative overflow-hidden">
         {/* Línea decorativa superior */}
         <motion.div
@@ -491,73 +492,61 @@ export default function Home() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-          className="font-display text-4xl sm:text-5xl md:text-6xl font-light text-[#e8e0d2] text-center tracking-wide mb-16"
+          className="font-display text-4xl sm:text-5xl md:text-6xl font-light text-[#e8e0d2] text-center tracking-wide mb-14"
         >
           Así de simple
         </motion.h2>
 
-        {/* 3 pasos */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 sm:gap-6 max-w-3xl w-full">
+        {/* Animación central de la taza */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+          className="mb-14"
+        >
+          <HowItWorksAnimation maxStamps={5} />
+        </motion.div>
+
+        {/* 3 pasos — ahora debajo de la animación, con líneas conectoras */}
+        <div className="grid grid-cols-3 gap-4 sm:gap-8 max-w-2xl w-full">
           {[
             {
               step: "01",
               title: "Regístrate",
-              desc: "Abre la app, pon tu nombre y listo. Tu tarjeta digital se crea al instante.",
-              icon: (
-                <svg viewBox="0 0 32 32" fill="none" className="w-8 h-8">
-                  <circle cx="16" cy="12" r="5" stroke="#c8956c" strokeWidth="1.5" />
-                  <path d="M8 26c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="#c8956c" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
-              ),
+              desc: "Abre la app y pon tu nombre. Tu tarjeta se crea al instante.",
             },
             {
               step: "02",
-              title: "Acumula sellos",
-              desc: "Cada café que compras suma un sello automáticamente. Sin códigos, sin filas.",
-              icon: (
-                <svg viewBox="0 0 32 32" fill="none" className="w-8 h-8">
-                  <rect x="6" y="8" width="20" height="16" rx="3" stroke="#c8956c" strokeWidth="1.5" />
-                  <circle cx="12" cy="16" r="2" fill="#c8956c" opacity="0.6" />
-                  <circle cx="20" cy="16" r="2" fill="#c8956c" opacity="0.6" />
-                  <circle cx="16" cy="16" r="2" fill="#c8956c" />
-                </svg>
-              ),
+              title: "Acumula",
+              desc: "Cada café suma un sello automáticamente. Sin códigos, sin filas.",
             },
             {
               step: "03",
-              title: "Bebida gratis",
-              desc: "A la quinta visita, tu siguiente bebida va por cuenta de la casa. Así de simple.",
-              icon: (
-                <svg viewBox="0 0 32 32" fill="none" className="w-8 h-8">
-                  <path d="M8 12h16l-2 14H10L8 12z" stroke="#c8956c" strokeWidth="1.5" strokeLinejoin="round" />
-                  <path d="M24 15h2a3 3 0 010 6h-1" stroke="#c8956c" strokeWidth="1.5" strokeLinecap="round" />
-                  <path d="M13 8c0-2 1-3 3-3s3 1 3 3" stroke="#c8956c" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
-                </svg>
-              ),
+              title: "Disfruta",
+              desc: "Al completar la tarjeta, tu siguiente bebida va por la casa.",
             },
           ].map((item, i) => (
             <motion.div
               key={item.step}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: i * 0.15, ease: [0.16, 1, 0.3, 1] }}
-              className="flex flex-col items-center text-center gap-4"
+              transition={{ duration: 0.7, delay: 0.3 + i * 0.12, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col items-center text-center gap-2.5"
             >
-              {/* Icono */}
-              <div className="w-14 h-14 rounded-full border border-[#2a2722] flex items-center justify-center">
-                {item.icon}
+              {/* Número con línea */}
+              <div className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full border border-[#c8956c]/30 flex items-center justify-center text-[9px] font-mono tracking-wider text-[#c8956c]/70">
+                  {item.step}
+                </span>
               </div>
-              {/* Número */}
-              <span className="text-[10px] font-mono tracking-[0.3em] text-[#3a3630]">
-                {item.step}
-              </span>
               {/* Título */}
-              <h3 className="font-display text-xl sm:text-2xl font-light text-[#e8e0d2] tracking-wide">
+              <h3 className="font-display text-lg sm:text-xl font-light text-[#e8e0d2] tracking-wide">
                 {item.title}
               </h3>
               {/* Descripción */}
-              <p className="text-[13px] text-[#6b6458] leading-relaxed max-w-[240px]">
+              <p className="text-[11px] sm:text-[12px] text-[#6b6458] leading-relaxed max-w-[200px]">
                 {item.desc}
               </p>
             </motion.div>
@@ -570,7 +559,7 @@ export default function Home() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.6 }}
-          className="mt-14"
+          className="mt-12"
         >
           <Link
             href={loyaltyCta.link}
@@ -582,71 +571,7 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* Social proof — números que generan confianza */}
-      <section className="snap-start min-h-[100dvh] flex flex-col items-center justify-center bg-[#0c0b09] px-6 sm:px-10 py-20 relative">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1 }}
-          className="max-w-2xl w-full text-center"
-        >
-          <p className="text-[10px] uppercase tracking-[0.45em] text-[#6b6458] mb-6">
-            Nuestra comunidad
-          </p>
-          <h2 className="font-display text-4xl sm:text-5xl font-light text-[#e8e0d2] tracking-wide mb-4">
-            Más que un café
-          </h2>
-          <p className="text-[14px] text-[#6b6458] leading-relaxed max-w-md mx-auto mb-16">
-            Cada taza que servimos fortalece un vínculo. Cada visita construye algo más grande que una transacción.
-          </p>
-
-          {/* Números */}
-          <div className="grid grid-cols-3 gap-6 sm:gap-10">
-            {[
-              { value: "5", label: "Cafés para tu\nbebida gratis" },
-              { value: "100%", label: "Digital, sin\nplásticos" },
-              { value: "∞", label: "Veces que puedes\nrepetir" },
-            ].map((stat, i) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.7, delay: 0.2 + i * 0.12 }}
-                className="flex flex-col items-center"
-              >
-                <span className="font-display text-4xl sm:text-5xl font-light text-[#c8956c] tracking-wide">
-                  {stat.value}
-                </span>
-                <span className="mt-3 text-[10px] sm:text-[11px] uppercase tracking-[0.2em] text-[#6b6458] whitespace-pre-line leading-relaxed">
-                  {stat.label}
-                </span>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Divider */}
-          <motion.div
-            initial={{ scaleX: 0 }}
-            whileInView={{ scaleX: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1, delay: 0.5 }}
-            className="w-16 h-px bg-[#2a2722] mx-auto mt-16 mb-10"
-          />
-
-          {/* Testimonio / frase */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1.2, delay: 0.6 }}
-            className="text-[13px] italic font-light text-[#4a443c] leading-relaxed tracking-wide max-w-sm mx-auto"
-          >
-            &ldquo;El mejor programa de fidelidad es el que no te hace pensar. Solo vienes, disfrutas, y un día te dicen: esta va por la casa.&rdquo;
-          </motion.p>
-        </motion.div>
-      </section>
+      {/* Social proof — oculta temporalmente */}
 
       {/* Footer — limpio, editorial */}
       <footer className="snap-start min-h-[100dvh] flex flex-col items-center justify-center bg-[#0c0b09] px-8 relative">
