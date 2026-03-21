@@ -2,7 +2,6 @@
 
 import { Card, TarjetaRow, mapTarjetaToCard } from "@/models/card.model";
 import { Reward, RecompensaRow, mapRecompensaToReward } from "@/models/reward.model";
-import { CoffeeBean } from "./CoffeeBean";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "next-themes";
@@ -159,49 +158,45 @@ export function StampCardFront({
 
   const hasCompletedRef = useRef(false);
   const prevStampsRef = useRef<number | undefined>(undefined);
-  const [newStampIdx, setNewStampIdx] = useState<number | null>(null);
+  const [isNewStamp, setIsNewStamp] = useState(false);
 
   // Track milestone celebrations
   const [showMilestoneCelebration, setShowMilestoneCelebration] = useState<MilestoneType>(null);
 
-  // Endowed Progress Effect: +1 sello visual de bienvenida
-  // Backend: 0/5 real → Frontend: 1/6 visual (primer slot = regalo)
-  const visualStamps = (card?.stamps ?? 0) + 1;
-  const visualMax = (card?.maxStamps ?? 5) + 1;
+  const stamps = card?.stamps ?? 0;
+  const maxStamps = card?.maxStamps ?? 5;
+  const animatedStamps = useCountUp(stamps);
+  const isComplete = card ? stamps >= maxStamps : false;
+  const remaining = card ? maxStamps - stamps : 0;
+  const milestone = card ? getMilestoneType(stamps, maxStamps) : null;
 
-  const animatedStamps = useCountUp(visualStamps);
-  const isComplete = card ? card.stamps >= card.maxStamps : false;
-  const remaining = card ? card.maxStamps - card.stamps : 0;
-  const progress = card ? (visualStamps / visualMax) * 100 : 0;
-  const milestone = card ? getMilestoneType(card.stamps, card.maxStamps) : null;
-
-  // Halfway point (including gift stamp offset)
-  const halfwayIdx = card ? Math.floor(card.maxStamps / 2) : -1;
-  const isAlmostDone = card ? card.stamps >= card.maxStamps - 2 && !isComplete : false;
+  // Fill radius: maps 0..maxStamps to 0..58 (cup inner radius)
+  const CUP_RADIUS = 58;
+  const fillRadius = card ? (stamps / maxStamps) * CUP_RADIUS : 0;
 
   // Mensajes personalizados con nombre de bebida
   const drinkLabel = lastDrink ? `¡Tu ${lastDrink} sumó!` : null;
 
   const progressMessage = card
-    ? card.stamps >= card.maxStamps
+    ? stamps >= maxStamps
       ? `¡${rewardName} lista!`
-      : card.stamps === card.maxStamps - 1
+      : stamps === maxStamps - 1
         ? drinkLabel
           ? `${drinkLabel} ¡Solo falta uno!`
           : "¡Solo falta uno!"
-        : card.stamps === Math.floor(card.maxStamps / 2)
+        : stamps === Math.floor(maxStamps / 2)
           ? drinkLabel
             ? `${drinkLabel} ¡Ya vas a la mitad!`
             : "¡Ya vas a la mitad!"
-          : card.stamps === 1
+          : stamps === 1
             ? drinkLabel
               ? `${drinkLabel} ¡Primer sello!`
               : "¡Primer sello!"
-            : card.stamps > 1
+            : stamps > 1
               ? drinkLabel
                 ? `${drinkLabel} Te faltan ${remaining}`
                 : "¡Vas avanzando!"
-              : "¡Bienvenido! Pide tu primer café"
+              : "Pide tu primer café"
     : null;
 
   // Emoji for milestone celebration
@@ -222,7 +217,7 @@ export function StampCardFront({
     prevStampsRef.current = card.stamps;
 
     if (prev !== undefined && card.stamps > prev) {
-      setNewStampIdx(card.stamps); // +1 offset visual (slot 0 = bienvenida)
+      setIsNewStamp(true);
       onStampAdded();
 
       // Trigger milestone celebration
@@ -230,14 +225,14 @@ export function StampCardFront({
       if (newMilestone && newMilestone !== "welcome") {
         setShowMilestoneCelebration(newMilestone);
         const celebTimer = setTimeout(() => setShowMilestoneCelebration(null), 2800);
-        const stampTimer = setTimeout(() => setNewStampIdx(null), 1200);
+        const stampTimer = setTimeout(() => setIsNewStamp(false), 1200);
         return () => {
           clearTimeout(celebTimer);
           clearTimeout(stampTimer);
         };
       }
 
-      const t = setTimeout(() => setNewStampIdx(null), 1200);
+      const t = setTimeout(() => setIsNewStamp(false), 1200);
       return () => clearTimeout(t);
     }
   }, [card?.stamps, onStampAdded]);
@@ -252,18 +247,15 @@ export function StampCardFront({
 
   if (!card) return null;
 
-  // Progress bar gradient changes based on milestone
-  const progressGradient = isComplete
-    ? "linear-gradient(90deg, #8A6A3A, #C4954A, #D4B06A)"
-    : isAlmostDone
-      ? isDark
-        ? "linear-gradient(90deg, #C4954A, #D4A85A, #E4C07A)"
-        : "linear-gradient(90deg, #3A2F2A, #2A1F1A, #1A0F0A)"
-      : milestone === "halfway"
-        ? isDark
-          ? "linear-gradient(90deg, #A47A3A, #C4954A)"
-          : "linear-gradient(90deg, #4A3F3A, #3A2F2A)"
-        : isDark ? "#C4954A" : "#3A2F2A";
+  // Colors
+  const cupStroke = isDark ? "#4a4240" : "#c7b7a3";
+  const plateStroke = isDark ? "#3a3630" : "#d8d0c8";
+  const handleStroke = isDark ? "#4a4240" : "#c7b7a3";
+  const emptyFill = isDark ? "#1a1412" : "#f0e9e0";
+  const labelColor = isDark ? "#7A706A" : "#A89E97";
+  const textColor = isDark ? "#E8DDD5" : "#2B2B2B";
+  const brandColor = isDark ? "#D4C8BE" : "#2B2B2B";
+  const accentColor = isDark ? "#C4954A" : "#8b6b3d";
 
   return (
     <div
@@ -272,53 +264,210 @@ export function StampCardFront({
         background: isDark
           ? "linear-gradient(145deg, #1A1412 0%, #2A2220 100%)"
           : "linear-gradient(145deg, #FAF7F4 0%, #F0E9E0 100%)",
-        color: isDark ? "#E8DDD5" : "#2B2B2B",
+        color: textColor,
       }}
     >
       {/* Header con marca */}
       <div
         className="flex items-center justify-between px-5 pt-4 pb-3"
-        style={{ borderBottom: `1px solid ${isDark ? "#3A3230" : "#E8E0D8"}` }}
+        style={{ borderBottom: `1px solid ${isDark ? "#2a2722" : "#E8E0D8"}` }}
       >
         <p
-          className="text-[13px] font-light tracking-[0.35em] uppercase"
-          style={{ fontFamily: "var(--font-display)", color: isDark ? "#D4C8BE" : "#2B2B2B" }}
+          className="text-[12px] font-light tracking-[0.3em] uppercase"
+          style={{ fontFamily: "var(--font-display)", color: brandColor }}
         >
           La Commune
         </p>
-        <p className="text-[10px] tracking-widest uppercase" style={{ color: isDark ? "#7A706A" : "#A89E97" }}>
+        <p className="text-[9px] tracking-widest uppercase" style={{ color: labelColor }}>
           {isComplete ? "Completada" : "Fidelidad"}
         </p>
       </div>
 
-      {/* Título + granos */}
-      <div className="flex-1 flex flex-col justify-center px-5 py-3 gap-3">
-        <div>
-          <h2
-            className="text-[17px] font-light leading-tight"
-            style={{ fontFamily: "var(--font-display)", color: isDark ? "#E8DDD5" : "#2B2B2B" }}
-          >
-            {isComplete ? `¡${rewardName}!` : "Café de la casa"}
-          </h2>
-          <p className="text-[10px] tracking-wide mt-0.5" style={{ color: isDark ? "#7A706A" : "#8A817A" }}>
-            {isComplete ? "Preséntala en barra" : "Cliente frecuente"}
-          </p>
-        </div>
+      {/* Taza cenital — vista desde arriba */}
+      <div className="flex-1 flex items-center justify-center relative">
+        <svg viewBox="0 0 180 180" className="w-[170px] h-[170px]">
+          <defs>
+            {/* Gradiente radial del café */}
+            <radialGradient id="coffeeFill" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor={isDark ? "#5a3f20" : "#8b6b3d"} />
+              <stop offset="55%" stopColor={isDark ? "#8b6b3d" : "#a07850"} />
+              <stop offset="85%" stopColor={isDark ? "#c8956c" : "#c8956c"} />
+              <stop offset="100%" stopColor={isDark ? "#a07850" : "#b08860"} />
+            </radialGradient>
+            {/* Clip para el líquido dentro de la taza */}
+            <clipPath id="cupClip">
+              <circle cx="90" cy="90" r="58" />
+            </clipPath>
+            {/* Glow para completado */}
+            <filter id="completeGlow">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
 
-        <div className="flex justify-between">
-          {Array.from({ length: visualMax }).map((_, i) => (
-            <CoffeeBean
-              key={i}
-              active={i < visualStamps}
-              isNew={i === newStampIdx}
-              isGift={i === 0}
-              isMilestone={i === halfwayIdx + 1 && i < visualStamps}
-              isAlmostDone={isAlmostDone && i < visualStamps && i > 0 && i >= visualStamps - 2}
-            />
-          ))}
-        </div>
+          {/* Platito */}
+          <circle cx="90" cy="90" r="78" fill="none" stroke={plateStroke} strokeWidth="1.5" />
 
-        {/* Progress message with milestone celebration */}
+          {/* Borde de la taza */}
+          <circle
+            cx="90" cy="90" r="62"
+            fill="none"
+            stroke={cupStroke}
+            strokeWidth="2.5"
+            filter={isComplete ? "url(#completeGlow)" : undefined}
+          />
+
+          {/* Interior vacío */}
+          <circle cx="90" cy="90" r="58" fill={emptyFill} />
+
+          {/* Asa — vista superior */}
+          <path
+            d="M148 78 Q170 78 170 90 Q170 102 148 102"
+            fill="none"
+            stroke={handleStroke}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          />
+
+          {/* Líquido — círculo que crece con cada sello */}
+          <motion.circle
+            cx={90}
+            cy={90}
+            fill="url(#coffeeFill)"
+            clipPath="url(#cupClip)"
+            initial={{ r: 0 }}
+            animate={{ r: fillRadius }}
+            transition={{
+              duration: isNewStamp ? 0.8 : 0.5,
+              ease: [0.16, 1, 0.3, 1],
+            }}
+          />
+
+          {/* Ripple cuando se agrega un sello nuevo */}
+          <AnimatePresence>
+            {isNewStamp && (
+              <motion.circle
+                cx={90}
+                cy={90}
+                r={fillRadius}
+                fill="none"
+                stroke={isDark ? "#c8956c" : "#8b6b3d"}
+                strokeWidth={1.5}
+                clipPath="url(#cupClip)"
+                initial={{ r: fillRadius * 0.5, opacity: 0.8 }}
+                animate={{ r: fillRadius + 8, opacity: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+              />
+            )}
+          </AnimatePresence>
+
+          {/* Latte art rosetta — solo cuando completa */}
+          {isComplete && (
+            <motion.g
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1, delay: 0.3 }}
+            >
+              <path
+                d="M90 65 Q78 76 90 82 Q102 76 90 65Z"
+                fill="none"
+                stroke={isDark ? "#e8ddd5" : "#f5f0ea"}
+                strokeWidth="0.8"
+                opacity="0.5"
+              />
+              <path
+                d="M90 74 Q80 83 90 88 Q100 83 90 74Z"
+                fill="none"
+                stroke={isDark ? "#e8ddd5" : "#f5f0ea"}
+                strokeWidth="0.7"
+                opacity="0.4"
+              />
+              <path
+                d="M90 83 Q83 90 90 95 Q97 90 90 83Z"
+                fill="none"
+                stroke={isDark ? "#e8ddd5" : "#f5f0ea"}
+                strokeWidth="0.6"
+                opacity="0.35"
+              />
+              <line
+                x1="90" y1="95" x2="90" y2="112"
+                stroke={isDark ? "#e8ddd5" : "#f5f0ea"}
+                strokeWidth="0.6"
+                opacity="0.3"
+              />
+            </motion.g>
+          )}
+
+          {/* Conteo central — cuando está vacía o pocos sellos */}
+          {!isComplete && stamps < maxStamps && (
+            <motion.g
+              initial={{ opacity: 0 }}
+              animate={{ opacity: stamps === 0 ? 0.6 : 0.9 }}
+              transition={{ duration: 0.4 }}
+            >
+              <text
+                x="90" y="85"
+                textAnchor="middle"
+                dominantBaseline="central"
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: stamps === 0 ? "28px" : "34px",
+                  fill: stamps === 0
+                    ? (isDark ? "#3a3630" : "#c7b7a3")
+                    : (isDark ? "#1a1412" : "#f5f0ea"),
+                  fontWeight: 300,
+                }}
+              >
+                {animatedStamps}
+              </text>
+              <text
+                x="90" y="106"
+                textAnchor="middle"
+                style={{
+                  fontFamily: "var(--font-mono, monospace)",
+                  fontSize: "5.5px",
+                  fill: stamps === 0
+                    ? (isDark ? "#2a2722" : "#d8d0c8")
+                    : (isDark ? "#1a1412" : "#f5f0ea"),
+                  letterSpacing: "2.5px",
+                  textTransform: "uppercase" as const,
+                  opacity: 0.7,
+                }}
+              >
+                de {maxStamps}
+              </text>
+            </motion.g>
+          )}
+
+          {/* Check cuando completa */}
+          {isComplete && (
+            <motion.text
+              x="90" y="87"
+              textAnchor="middle"
+              dominantBaseline="central"
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: "28px",
+                fill: isDark ? "#1a1412" : "#f5f0ea",
+                fontWeight: 300,
+              }}
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 0.7, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            >
+              ✓
+            </motion.text>
+          )}
+        </svg>
+      </div>
+
+      {/* Progress message + conteo */}
+      <div className="px-5 pb-4 space-y-1.5">
+        {/* Message */}
         <div className="relative min-h-[16px]">
           <AnimatePresence mode="wait">
             {showMilestoneCelebration ? (
@@ -341,11 +490,7 @@ export function StampCardFront({
                 )}
                 <p
                   className="text-[10px] tracking-widest uppercase font-medium"
-                  style={{
-                    color: isDark
-                      ? showMilestoneCelebration === "almost" ? "#D4A85A" : "#C4954A"
-                      : showMilestoneCelebration === "almost" ? "#2A1F1A" : "#3A2F2A",
-                  }}
+                  style={{ color: accentColor }}
                 >
                   {progressMessage}
                 </p>
@@ -358,62 +503,23 @@ export function StampCardFront({
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
                 className="text-[10px] tracking-widest uppercase"
-                style={{ color: isDark ? "#7A706A" : "#A89E97" }}
+                style={{ color: labelColor }}
               >
                 {progressMessage}
               </motion.p>
             ) : null}
           </AnimatePresence>
         </div>
-      </div>
 
-      {/* Barra de progreso + conteo */}
-      <div className="px-5 pb-4 space-y-2">
-        {/* Progress bar track with milestone markers */}
-        <div className="relative">
-          <div
-            className="h-[2px] rounded-full overflow-hidden"
-            style={{ background: isDark ? "#3A3230" : "#E8E0D8" }}
-          >
-            <motion.div
-              className="h-full rounded-full"
-              style={{ background: progressGradient }}
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.9, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            />
-          </div>
-
-          {/* Milestone dot at halfway point */}
-          {card.maxStamps > 2 && (
-            <div
-              className="absolute top-1/2 -translate-y-1/2"
-              style={{
-                left: `${((halfwayIdx + 1) / visualMax) * 100}%`,
-                transform: "translate(-50%, -50%)",
-              }}
-            >
-              <div
-                className="w-1.5 h-1.5 rounded-full"
-                style={{
-                  background: progress >= ((halfwayIdx + 1) / visualMax) * 100
-                    ? isDark ? "#C4954A" : "#3A2F2A"
-                    : isDark ? "#4A4240" : "#D8D0C8",
-                  transition: "background 0.5s ease",
-                }}
-              />
-            </div>
-          )}
-        </div>
-
+        {/* Counter */}
         <div className="flex justify-between">
-          <p className="text-[10px] tracking-widest uppercase" style={{ color: isDark ? "#7A706A" : "#A89E97" }}>
-            {animatedStamps} de {visualMax} visitas
-          </p>
-          <p className="text-[10px]" style={{ color: isDark ? "#7A706A" : "#A89E97" }}>
+          <p className="text-[9px] tracking-widest uppercase" style={{ color: labelColor }}>
             {isComplete
-              ? "✓ Lista"
+              ? `¡${rewardName}!`
               : `${remaining} restante${remaining !== 1 ? "s" : ""}`}
+          </p>
+          <p className="text-[9px] tracking-wide" style={{ color: accentColor }}>
+            {isComplete ? "Preséntala en barra" : `${stamps} / ${maxStamps}`}
           </p>
         </div>
       </div>

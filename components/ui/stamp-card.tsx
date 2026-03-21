@@ -80,7 +80,7 @@ export function StampCardView({ cardId }: { cardId: string }) {
       />
 
       <motion.div
-        className="w-[320px] h-[210px] mx-auto perspective cursor-pointer"
+        className="w-[300px] h-[380px] mx-auto perspective cursor-pointer"
         whileTap={{ scale: 0.97 }}
         animate={completed ? { scale: [1, 1.03, 1] } : {}}
         transition={{ duration: 0.4 }}
