@@ -11,7 +11,8 @@ import { Reward } from "@/models/reward.model";
 import { getCardByCustomer } from "@/services/card.service";
 import { getDefaultReward } from "@/services/reward.service";
 import { setCustomerSession } from "@/app/actions/customerSession";
-import { getSupabase } from "@/lib/supabase";
+import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
 
 type ConfettiInstance = (opts: any) => void;
 
@@ -36,13 +37,32 @@ export default function RedeemPage() {
     });
   }, []);
 
-  // Setup realtime subscription for card
+  // Fetch inicial + realtime subscription for card
   useEffect(() => {
     if (!cardId) return;
 
     const supabase = getSupabase();
+
+    // Fetch inicial — cubre refresh de página y cuando realtime aún no entrega
+    supabase
+      .from("tarjetas")
+      .select("*")
+      .eq("id", cardId)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setCardDoc({
+            id: data.id,
+            stamps: data.sellos,
+            maxStamps: data.sellos_maximos,
+            status: data.estado as Card["status"],
+            createdAt: new Date(data.creado_en),
+          });
+        }
+      });
+
     const channel = supabase
-      .channel(`card-${cardId}`)
+      .channel(`card-redeem-${cardId}`)
       .on(
         "postgres_changes",
         {
@@ -92,22 +112,79 @@ export default function RedeemPage() {
   }, [cardStatus, cardDoc, cardId, router]);
 
   // Si la tarjeta fue canjeada (barista confirmo), redirigir al nuevo card
+  const redirectingRef = useRef(false);
   useEffect(() => {
     if (cardStatus !== "canjeada") return;
+    if (redirectingRef.current) return;
+    redirectingRef.current = true;
+
     const customerId =
       typeof window !== "undefined"
         ? localStorage.getItem("customerId")
         : null;
-    if (!customerId) return;
+    if (!customerId) {
+      logger.warn("redeem", "No customerId in localStorage, redirecting to home");
+      router.replace("/");
+      return;
+    }
 
-    getCardByCustomer(customerId).then((newCard) => {
-      if (newCard) {
-        localStorage.setItem("cardId", newCard.id);
-        setCustomerSession(customerId!, newCard.id);
-        router.replace(`/card/${newCard.id}`);
+    // Retry logic: la nueva tarjeta puede tardar un instante en ser visible
+    // por replicación, así que reintentamos hasta 3 veces con delay
+    let attempts = 0;
+    const maxAttempts = 3;
+    const retryDelay = 800; // ms
+
+    const tryRedirect = async () => {
+      attempts++;
+      try {
+        const newCard = await getCardByCustomer(customerId);
+        if (newCard) {
+          localStorage.setItem("cardId", newCard.id);
+          await setCustomerSession(customerId, newCard.id);
+          router.replace(`/card/${newCard.id}`);
+          return;
+        }
+
+        // No new card found yet — retry or fallback
+        if (attempts < maxAttempts) {
+          setTimeout(tryRedirect, retryDelay);
+        } else {
+          // Fallback: buscar directamente cualquier tarjeta activa del cliente
+          const supabase = getSupabase();
+          const { data } = await supabase
+            .from("tarjetas")
+            .select("id")
+            .eq("negocio_id", NEGOCIO_ID)
+            .eq("cliente_id", customerId)
+            .eq("estado", "activa")
+            .order("creado_en", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (data) {
+            localStorage.setItem("cardId", data.id);
+            await setCustomerSession(customerId, data.id);
+            router.replace(`/card/${data.id}`);
+          } else {
+            // Último recurso: la RPC debió crear la tarjeta, algo salió mal
+            logger.error("redeem", "No active card found after redeem", { customerId, cardId });
+            setToast("Tu bebida fue canjeada. Abriendo nueva tarjeta...");
+            setTimeout(() => router.replace("/"), 2000);
+          }
+        }
+      } catch (err) {
+        logger.error("redeem", "Error finding new card", err);
+        if (attempts < maxAttempts) {
+          setTimeout(tryRedirect, retryDelay);
+        } else {
+          setToast("Hubo un error. Redirigiendo...");
+          setTimeout(() => router.replace("/"), 2000);
+        }
       }
-    });
-  }, [cardStatus, router]);
+    };
+
+    tryRedirect();
+  }, [cardStatus, cardId, router]);
 
   const fireConfetti = useCallback(() => {
     confettiRef.current?.({
