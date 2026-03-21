@@ -13,15 +13,21 @@ export function StampCardView({ cardId }: { cardId: string }) {
   const [completed, setCompleted] = useState(false);
   const [stampNotification, setStampNotification] = useState(false);
 
+  // Señal que indica que la tarjeta ya está de frente y visible
+  // Se activa DESPUÉS de que termine la animación de flip
+  const [frontReady, setFrontReady] = useState(true);
+
   const confettiRef = useRef<ConfettiInstance | null>(null);
   const flipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const notifTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const animTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Limpiar timers al desmontar
   useEffect(() => {
     return () => {
       if (flipTimerRef.current) clearTimeout(flipTimerRef.current);
       if (notifTimerRef.current) clearTimeout(notifTimerRef.current);
+      if (animTimerRef.current) clearTimeout(animTimerRef.current);
     };
   }, []);
 
@@ -43,16 +49,28 @@ export function StampCardView({ cardId }: { cardId: string }) {
     fireConfetti();
   }, [completed, fireConfetti]);
 
-  // Cuando se agrega un sello: mostrar notificación y voltear al frente
+  // Cuando se agrega un sello: voltear al frente, ESPERAR a que termine el flip,
+  // y LUEGO señalar que puede animar
   const handleStampAdded = useCallback(() => {
     if (flipTimerRef.current) clearTimeout(flipTimerRef.current);
     if (notifTimerRef.current) clearTimeout(notifTimerRef.current);
+    if (animTimerRef.current) clearTimeout(animTimerRef.current);
 
     if ("vibrate" in navigator) navigator.vibrate(80);
     setStampNotification(true);
 
-    // Voltear al frente después de 800ms (si está mostrando el QR)
-    flipTimerRef.current = setTimeout(() => setFlipped(false), 800);
+    // Si ya está de frente, la animación puede correr tras un breve delay
+    // Si está mostrando el QR (flipped), voltear y esperar
+    setFrontReady(false);
+
+    // Voltear al frente inmediatamente
+    flipTimerRef.current = setTimeout(() => {
+      setFlipped(false);
+      // La animación de flip dura 600ms — señalar frontReady cuando termine
+      animTimerRef.current = setTimeout(() => {
+        setFrontReady(true);
+      }, 650);
+    }, 300);
 
     // Ocultar notificación después de 2.5s
     notifTimerRef.current = setTimeout(() => setStampNotification(false), 2500);
@@ -96,6 +114,7 @@ export function StampCardView({ cardId }: { cardId: string }) {
             cardId={cardId}
             onComplete={handleComplete}
             onStampAdded={handleStampAdded}
+            frontReady={frontReady}
           />
           <StampCardBack cardId={cardId} />
         </motion.div>
