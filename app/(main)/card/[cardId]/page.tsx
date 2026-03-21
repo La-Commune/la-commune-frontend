@@ -157,13 +157,6 @@ export default function CardEntry() {
     };
   }, [cardIdParam]);
 
-  // Auto-redirect a la página de canje cuando la tarjeta se completa
-  useEffect(() => {
-    if (!cardId) return;
-    if (cardDoc?.status !== "completada") return;
-    router.replace(`/card/${cardIdParam}/redeem`);
-  }, [cardDoc?.status, cardId, cardIdParam, router]);
-
   // Si la tarjeta fue canjeada, buscar la nueva tarjeta activa y redirigir
   const canjeRedirectRef = useRef(false);
 

@@ -15,6 +15,7 @@ import { verifyAdminPin, checkBaristaSession, logoutBarista, type SessionResult 
 import { addStamp, redeemCard, undoStamp } from "@/services/card.service";
 import { getDefaultReward, upsertDefaultReward } from "@/services/reward.service";
 import { Reward } from "@/models/reward.model";
+import { ILLUSTRATION_CATALOG, StampIllustration, type IllustrationId } from "@/components/ui/stamp-illustrations";
 import { getFullMenu } from "@/services/menu.service";
 import { timeAgo } from "@/lib/utils";
 import { toast } from "@/components/ui/use-toast";
@@ -1034,6 +1035,7 @@ function RewardConfig() {
   const [stamps, setStamps] = useState(5);
   const [rewardName, setRewardName] = useState("");
   const [rewardDesc, setRewardDesc] = useState("");
+  const [illustration, setIllustration] = useState<IllustrationId>("flat-white-cenital");
 
   useEffect(() => {
     getDefaultReward().then((r) => {
@@ -1042,6 +1044,7 @@ function RewardConfig() {
         setStamps(r.requiredStamps);
         setRewardName(r.name);
         setRewardDesc(r.description);
+        setIllustration(r.illustration || "flat-white-cenital");
       }
       setLoadingReward(false);
     });
@@ -1057,6 +1060,7 @@ function RewardConfig() {
         requiredStamps: stamps,
         type: "drink",
         active: true,
+        illustration,
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
@@ -1135,25 +1139,85 @@ function RewardConfig() {
         </div>
       </div>
 
-      {/* Preview */}
-      <div className="p-4 rounded-xl bg-stone-100 dark:bg-neutral-900 border border-stone-200 dark:border-stone-800">
-        <p className="text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 mb-3">
-          Vista previa de la tarjeta
+      {/* Ilustración con vista previa SVG */}
+      <div className="space-y-3">
+        <p className="text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600">
+          Ilustración de la tarjeta
         </p>
-        <div className="flex gap-2 flex-wrap">
-          {Array.from({ length: stamps }).map((_, i) => (
-            <div
-              key={i}
-              className={`w-7 h-7 rounded-full border-2 transition-colors ${
-                i < Math.floor(stamps / 2)
-                  ? "bg-stone-700 border-stone-700 dark:bg-stone-300 dark:border-stone-300"
-                  : "bg-transparent border-stone-300 dark:border-stone-700"
-              }`}
-            />
+        <div className="space-y-4">
+          {Array.from(new Set(ILLUSTRATION_CATALOG.map((i) => i.category))).map((cat) => (
+            <div key={cat}>
+              <p className="text-[9px] uppercase tracking-[0.2em] text-stone-400/70 dark:text-stone-600/70 mb-2">{cat}</p>
+              <div className="grid grid-cols-3 gap-2">
+                {ILLUSTRATION_CATALOG.filter((i) => i.category === cat).map((ilu) => {
+                  const isSelected = illustration === ilu.id;
+                  const isDark = typeof window !== "undefined" && document.documentElement.classList.contains("dark");
+                  return (
+                    <button
+                      key={ilu.id}
+                      type="button"
+                      onClick={() => setIllustration(ilu.id)}
+                      className={`relative flex flex-col items-center gap-1.5 p-2 rounded-xl border transition-all duration-200 ${
+                        isSelected
+                          ? "border-stone-700 dark:border-stone-300 bg-stone-200/60 dark:bg-neutral-800 ring-1 ring-stone-700/30 dark:ring-stone-300/30"
+                          : "border-stone-200 dark:border-stone-800 bg-white dark:bg-neutral-900 hover:border-stone-300 dark:hover:border-stone-700"
+                      }`}
+                    >
+                      {isSelected && (
+                        <div className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-stone-700 dark:bg-stone-300 flex items-center justify-center z-10">
+                          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-white dark:text-neutral-900">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        </div>
+                      )}
+                      {/* Miniatura SVG real */}
+                      <div className="w-full aspect-square flex items-center justify-center overflow-hidden rounded-lg pointer-events-none" style={{ maxHeight: 80 }}>
+                        <div style={{ transform: "scale(0.35)", transformOrigin: "center center" }}>
+                          <StampIllustration
+                            id={ilu.id}
+                            stamps={Math.floor(stamps / 2)}
+                            maxStamps={stamps}
+                            displayedStamps={Math.floor(stamps / 2)}
+                            animatedStamps={0}
+                            isComplete={false}
+                            isNewStamp={false}
+                            isDark={isDark}
+                            fillRadius={0}
+                          />
+                        </div>
+                      </div>
+                      <span className="text-[8px] text-stone-500 dark:text-stone-500 text-center leading-tight truncate w-full">{ilu.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           ))}
         </div>
-        <p className="text-[11px] text-stone-500 dark:text-stone-500 mt-2">
-          {Math.floor(stamps / 2)} de {stamps} sellos
+      </div>
+
+      {/* Preview grande de la seleccionada */}
+      <div className="p-4 rounded-xl bg-stone-100 dark:bg-neutral-900 border border-stone-200 dark:border-stone-800">
+        <p className="text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 mb-3">
+          Vista previa
+        </p>
+        <div className="flex justify-center">
+          <div style={{ transform: "scale(0.6)", transformOrigin: "top center" }}>
+            <StampIllustration
+              id={illustration}
+              stamps={Math.floor(stamps / 2)}
+              maxStamps={stamps}
+              displayedStamps={Math.floor(stamps / 2)}
+              animatedStamps={0}
+              isComplete={false}
+              isNewStamp={false}
+              isDark={typeof window !== "undefined" && document.documentElement.classList.contains("dark")}
+              fillRadius={0}
+            />
+          </div>
+        </div>
+        <p className="text-[11px] text-stone-500 dark:text-stone-500 mt-2 text-center">
+          {Math.floor(stamps / 2)} de {stamps} sellos — {ILLUSTRATION_CATALOG.find((i) => i.id === illustration)?.name}
         </p>
       </div>
 

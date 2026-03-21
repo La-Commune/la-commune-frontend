@@ -37,13 +37,16 @@ export async function upsertDefaultReward(
     .limit(1)
     .single();
 
-  const updateData = {
+  const updateData: Record<string, unknown> = {
     nombre: data.name,
     descripcion: data.description,
     sellos_requeridos: data.requiredStamps,
     tipo: data.type,
     activa: data.active,
   };
+  if (data.illustration) {
+    updateData.ilustracion = data.illustration;
+  }
 
   if (existingReward) {
     // Update existing

@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "next-themes";
 import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
+import { StampIllustration, type IllustrationId } from "./stamp-illustrations";
 
 function useCountUp(target: number, duration = 500) {
   const [count, setCount] = useState(target);
@@ -115,6 +116,7 @@ export function StampCardFront({
   }, [rewardId]);
 
   const rewardName = reward?.name ?? "Bebida de cortesía";
+  const illustrationId: IllustrationId = reward?.illustration ?? "flat-white-cenital";
 
   // Último evento de sello — para mensajes personalizados con nombre de bebida
   const [lastDrink, setLastDrink] = useState<string | null>(null);
@@ -191,7 +193,6 @@ export function StampCardFront({
   }, [frontReady, displayedStamps]);
 
   // Si los stamps cambian y ya estamos de frente, aplicar inmediatamente
-  // (caso: la tarjeta ya estaba al frente cuando llegó el sello)
   useEffect(() => {
     if (frontReady) {
       setDisplayedStamps(stamps);
@@ -278,10 +279,6 @@ export function StampCardFront({
   if (!card) return null;
 
   // Colors
-  const cupStroke = isDark ? "#4a4240" : "#c7b7a3";
-  const plateStroke = isDark ? "#3a3630" : "#d8d0c8";
-  const handleStroke = isDark ? "#4a4240" : "#c7b7a3";
-  const emptyFill = isDark ? "#1a1412" : "#f0e9e0";
   const labelColor = isDark ? "#7A706A" : "#A89E97";
   const textColor = isDark ? "#E8DDD5" : "#2B2B2B";
   const brandColor = isDark ? "#D4C8BE" : "#2B2B2B";
@@ -313,186 +310,19 @@ export function StampCardFront({
         </p>
       </div>
 
-      {/* Taza cenital — vista desde arriba */}
+      {/* Ilustración dinámica */}
       <div className="flex-1 flex items-center justify-center relative">
-        <svg viewBox="0 0 180 180" className="w-[170px] h-[170px]">
-          <defs>
-            {/* Gradiente radial del café */}
-            <radialGradient id="coffeeFill" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor={isDark ? "#5a3f20" : "#8b6b3d"} />
-              <stop offset="55%" stopColor={isDark ? "#8b6b3d" : "#a07850"} />
-              <stop offset="85%" stopColor={isDark ? "#c8956c" : "#c8956c"} />
-              <stop offset="100%" stopColor={isDark ? "#a07850" : "#b08860"} />
-            </radialGradient>
-            {/* Clip para el líquido dentro de la taza */}
-            <clipPath id="cupClip">
-              <circle cx="90" cy="90" r="58" />
-            </clipPath>
-            {/* Glow para completado */}
-            <filter id="completeGlow">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-
-          {/* Platito */}
-          <circle cx="90" cy="90" r="78" fill="none" stroke={plateStroke} strokeWidth="1.5" />
-
-          {/* Borde de la taza */}
-          <circle
-            cx="90" cy="90" r="62"
-            fill="none"
-            stroke={cupStroke}
-            strokeWidth="2.5"
-            filter={isComplete ? "url(#completeGlow)" : undefined}
-          />
-
-          {/* Interior vacío */}
-          <circle cx="90" cy="90" r="58" fill={emptyFill} />
-
-          {/* Asa — vista superior */}
-          <path
-            d="M148 78 Q170 78 170 90 Q170 102 148 102"
-            fill="none"
-            stroke={handleStroke}
-            strokeWidth="2.5"
-            strokeLinecap="round"
-          />
-
-          {/* Líquido — círculo que crece con cada sello */}
-          <motion.circle
-            cx={90}
-            cy={90}
-            fill="url(#coffeeFill)"
-            clipPath="url(#cupClip)"
-            initial={{ r: 0 }}
-            animate={{ r: fillRadius }}
-            transition={{
-              duration: isNewStamp ? 0.8 : 0.5,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-          />
-
-          {/* Ripple cuando se agrega un sello nuevo */}
-          <AnimatePresence>
-            {isNewStamp && (
-              <motion.circle
-                cx={90}
-                cy={90}
-                r={fillRadius}
-                fill="none"
-                stroke={isDark ? "#c8956c" : "#8b6b3d"}
-                strokeWidth={1.5}
-                clipPath="url(#cupClip)"
-                initial={{ r: fillRadius * 0.5, opacity: 0.8 }}
-                animate={{ r: fillRadius + 8, opacity: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
-              />
-            )}
-          </AnimatePresence>
-
-          {/* Latte art rosetta — solo cuando completa */}
-          {isComplete && (
-            <motion.g
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 1, delay: 0.3 }}
-            >
-              <path
-                d="M90 65 Q78 76 90 82 Q102 76 90 65Z"
-                fill="none"
-                stroke={isDark ? "#e8ddd5" : "#f5f0ea"}
-                strokeWidth="0.8"
-                opacity="0.5"
-              />
-              <path
-                d="M90 74 Q80 83 90 88 Q100 83 90 74Z"
-                fill="none"
-                stroke={isDark ? "#e8ddd5" : "#f5f0ea"}
-                strokeWidth="0.7"
-                opacity="0.4"
-              />
-              <path
-                d="M90 83 Q83 90 90 95 Q97 90 90 83Z"
-                fill="none"
-                stroke={isDark ? "#e8ddd5" : "#f5f0ea"}
-                strokeWidth="0.6"
-                opacity="0.35"
-              />
-              <line
-                x1="90" y1="95" x2="90" y2="112"
-                stroke={isDark ? "#e8ddd5" : "#f5f0ea"}
-                strokeWidth="0.6"
-                opacity="0.3"
-              />
-            </motion.g>
-          )}
-
-          {/* Conteo central — cuando está vacía o pocos sellos */}
-          {!isComplete && stamps < maxStamps && (
-            <motion.g
-              initial={{ opacity: 0 }}
-              animate={{ opacity: stamps === 0 ? 0.6 : 0.9 }}
-              transition={{ duration: 0.4 }}
-            >
-              <text
-                x="90" y="85"
-                textAnchor="middle"
-                dominantBaseline="central"
-                style={{
-                  fontFamily: "var(--font-display)",
-                  fontSize: stamps === 0 ? "28px" : "34px",
-                  fill: stamps === 0
-                    ? (isDark ? "#3a3630" : "#c7b7a3")
-                    : (isDark ? "#1a1412" : "#f5f0ea"),
-                  fontWeight: 300,
-                }}
-              >
-                {animatedStamps}
-              </text>
-              <text
-                x="90" y="106"
-                textAnchor="middle"
-                style={{
-                  fontFamily: "var(--font-mono, monospace)",
-                  fontSize: "5.5px",
-                  fill: stamps === 0
-                    ? (isDark ? "#2a2722" : "#d8d0c8")
-                    : (isDark ? "#1a1412" : "#f5f0ea"),
-                  letterSpacing: "2.5px",
-                  textTransform: "uppercase" as const,
-                  opacity: 0.7,
-                }}
-              >
-                de {maxStamps}
-              </text>
-            </motion.g>
-          )}
-
-          {/* Check cuando completa */}
-          {isComplete && (
-            <motion.text
-              x="90" y="87"
-              textAnchor="middle"
-              dominantBaseline="central"
-              style={{
-                fontFamily: "var(--font-display)",
-                fontSize: "28px",
-                fill: isDark ? "#1a1412" : "#f5f0ea",
-                fontWeight: 300,
-              }}
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 0.7, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            >
-              ✓
-            </motion.text>
-          )}
-        </svg>
+        <StampIllustration
+          id={illustrationId}
+          stamps={stamps}
+          maxStamps={maxStamps}
+          displayedStamps={displayedStamps}
+          animatedStamps={animatedStamps}
+          isComplete={isComplete}
+          isNewStamp={isNewStamp}
+          isDark={isDark}
+          fillRadius={fillRadius}
+        />
       </div>
 
       {/* Progress message + conteo */}
