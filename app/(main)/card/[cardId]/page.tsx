@@ -107,13 +107,31 @@ export default function CardEntry() {
     };
   }, [resolvedCustomerId]);
 
-  // Setup realtime subscription for card data
+  // Setup realtime subscription for card data + initial fetch with validation
   useEffect(() => {
     if (!cardIdParam) return;
 
     const supabase = getSupabase();
+
+    // Fetch inicial — valida que la tarjeta exista y su estado actual
+    supabase
+      .from("tarjetas")
+      .select("*")
+      .eq("id", cardIdParam)
+      .single()
+      .then(({ data: row }) => {
+        if (!row) return;
+        setCardDoc({
+          id: row.id as string,
+          stamps: row.sellos as number,
+          maxStamps: row.sellos_maximos as number,
+          status: row.estado as Card["status"],
+          createdAt: new Date(row.creado_en as string),
+        });
+      });
+
     const channel = supabase
-      .channel(`card-${cardIdParam}`)
+      .channel(`card-page-${cardIdParam}`)
       .on(
         "postgres_changes",
         {
@@ -149,9 +167,8 @@ export default function CardEntry() {
 
   // Si la tarjeta fue canjeada, buscar la nueva tarjeta activa y redirigir
   const canjeRedirectRef = useRef(false);
-  useEffect(() => {
-    if (!cardDoc || cardDoc.status !== "canjeada") return;
-    if (!resolvedCustomerId) return;
+
+  const findAndRedirectToActiveCard = async (customerId: string) => {
     if (canjeRedirectRef.current) return;
     canjeRedirectRef.current = true;
 
@@ -162,17 +179,17 @@ export default function CardEntry() {
     const tryRedirect = async () => {
       attempts++;
       try {
-        const newCard = await getCardByCustomer(resolvedCustomerId);
+        const newCard = await getCardByCustomer(customerId);
         if (newCard) {
           localStorage.setItem("cardId", newCard.id);
-          setCustomerSession(resolvedCustomerId, newCard.id);
+          setCustomerSession(customerId, newCard.id);
           router.replace(`/card/${newCard.id}`);
           return;
         }
         if (attempts < maxAttempts) {
           setTimeout(tryRedirect, retryDelay);
         } else {
-          logger.error("card-page", "No active card found after redeem", { resolvedCustomerId });
+          logger.error("card-page", "No active card found after redeem", { customerId });
           router.replace("/");
         }
       } catch (err) {
@@ -186,11 +203,51 @@ export default function CardEntry() {
     };
 
     tryRedirect();
+  };
+
+  useEffect(() => {
+    if (!cardDoc || cardDoc.status !== "canjeada") return;
+    if (!resolvedCustomerId) return;
+    findAndRedirectToActiveCard(resolvedCustomerId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cardDoc?.status, resolvedCustomerId, router]);
 
-  // Session resolution: localStorage first, then cookie fallback
+  // Revalidar al volver a la app (tab/app switch) — detecta cambios de otro dispositivo
+  useEffect(() => {
+    if (!cardIdParam) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") return;
+
+      const supabase = getSupabase();
+      supabase
+        .from("tarjetas")
+        .select("id, sellos, sellos_maximos, estado, creado_en")
+        .eq("id", cardIdParam)
+        .single()
+        .then(({ data: row }) => {
+          if (!row) return;
+          setCardDoc({
+            id: row.id as string,
+            stamps: row.sellos as number,
+            maxStamps: row.sellos_maximos as number,
+            status: row.estado as Card["status"],
+            createdAt: new Date(row.creado_en as string),
+          });
+        });
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [cardIdParam]);
+
+  // Session resolution: localStorage first, then cookie fallback.
+  // Also handles stale cardId (e.g. from another device or old URL).
   useEffect(() => {
     async function resolveSession() {
+      let customerId: string | null = null;
+
+      // 1. Try localStorage
       const storedCardId = localStorage.getItem("cardId");
       const storedCustomerId = localStorage.getItem("customerId");
 
@@ -201,19 +258,57 @@ export default function CardEntry() {
         return;
       }
 
-      // Cookie fallback — recovers session after cache clear
-      try {
-        const cookieSession = await getCustomerSession();
-        if (cookieSession && cookieSession.cardId === cardIdParam) {
-          localStorage.setItem("cardId", cookieSession.cardId);
-          localStorage.setItem("customerId", cookieSession.customerId);
-          setCardId(cookieSession.cardId);
-          setResolvedCustomerId(cookieSession.customerId);
-          setLoading(false);
-          return;
+      // Si tenemos customerId pero el cardId no coincide (otra tarjeta en la URL),
+      // verificar si la tarjeta activa del cliente es otra
+      if (storedCustomerId) {
+        customerId = storedCustomerId;
+      }
+
+      // 2. Cookie fallback
+      if (!customerId) {
+        try {
+          const cookieSession = await getCustomerSession();
+          if (cookieSession) {
+            customerId = cookieSession.customerId;
+            if (cookieSession.cardId === cardIdParam) {
+              localStorage.setItem("cardId", cookieSession.cardId);
+              localStorage.setItem("customerId", cookieSession.customerId);
+              setCardId(cookieSession.cardId);
+              setResolvedCustomerId(cookieSession.customerId);
+              setLoading(false);
+              return;
+            }
+          }
+        } catch {
+          // Cookie check failed, fall through
         }
-      } catch {
-        // Cookie check failed, fall through
+      }
+
+      // 3. Si tenemos customerId pero el cardId de la URL no coincide,
+      // buscar la tarjeta activa real del cliente y redirigir
+      if (customerId) {
+        try {
+          const activeCard = await getCardByCustomer(customerId);
+          if (activeCard && activeCard.id !== cardIdParam) {
+            // El cliente tiene otra tarjeta activa — redirigir
+            localStorage.setItem("cardId", activeCard.id);
+            setCustomerSession(customerId, activeCard.id);
+            router.replace(`/card/${activeCard.id}`);
+            return;
+          }
+          if (activeCard && activeCard.id === cardIdParam) {
+            // La tarjeta de la URL es la activa, actualizar sesión
+            localStorage.setItem("cardId", activeCard.id);
+            localStorage.setItem("customerId", customerId);
+            setCustomerSession(customerId, activeCard.id);
+            setCardId(activeCard.id);
+            setResolvedCustomerId(customerId);
+            setLoading(false);
+            return;
+          }
+        } catch {
+          // Fall through to recover
+        }
       }
 
       // No valid session — redirect to recovery
@@ -221,6 +316,7 @@ export default function CardEntry() {
     }
 
     resolveSession();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cardIdParam, router]);
 
 if (loading || !cardId) {
