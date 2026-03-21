@@ -465,33 +465,213 @@ export default function Home() {
         lazy
       />
 
-      {/* Storytelling — identidad de marca. Opción 1: todo en sección */}
-      {/* TODO: Reactivar cuando se tenga el contenido en instagram y algo consolidado */}
-      {/* <PremiumSection
-        eyebrow="La Commune"
-        title={`Sin trucos.\nSolo oficio.`}
-        subtitle="La Commune es el nombre que le ponemos al esfuerzo compartido detrás de cada taza."
-        manifesto="El café es el pretexto. La comunidad, el punto."
-        videoSrc="/videos/coffee-black-white.mp4"
-        videoPoster="/images/poster-storytelling.jpg"
-        ctaText="Nuestra historia"
-        ctaLink="/nosotros"
-        align="center"
-        lazy
-      /> */}
+      {/* Cómo funciona — 3 pasos del programa de fidelidad */}
+      <section className="snap-start min-h-[100dvh] flex flex-col items-center justify-center bg-[#0c0b09] px-6 sm:px-10 py-20 relative overflow-hidden">
+        {/* Línea decorativa superior */}
+        <motion.div
+          initial={{ scaleX: 0 }}
+          whileInView={{ scaleX: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+          className="w-12 h-px bg-[#c8956c] mb-12 origin-center"
+        />
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+          className="text-[10px] uppercase tracking-[0.45em] text-[#6b6458] mb-6"
+        >
+          Tu programa de fidelidad
+        </motion.p>
+
+        <motion.h2
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+          className="font-display text-4xl sm:text-5xl md:text-6xl font-light text-[#e8e0d2] text-center tracking-wide mb-16"
+        >
+          Así de simple
+        </motion.h2>
+
+        {/* 3 pasos */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 sm:gap-6 max-w-3xl w-full">
+          {[
+            {
+              step: "01",
+              title: "Regístrate",
+              desc: "Abre la app, pon tu nombre y listo. Tu tarjeta digital se crea al instante.",
+              icon: (
+                <svg viewBox="0 0 32 32" fill="none" className="w-8 h-8">
+                  <circle cx="16" cy="12" r="5" stroke="#c8956c" strokeWidth="1.5" />
+                  <path d="M8 26c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="#c8956c" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              ),
+            },
+            {
+              step: "02",
+              title: "Acumula sellos",
+              desc: "Cada café que compras suma un sello automáticamente. Sin códigos, sin filas.",
+              icon: (
+                <svg viewBox="0 0 32 32" fill="none" className="w-8 h-8">
+                  <rect x="6" y="8" width="20" height="16" rx="3" stroke="#c8956c" strokeWidth="1.5" />
+                  <circle cx="12" cy="16" r="2" fill="#c8956c" opacity="0.6" />
+                  <circle cx="20" cy="16" r="2" fill="#c8956c" opacity="0.6" />
+                  <circle cx="16" cy="16" r="2" fill="#c8956c" />
+                </svg>
+              ),
+            },
+            {
+              step: "03",
+              title: "Bebida gratis",
+              desc: "A la quinta visita, tu siguiente bebida va por cuenta de la casa. Así de simple.",
+              icon: (
+                <svg viewBox="0 0 32 32" fill="none" className="w-8 h-8">
+                  <path d="M8 12h16l-2 14H10L8 12z" stroke="#c8956c" strokeWidth="1.5" strokeLinejoin="round" />
+                  <path d="M24 15h2a3 3 0 010 6h-1" stroke="#c8956c" strokeWidth="1.5" strokeLinecap="round" />
+                  <path d="M13 8c0-2 1-3 3-3s3 1 3 3" stroke="#c8956c" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
+                </svg>
+              ),
+            },
+          ].map((item, i) => (
+            <motion.div
+              key={item.step}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: i * 0.15, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col items-center text-center gap-4"
+            >
+              {/* Icono */}
+              <div className="w-14 h-14 rounded-full border border-[#2a2722] flex items-center justify-center">
+                {item.icon}
+              </div>
+              {/* Número */}
+              <span className="text-[10px] font-mono tracking-[0.3em] text-[#3a3630]">
+                {item.step}
+              </span>
+              {/* Título */}
+              <h3 className="font-display text-xl sm:text-2xl font-light text-[#e8e0d2] tracking-wide">
+                {item.title}
+              </h3>
+              {/* Descripción */}
+              <p className="text-[13px] text-[#6b6458] leading-relaxed max-w-[240px]">
+                {item.desc}
+              </p>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, delay: 0.6 }}
+          className="mt-14"
+        >
+          <Link
+            href={loyaltyCta.link}
+            className="inline-flex items-center gap-3 px-8 py-3.5 rounded-full border border-[#c8956c]/30 text-[11px] uppercase tracking-[0.3em] text-[#c8956c] hover:bg-[#c8956c]/10 hover:border-[#c8956c]/50 transition-all duration-500"
+          >
+            {loyaltyCta.text}
+            <span aria-hidden="true" className="w-4 h-px bg-[#c8956c]" />
+          </Link>
+        </motion.div>
+      </section>
+
+      {/* Social proof — números que generan confianza */}
+      <section className="snap-start min-h-[100dvh] flex flex-col items-center justify-center bg-[#0c0b09] px-6 sm:px-10 py-20 relative">
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 1 }}
+          className="max-w-2xl w-full text-center"
+        >
+          <p className="text-[10px] uppercase tracking-[0.45em] text-[#6b6458] mb-6">
+            Nuestra comunidad
+          </p>
+          <h2 className="font-display text-4xl sm:text-5xl font-light text-[#e8e0d2] tracking-wide mb-4">
+            Más que un café
+          </h2>
+          <p className="text-[14px] text-[#6b6458] leading-relaxed max-w-md mx-auto mb-16">
+            Cada taza que servimos fortalece un vínculo. Cada visita construye algo más grande que una transacción.
+          </p>
+
+          {/* Números */}
+          <div className="grid grid-cols-3 gap-6 sm:gap-10">
+            {[
+              { value: "5", label: "Cafés para tu\nbebida gratis" },
+              { value: "100%", label: "Digital, sin\nplásticos" },
+              { value: "∞", label: "Veces que puedes\nrepetir" },
+            ].map((stat, i) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, delay: 0.2 + i * 0.12 }}
+                className="flex flex-col items-center"
+              >
+                <span className="font-display text-4xl sm:text-5xl font-light text-[#c8956c] tracking-wide">
+                  {stat.value}
+                </span>
+                <span className="mt-3 text-[10px] sm:text-[11px] uppercase tracking-[0.2em] text-[#6b6458] whitespace-pre-line leading-relaxed">
+                  {stat.label}
+                </span>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Divider */}
+          <motion.div
+            initial={{ scaleX: 0 }}
+            whileInView={{ scaleX: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1, delay: 0.5 }}
+            className="w-16 h-px bg-[#2a2722] mx-auto mt-16 mb-10"
+          />
+
+          {/* Testimonio / frase */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1.2, delay: 0.6 }}
+            className="text-[13px] italic font-light text-[#4a443c] leading-relaxed tracking-wide max-w-sm mx-auto"
+          >
+            &ldquo;El mejor programa de fidelidad es el que no te hace pensar. Solo vienes, disfrutas, y un día te dicen: esta va por la casa.&rdquo;
+          </motion.p>
+        </motion.div>
+      </section>
 
       {/* Footer — limpio, editorial */}
-      <footer className="snap-start h-[100dvh] flex flex-col items-center justify-center bg-[#0c0b09] px-8">
+      <footer className="snap-start min-h-[100dvh] flex flex-col items-center justify-center bg-[#0c0b09] px-8 relative">
+        {/* Grano decorativo de fondo sutil */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-[0.03]"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+            backgroundSize: "128px 128px",
+          }}
+        />
+
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 1 }}
-          className="flex flex-col items-center text-center"
+          className="flex flex-col items-center text-center relative z-10"
         >
           {/* Wordmark */}
-          <p className="font-mono text-2xl sm:text-3xl font-medium tracking-[0.3em] uppercase text-[#e8e0d2]">
+          <p className="font-display text-3xl sm:text-4xl font-light tracking-[0.25em] text-[#e8e0d2]">
             La Commune
+          </p>
+          <p className="text-[10px] uppercase tracking-[0.4em] text-[#3a3630] mt-2">
+            Café · Comunidad · Hidalgo
           </p>
           <div aria-hidden="true" className="w-8 h-px bg-[#c8956c] mt-6 mb-8" />
 
@@ -526,6 +706,23 @@ export default function Home() {
               Cómo llegar →
             </p>
           </a>
+
+          {/* Quick links — menú + fidelidad */}
+          <div className="flex items-center gap-6 mt-10">
+            <Link
+              href="/menu"
+              className="text-[11px] uppercase tracking-[0.25em] text-[#6b6458] hover:text-[#c8956c] transition-colors duration-300"
+            >
+              Menú
+            </Link>
+            <span aria-hidden="true" className="w-1 h-1 rounded-full bg-[#2a2722]" />
+            <Link
+              href={loyaltyCta.link}
+              className="text-[11px] uppercase tracking-[0.25em] text-[#6b6458] hover:text-[#c8956c] transition-colors duration-300"
+            >
+              Fidelidad
+            </Link>
+          </div>
 
           {/* Copyright + admin */}
           <div className="mt-16 flex flex-col items-center gap-4">
