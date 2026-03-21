@@ -4,7 +4,7 @@ import { Card, TarjetaRow, mapTarjetaToCard } from "@/models/card.model";
 import { Reward, RecompensaRow, mapRecompensaToReward } from "@/models/reward.model";
 import { CoffeeBean } from "./CoffeeBean";
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "next-themes";
 import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
 
@@ -27,6 +27,18 @@ function useCountUp(target: number, duration = 500) {
   }, [target, duration]);
 
   return count;
+}
+
+/** Milestone types for progress psychology */
+type MilestoneType = "welcome" | "first" | "halfway" | "almost" | "complete" | null;
+
+function getMilestoneType(stamps: number, maxStamps: number): MilestoneType {
+  if (stamps >= maxStamps) return "complete";
+  if (stamps === maxStamps - 1) return "almost";
+  if (stamps === Math.floor(maxStamps / 2)) return "halfway";
+  if (stamps === 1) return "first";
+  if (stamps === 0) return "welcome";
+  return null;
 }
 
 export function StampCardFront({
@@ -149,6 +161,9 @@ export function StampCardFront({
   const prevStampsRef = useRef<number | undefined>(undefined);
   const [newStampIdx, setNewStampIdx] = useState<number | null>(null);
 
+  // Track milestone celebrations
+  const [showMilestoneCelebration, setShowMilestoneCelebration] = useState<MilestoneType>(null);
+
   // Endowed Progress Effect: +1 sello visual de bienvenida
   // Backend: 0/5 real → Frontend: 1/6 visual (primer slot = regalo)
   const visualStamps = (card?.stamps ?? 0) + 1;
@@ -158,6 +173,11 @@ export function StampCardFront({
   const isComplete = card ? card.stamps >= card.maxStamps : false;
   const remaining = card ? card.maxStamps - card.stamps : 0;
   const progress = card ? (visualStamps / visualMax) * 100 : 0;
+  const milestone = card ? getMilestoneType(card.stamps, card.maxStamps) : null;
+
+  // Halfway point (including gift stamp offset)
+  const halfwayIdx = card ? Math.floor(card.maxStamps / 2) : -1;
+  const isAlmostDone = card ? card.stamps >= card.maxStamps - 2 && !isComplete : false;
 
   // Mensajes personalizados con nombre de bebida
   const drinkLabel = lastDrink ? `¡Tu ${lastDrink} sumó!` : null;
@@ -184,7 +204,18 @@ export function StampCardFront({
               : "¡Bienvenido! Pide tu primer café"
     : null;
 
-  // Detectar sello nuevo (el índice visual es +1 por el sello de bienvenida)
+  // Emoji for milestone celebration
+  const milestoneEmoji = milestone === "complete"
+    ? "🎉"
+    : milestone === "almost"
+      ? "🔥"
+      : milestone === "halfway"
+        ? "⚡"
+        : milestone === "first"
+          ? "☕"
+          : null;
+
+  // Detectar sello nuevo y trigger celebración
   useEffect(() => {
     if (!card) return;
     const prev = prevStampsRef.current;
@@ -193,6 +224,19 @@ export function StampCardFront({
     if (prev !== undefined && card.stamps > prev) {
       setNewStampIdx(card.stamps); // +1 offset visual (slot 0 = bienvenida)
       onStampAdded();
+
+      // Trigger milestone celebration
+      const newMilestone = getMilestoneType(card.stamps, card.maxStamps);
+      if (newMilestone && newMilestone !== "welcome") {
+        setShowMilestoneCelebration(newMilestone);
+        const celebTimer = setTimeout(() => setShowMilestoneCelebration(null), 2800);
+        const stampTimer = setTimeout(() => setNewStampIdx(null), 1200);
+        return () => {
+          clearTimeout(celebTimer);
+          clearTimeout(stampTimer);
+        };
+      }
+
       const t = setTimeout(() => setNewStampIdx(null), 1200);
       return () => clearTimeout(t);
     }
@@ -207,6 +251,19 @@ export function StampCardFront({
   }, [isComplete, onComplete]);
 
   if (!card) return null;
+
+  // Progress bar gradient changes based on milestone
+  const progressGradient = isComplete
+    ? "linear-gradient(90deg, #8A6A3A, #C4954A, #D4B06A)"
+    : isAlmostDone
+      ? isDark
+        ? "linear-gradient(90deg, #C4954A, #D4A85A, #E4C07A)"
+        : "linear-gradient(90deg, #3A2F2A, #2A1F1A, #1A0F0A)"
+      : milestone === "halfway"
+        ? isDark
+          ? "linear-gradient(90deg, #A47A3A, #C4954A)"
+          : "linear-gradient(90deg, #4A3F3A, #3A2F2A)"
+        : isDark ? "#C4954A" : "#3A2F2A";
 
   return (
     <div
@@ -255,32 +312,100 @@ export function StampCardFront({
               active={i < visualStamps}
               isNew={i === newStampIdx}
               isGift={i === 0}
+              isMilestone={i === halfwayIdx + 1 && i < visualStamps}
+              isAlmostDone={isAlmostDone && i < visualStamps && i > 0 && i >= visualStamps - 2}
             />
           ))}
         </div>
 
-        {progressMessage && (
-          <p className="text-[10px] tracking-widest uppercase" style={{ color: isDark ? "#7A706A" : "#A89E97" }}>
-            {progressMessage}
-          </p>
-        )}
+        {/* Progress message with milestone celebration */}
+        <div className="relative min-h-[16px]">
+          <AnimatePresence mode="wait">
+            {showMilestoneCelebration ? (
+              <motion.div
+                key={`celebration-${showMilestoneCelebration}`}
+                initial={{ opacity: 0, y: 6, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -4, scale: 0.95 }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                className="flex items-center gap-1.5"
+              >
+                {milestoneEmoji && (
+                  <motion.span
+                    className="text-sm"
+                    animate={{ scale: [1, 1.3, 1] }}
+                    transition={{ duration: 0.5, delay: 0.2 }}
+                  >
+                    {milestoneEmoji}
+                  </motion.span>
+                )}
+                <p
+                  className="text-[10px] tracking-widest uppercase font-medium"
+                  style={{
+                    color: isDark
+                      ? showMilestoneCelebration === "almost" ? "#D4A85A" : "#C4954A"
+                      : showMilestoneCelebration === "almost" ? "#2A1F1A" : "#3A2F2A",
+                  }}
+                >
+                  {progressMessage}
+                </p>
+              </motion.div>
+            ) : progressMessage ? (
+              <motion.p
+                key="progress-msg"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="text-[10px] tracking-widest uppercase"
+                style={{ color: isDark ? "#7A706A" : "#A89E97" }}
+              >
+                {progressMessage}
+              </motion.p>
+            ) : null}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Barra de progreso + conteo */}
       <div className="px-5 pb-4 space-y-2">
-        <div className="h-[2px] rounded-full overflow-hidden" style={{ background: isDark ? "#3A3230" : "#E8E0D8" }}>
-          <motion.div
-            className="h-full rounded-full"
-            style={{
-              background: isComplete
-                ? "linear-gradient(90deg, #8A6A3A, #C4954A)"
-                : isDark ? "#C4954A" : "#3A2F2A",
-            }}
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.9, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          />
+        {/* Progress bar track with milestone markers */}
+        <div className="relative">
+          <div
+            className="h-[2px] rounded-full overflow-hidden"
+            style={{ background: isDark ? "#3A3230" : "#E8E0D8" }}
+          >
+            <motion.div
+              className="h-full rounded-full"
+              style={{ background: progressGradient }}
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.9, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            />
+          </div>
+
+          {/* Milestone dot at halfway point */}
+          {card.maxStamps > 2 && (
+            <div
+              className="absolute top-1/2 -translate-y-1/2"
+              style={{
+                left: `${((halfwayIdx + 1) / visualMax) * 100}%`,
+                transform: "translate(-50%, -50%)",
+              }}
+            >
+              <div
+                className="w-1.5 h-1.5 rounded-full"
+                style={{
+                  background: progress >= ((halfwayIdx + 1) / visualMax) * 100
+                    ? isDark ? "#C4954A" : "#3A2F2A"
+                    : isDark ? "#4A4240" : "#D8D0C8",
+                  transition: "background 0.5s ease",
+                }}
+              />
+            </div>
+          )}
         </div>
+
         <div className="flex justify-between">
           <p className="text-[10px] tracking-widest uppercase" style={{ color: isDark ? "#7A706A" : "#A89E97" }}>
             {animatedStamps} de {visualMax} visitas
