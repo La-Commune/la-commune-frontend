@@ -25,6 +25,10 @@ export interface IllustrationProps {
   isNewStamp: boolean;
   isDark: boolean;
   fillRadius: number;
+  /** Stamps reales del cliente (sin bonus). Para el texto del contador. */
+  realStamps?: number;
+  /** Max stamps reales (sin bonus). Para el texto "de X". */
+  realMaxStamps?: number;
 }
 
 /** Catálogo de ilustraciones con metadatos para el selector admin */
@@ -482,13 +486,16 @@ function MatchaLatte(p: IllustrationProps) {
 
 // ─── Shared sub-components ───
 
-function CentralCount({ animatedStamps, maxStamps, displayedStamps, isDark, cx, cy, svgFont = "34px", textFill }: IllustrationProps & { cx: number; cy: number; svgFont?: string; textFill?: string }) {
+function CentralCount({ animatedStamps, maxStamps, displayedStamps, isDark, cx, cy, svgFont = "34px", textFill, realStamps, realMaxStamps }: IllustrationProps & { cx: number; cy: number; svgFont?: string; textFill?: string }) {
   const c = colors(isDark);
+  // Mostrar conteo real (sin bonus) si se provee, sino usar el visual
+  const showStamps = realStamps != null ? realStamps : animatedStamps;
+  const showMax = realMaxStamps ?? maxStamps;
   const empty = displayedStamps === 0;
   return (
     <motion.g initial={{ opacity: 0 }} animate={{ opacity: empty ? 0.6 : 0.9 }} transition={{ duration: 0.4 }}>
-      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" style={{ fontFamily: "var(--font-display)", fontSize: empty ? "28px" : svgFont, fill: textFill ?? (empty ? c.textGhost : c.textLight), fontWeight: 300 }}>{animatedStamps}</text>
-      <text x={cx} y={cy + 21} textAnchor="middle" style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "5.5px", fill: empty ? c.subtextGhost : (textFill ?? c.textLight), letterSpacing: "2.5px", textTransform: "uppercase" as const, opacity: 0.7 }}>de {maxStamps}</text>
+      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" style={{ fontFamily: "var(--font-display)", fontSize: empty ? "28px" : svgFont, fill: textFill ?? (empty ? c.textGhost : c.textLight), fontWeight: 300 }}>{showStamps}</text>
+      <text x={cx} y={cy + 21} textAnchor="middle" style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "5.5px", fill: empty ? c.subtextGhost : (textFill ?? c.textLight), letterSpacing: "2.5px", textTransform: "uppercase" as const, opacity: 0.7 }}>de {showMax}</text>
     </motion.g>
   );
 }
