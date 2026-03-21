@@ -11,7 +11,10 @@ import {
 } from "framer-motion";
 import React, { useRef, useState, useEffect } from "react";
 import { SplashScreen } from "@/components/ui/SplashScreen";
+import { HowItWorksAnimation } from "@/components/ui/HowItWorksAnimation";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { getDefaultReward } from "@/services/reward.service";
+import type { IllustrationId } from "@/components/ui/stamp-illustrations";
 
 /* ===============================
    Animated Text (línea por línea)
@@ -394,10 +397,22 @@ export default function Home() {
   const router = useRouter();
   const [cardId, setCardId] = useState<string | null>(null);
   const [openStatus, setOpenStatus] = useState<{ open: boolean; label: string } | null>(null);
+  const [rewardIllustration, setRewardIllustration] = useState<IllustrationId>("flat-white-cenital");
+  const [rewardStamps, setRewardStamps] = useState(5);
 
   useEffect(() => {
     setCardId(localStorage.getItem("cardId"));
     setOpenStatus(getOpenStatus());
+
+    // Traer ilustración y sellos de la recompensa activa
+    getDefaultReward()
+      .then((reward) => {
+        if (reward) {
+          setRewardIllustration(reward.illustration);
+          setRewardStamps(reward.requiredStamps);
+        }
+      })
+      .catch(() => {/* fallback a flat-white-cenital / 5 sellos */});
   }, []);
 
   const handleClearSession = () => {
@@ -449,204 +464,142 @@ export default function Home() {
       />
     
 
-      {/* Segunda sección — fidelidad, alineada a la izquierda */}
-      <PremiumSection
-        eyebrow="Para los que construyen"
-        title={`Lo que se da\nvuelve`}
-        subtitle="Cada visita es un ladrillo. A la quinta, la casa te devuelve algo."
-        videoSrc="/videos/coffee-slow.mp4"
-        videoPoster="/images/poster-loyalty.jpg"
-        ctaText={loyaltyCta.text}
-        ctaLink={loyaltyCta.link}
-        secondaryCtaText={cardId ? "No es mi tarjeta" : "Ya tengo cuenta"}
-        secondaryCtaLink={cardId ? undefined : "/recover"}
-        onSecondaryCtaClick={cardId ? handleClearSession : undefined}
-        align="left"
-        lazy
-      />
-
-      {/* Cómo funciona — 3 pasos del programa de fidelidad */}
-      <section className="snap-start min-h-[100dvh] flex flex-col items-center justify-center bg-[#0c0b09] px-6 sm:px-10 py-20 relative overflow-hidden">
-        {/* Línea decorativa superior */}
-        <motion.div
-          initial={{ scaleX: 0 }}
-          whileInView={{ scaleX: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-          className="w-12 h-px bg-[#c8956c] mb-12 origin-center"
+      {/* Sección fidelidad — condicional según estado del usuario */}
+      {cardId ? (
+        /* Usuario registrado → video cinematográfico + CTA directo */
+        <PremiumSection
+          eyebrow="Para los que construyen"
+          title={`Lo que se da\nvuelve`}
+          subtitle="Cada visita es un ladrillo. A la quinta, la casa te devuelve algo."
+          videoSrc="/videos/coffee-slow.mp4"
+          videoPoster="/images/poster-loyalty.jpg"
+          ctaText="Ver mi tarjeta"
+          ctaLink={`/card/${cardId}`}
+          secondaryCtaText="No es mi tarjeta"
+          onSecondaryCtaClick={handleClearSession}
+          align="left"
+          lazy
         />
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="text-[10px] uppercase tracking-[0.45em] text-[#6b6458] mb-6"
-        >
-          Tu programa de fidelidad
-        </motion.p>
-
-        <motion.h2
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-          className="font-display text-4xl sm:text-5xl md:text-6xl font-light text-[#e8e0d2] text-center tracking-wide mb-16"
-        >
-          Así de simple
-        </motion.h2>
-
-        {/* 3 pasos */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 sm:gap-6 max-w-3xl w-full">
-          {[
-            {
-              step: "01",
-              title: "Regístrate",
-              desc: "Abre la app, pon tu nombre y listo. Tu tarjeta digital se crea al instante.",
-              icon: (
-                <svg viewBox="0 0 32 32" fill="none" className="w-8 h-8">
-                  <circle cx="16" cy="12" r="5" stroke="#c8956c" strokeWidth="1.5" />
-                  <path d="M8 26c0-4.4 3.6-8 8-8s8 3.6 8 8" stroke="#c8956c" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
-              ),
-            },
-            {
-              step: "02",
-              title: "Acumula sellos",
-              desc: "Cada café que compras suma un sello automáticamente. Sin códigos, sin filas.",
-              icon: (
-                <svg viewBox="0 0 32 32" fill="none" className="w-8 h-8">
-                  <rect x="6" y="8" width="20" height="16" rx="3" stroke="#c8956c" strokeWidth="1.5" />
-                  <circle cx="12" cy="16" r="2" fill="#c8956c" opacity="0.6" />
-                  <circle cx="20" cy="16" r="2" fill="#c8956c" opacity="0.6" />
-                  <circle cx="16" cy="16" r="2" fill="#c8956c" />
-                </svg>
-              ),
-            },
-            {
-              step: "03",
-              title: "Bebida gratis",
-              desc: "A la quinta visita, tu siguiente bebida va por cuenta de la casa. Así de simple.",
-              icon: (
-                <svg viewBox="0 0 32 32" fill="none" className="w-8 h-8">
-                  <path d="M8 12h16l-2 14H10L8 12z" stroke="#c8956c" strokeWidth="1.5" strokeLinejoin="round" />
-                  <path d="M24 15h2a3 3 0 010 6h-1" stroke="#c8956c" strokeWidth="1.5" strokeLinecap="round" />
-                  <path d="M13 8c0-2 1-3 3-3s3 1 3 3" stroke="#c8956c" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
-                </svg>
-              ),
-            },
-          ].map((item, i) => (
-            <motion.div
-              key={item.step}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: i * 0.15, ease: [0.16, 1, 0.3, 1] }}
-              className="flex flex-col items-center text-center gap-4"
-            >
-              {/* Icono */}
-              <div className="w-14 h-14 rounded-full border border-[#2a2722] flex items-center justify-center">
-                {item.icon}
-              </div>
-              {/* Número */}
-              <span className="text-[10px] font-mono tracking-[0.3em] text-[#3a3630]">
-                {item.step}
-              </span>
-              {/* Título */}
-              <h3 className="font-display text-xl sm:text-2xl font-light text-[#e8e0d2] tracking-wide">
-                {item.title}
-              </h3>
-              {/* Descripción */}
-              <p className="text-[13px] text-[#6b6458] leading-relaxed max-w-[240px]">
-                {item.desc}
-              </p>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* CTA */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          className="mt-14"
-        >
-          <Link
-            href={loyaltyCta.link}
-            className="inline-flex items-center gap-3 px-8 py-3.5 rounded-full border border-[#c8956c]/30 text-[11px] uppercase tracking-[0.3em] text-[#c8956c] hover:bg-[#c8956c]/10 hover:border-[#c8956c]/50 transition-all duration-500"
-          >
-            {loyaltyCta.text}
-            <span aria-hidden="true" className="w-4 h-px bg-[#c8956c]" />
-          </Link>
-        </motion.div>
-      </section>
-
-      {/* Social proof — números que generan confianza */}
-      <section className="snap-start min-h-[100dvh] flex flex-col items-center justify-center bg-[#0c0b09] px-6 sm:px-10 py-20 relative">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 1 }}
-          className="max-w-2xl w-full text-center"
-        >
-          <p className="text-[10px] uppercase tracking-[0.45em] text-[#6b6458] mb-6">
-            Nuestra comunidad
-          </p>
-          <h2 className="font-display text-4xl sm:text-5xl font-light text-[#e8e0d2] tracking-wide mb-4">
-            Más que un café
-          </h2>
-          <p className="text-[14px] text-[#6b6458] leading-relaxed max-w-md mx-auto mb-16">
-            Cada taza que servimos fortalece un vínculo. Cada visita construye algo más grande que una transacción.
-          </p>
-
-          {/* Números */}
-          <div className="grid grid-cols-3 gap-6 sm:gap-10">
-            {[
-              { value: "5", label: "Cafés para tu\nbebida gratis" },
-              { value: "100%", label: "Digital, sin\nplásticos" },
-              { value: "∞", label: "Veces que puedes\nrepetir" },
-            ].map((stat, i) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.7, delay: 0.2 + i * 0.12 }}
-                className="flex flex-col items-center"
-              >
-                <span className="font-display text-4xl sm:text-5xl font-light text-[#c8956c] tracking-wide">
-                  {stat.value}
-                </span>
-                <span className="mt-3 text-[10px] sm:text-[11px] uppercase tracking-[0.2em] text-[#6b6458] whitespace-pre-line leading-relaxed">
-                  {stat.label}
-                </span>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Divider */}
+      ) : (
+        /* Usuario nuevo → explicación completa con animación + 3 pasos */
+        <section className="snap-start min-h-[100dvh] flex flex-col items-center justify-center bg-[#0c0b09] px-6 sm:px-10 py-16 sm:py-20 relative overflow-hidden">
+          {/* Línea decorativa */}
           <motion.div
             initial={{ scaleX: 0 }}
             whileInView={{ scaleX: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 1, delay: 0.5 }}
-            className="w-16 h-px bg-[#2a2722] mx-auto mt-16 mb-10"
+            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+            className="w-12 h-px bg-[#c8956c] mb-8 sm:mb-10 origin-center"
           />
 
-          {/* Testimonio / frase */}
+          {/* Eyebrow */}
           <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 1.2, delay: 0.6 }}
-            className="text-[13px] italic font-light text-[#4a443c] leading-relaxed tracking-wide max-w-sm mx-auto"
+            transition={{ duration: 0.8 }}
+            className="text-[10px] uppercase tracking-[0.45em] text-[#6b6458] mb-4 sm:mb-5"
           >
-            &ldquo;El mejor programa de fidelidad es el que no te hace pensar. Solo vienes, disfrutas, y un día te dicen: esta va por la casa.&rdquo;
+            Para los que construyen
           </motion.p>
-        </motion.div>
-      </section>
+
+          {/* Título emotivo */}
+          <motion.h2
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+            className="font-display text-4xl sm:text-5xl md:text-6xl font-light text-[#e8e0d2] text-center tracking-wide mb-3 sm:mb-4"
+          >
+            Lo que se da, vuelve
+          </motion.h2>
+
+          {/* Subtítulo */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1, delay: 0.3 }}
+            className="text-sm sm:text-base text-[#6b6458] text-center max-w-md leading-relaxed mb-8 sm:mb-10"
+          >
+            Cada visita es un ladrillo. A la quinta, la casa te devuelve algo.
+          </motion.p>
+
+          {/* Animación de la taza */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+            className="mb-8 sm:mb-10"
+          >
+            <HowItWorksAnimation maxStamps={rewardStamps} illustrationId={rewardIllustration} />
+          </motion.div>
+
+          {/* 3 pasos */}
+          <div className="grid grid-cols-3 gap-4 sm:gap-8 max-w-2xl w-full mb-8 sm:mb-10">
+            {[
+              {
+                step: "01",
+                title: "Regístrate",
+                desc: "Abre la app y pon tu nombre. Tu tarjeta se crea al instante.",
+              },
+              {
+                step: "02",
+                title: "Acumula",
+                desc: "Cada café suma un sello automáticamente. Sin códigos, sin filas.",
+              },
+              {
+                step: "03",
+                title: "Disfruta",
+                desc: "Al completar la tarjeta, tu siguiente bebida va por la casa.",
+              },
+            ].map((item, i) => (
+              <motion.div
+                key={item.step}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, delay: 0.3 + i * 0.12, ease: [0.16, 1, 0.3, 1] }}
+                className="flex flex-col items-center text-center gap-2"
+              >
+                <span className="w-6 h-6 rounded-full border border-[#c8956c]/30 flex items-center justify-center text-[9px] font-mono tracking-wider text-[#c8956c]/70">
+                  {item.step}
+                </span>
+                <h3 className="font-display text-base sm:text-lg font-light text-[#e8e0d2] tracking-wide">
+                  {item.title}
+                </h3>
+                <p className="text-[10px] sm:text-[11px] text-[#6b6458] leading-relaxed max-w-[180px]">
+                  {item.desc}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* CTAs */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+            className="flex flex-col items-center gap-3"
+          >
+            <Link
+              href="/onboarding"
+              className="inline-flex items-center gap-3 px-8 py-3.5 rounded-full border border-[#c8956c]/30 text-[11px] uppercase tracking-[0.3em] text-[#c8956c] hover:bg-[#c8956c]/10 hover:border-[#c8956c]/50 transition-all duration-500"
+            >
+              Registrar mi tarjeta
+              <span aria-hidden="true" className="w-4 h-px bg-[#c8956c]" />
+            </Link>
+            <Link
+              href="/recover"
+              className="text-[10px] uppercase tracking-[0.3em] text-[#3a3630] hover:text-[#6b6458] transition-colors duration-300"
+            >
+              Ya tengo cuenta
+            </Link>
+          </motion.div>
+        </section>
+      )}
 
       {/* Footer — limpio, editorial */}
       <footer className="snap-start min-h-[100dvh] flex flex-col items-center justify-center bg-[#0c0b09] px-8 relative">
