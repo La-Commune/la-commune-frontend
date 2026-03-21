@@ -13,6 +13,7 @@ import { Reward } from "@/models/reward.model";
 import { formatDate } from "@/lib/utils";
 import { getCardByCustomer } from "@/services/card.service";
 import { getDefaultReward } from "@/services/reward.service";
+import { logger } from "@/lib/logger";
 import { PromoBannerInline, useActivePromos } from "@/components/ui/promos/PromoBanner";
 import {
   getCustomerSession,
@@ -147,17 +148,44 @@ export default function CardEntry() {
   }, [cardDoc?.status, cardId, cardIdParam, router]);
 
   // Si la tarjeta fue canjeada, buscar la nueva tarjeta activa y redirigir
+  const canjeRedirectRef = useRef(false);
   useEffect(() => {
     if (!cardDoc || cardDoc.status !== "canjeada") return;
     if (!resolvedCustomerId) return;
+    if (canjeRedirectRef.current) return;
+    canjeRedirectRef.current = true;
 
-    getCardByCustomer(resolvedCustomerId).then((newCard) => {
-      if (newCard) {
-        localStorage.setItem("cardId", newCard.id);
-        setCustomerSession(resolvedCustomerId, newCard.id);
-        router.replace(`/card/${newCard.id}`);
+    let attempts = 0;
+    const maxAttempts = 3;
+    const retryDelay = 800;
+
+    const tryRedirect = async () => {
+      attempts++;
+      try {
+        const newCard = await getCardByCustomer(resolvedCustomerId);
+        if (newCard) {
+          localStorage.setItem("cardId", newCard.id);
+          setCustomerSession(resolvedCustomerId, newCard.id);
+          router.replace(`/card/${newCard.id}`);
+          return;
+        }
+        if (attempts < maxAttempts) {
+          setTimeout(tryRedirect, retryDelay);
+        } else {
+          logger.error("card-page", "No active card found after redeem", { resolvedCustomerId });
+          router.replace("/");
+        }
+      } catch (err) {
+        logger.error("card-page", "Error finding new card after redeem", err);
+        if (attempts < maxAttempts) {
+          setTimeout(tryRedirect, retryDelay);
+        } else {
+          router.replace("/");
+        }
       }
-    });
+    };
+
+    tryRedirect();
   }, [cardDoc?.status, resolvedCustomerId, router]);
 
   // Session resolution: localStorage first, then cookie fallback
