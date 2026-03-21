@@ -9,7 +9,7 @@ import { DownloadCardButton } from "@/components/ui/DownloadCardButton";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Customer } from "@/models/customer.model";
 import type { Card } from "@/models/card.model";
-import { Reward } from "@/models/reward.model";
+import { Reward, RecompensaRow, mapRecompensaToReward } from "@/models/reward.model";
 import { getCardByCustomer } from "@/services/card.service";
 import { getDefaultReward } from "@/services/reward.service";
 import { logger } from "@/lib/logger";
@@ -122,6 +122,7 @@ export default function CardEntry() {
         if (!row) return;
         setCardDoc({
           id: row.id as string,
+          rewardId: row.recompensa_id as string,
           stamps: row.sellos as number,
           maxStamps: row.sellos_maximos as number,
           status: row.estado as Card["status"],
@@ -143,6 +144,7 @@ export default function CardEntry() {
           const row = payload.new as Record<string, unknown>;
           setCardDoc({
             id: row.id as string,
+            rewardId: row.recompensa_id as string,
             stamps: row.sellos as number,
             maxStamps: row.sellos_maximos as number,
             status: row.estado as Card["status"],
@@ -214,13 +216,14 @@ export default function CardEntry() {
       const supabase = getSupabase();
       supabase
         .from("tarjetas")
-        .select("id, sellos, sellos_maximos, estado, creado_en")
+        .select("id, recompensa_id, sellos, sellos_maximos, estado, creado_en")
         .eq("id", cardIdParam)
         .single()
         .then(({ data: row }) => {
           if (!row) return;
           setCardDoc({
             id: row.id as string,
+            rewardId: row.recompensa_id as string,
             stamps: row.sellos as number,
             maxStamps: row.sellos_maximos as number,
             status: row.estado as Card["status"],
@@ -332,7 +335,7 @@ if (loading || !cardId) {
 
   const isCompleted = cardDoc?.status === "completada";
 
-  return <Card cardId={cardId} customerId={resolvedCustomerId!} customer={customer as Customer} isCompleted={isCompleted} />;
+  return <Card cardId={cardId} customerId={resolvedCustomerId!} customer={customer as Customer} isCompleted={isCompleted} rewardId={cardDoc?.rewardId} />;
 }
 
 
@@ -341,25 +344,40 @@ function Card({
   customerId,
   customer,
   isCompleted,
+  rewardId,
 }: {
   cardId: string;
   customerId: string;
   customer?: Customer;
   isCompleted?: boolean;
+  rewardId?: string;
 }) {
   const router = useRouter();
   const name = customer?.name?.trim();
 
-  // Reward info
+  // Reward info — usa el rewardId de la tarjeta, fallback a default
   const [rewardDoc, setRewardDoc] = useState<Reward | null>(null);
 
   useEffect(() => {
-    getDefaultReward().then((reward) => {
-      if (reward) {
-        setRewardDoc(reward);
-      }
-    });
-  }, []);
+    if (rewardId) {
+      const supabase = getSupabase();
+      supabase
+        .from("recompensas")
+        .select("*")
+        .eq("id", rewardId)
+        .single()
+        .then(({ data }) => {
+          if (data) {
+            setRewardDoc(mapRecompensaToReward(data as RecompensaRow));
+          }
+        });
+    } else {
+      // Fallback si la tarjeta no tiene rewardId (no debería pasar)
+      getDefaultReward().then((reward) => {
+        if (reward) setRewardDoc(reward);
+      });
+    }
+  }, [rewardId]);
 
   const rewardName: string = rewardDoc?.name ?? "Bebida gratis";
 
