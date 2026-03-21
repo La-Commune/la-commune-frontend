@@ -13,6 +13,8 @@ import React, { useRef, useState, useEffect } from "react";
 import { SplashScreen } from "@/components/ui/SplashScreen";
 import { HowItWorksAnimation } from "@/components/ui/HowItWorksAnimation";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { getDefaultReward } from "@/services/reward.service";
+import type { IllustrationId } from "@/components/ui/stamp-illustrations";
 
 /* ===============================
    Animated Text (línea por línea)
@@ -395,10 +397,22 @@ export default function Home() {
   const router = useRouter();
   const [cardId, setCardId] = useState<string | null>(null);
   const [openStatus, setOpenStatus] = useState<{ open: boolean; label: string } | null>(null);
+  const [rewardIllustration, setRewardIllustration] = useState<IllustrationId>("flat-white-cenital");
+  const [rewardStamps, setRewardStamps] = useState(5);
 
   useEffect(() => {
     setCardId(localStorage.getItem("cardId"));
     setOpenStatus(getOpenStatus());
+
+    // Traer ilustración y sellos de la recompensa activa
+    getDefaultReward()
+      .then((reward) => {
+        if (reward) {
+          setRewardIllustration(reward.illustration);
+          setRewardStamps(reward.requiredStamps);
+        }
+      })
+      .catch(() => {/* fallback a flat-white-cenital / 5 sellos */});
   }, []);
 
   const handleClearSession = () => {
@@ -519,7 +533,7 @@ export default function Home() {
             transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
             className="mb-8 sm:mb-10"
           >
-            <HowItWorksAnimation maxStamps={5} />
+            <HowItWorksAnimation maxStamps={rewardStamps} illustrationId={rewardIllustration} />
           </motion.div>
 
           {/* 3 pasos */}

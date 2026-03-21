@@ -2,25 +2,20 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { StampIllustration } from "./stamp-illustrations";
+import { StampIllustration, type IllustrationId } from "./stamp-illustrations";
 
 /**
  * Animación para la sección "Cómo funciona" de la landing.
- * Muestra la taza llenándose sello a sello en loop, con el Endowed Progress Effect.
- *
- * Flujo visual:
- * 1. Taza con 1 sello (bonus) → pausa
- * 2. +1 sello cada ~1.2s con efecto de pulso
- * 3. Al completar → checkmark + badge "Bebida gratis" + pausa larga
- * 4. Vaciado suave (no desaparece) → vuelve a empezar
- *
- * Mejoras UX:
- * - Contenedor de altura fija → nunca desacomoda el layout
- * - Sin AnimatePresence mode="wait" → sin colapso de espacio
- * - Crossfade en reset → la taza se "vacía" suavemente
- * - Texto de paso sincronizado con cada sello
+ * Muestra la ilustración configurada por el admin llenándose sello a sello en loop,
+ * con el Endowed Progress Effect.
  */
-export function HowItWorksAnimation({ maxStamps = 5 }: { maxStamps?: number }) {
+export function HowItWorksAnimation({
+  maxStamps = 5,
+  illustrationId = "flat-white-cenital",
+}: {
+  maxStamps?: number;
+  illustrationId?: IllustrationId;
+}) {
   const BONUS = 1;
   const visualMax = maxStamps + BONUS;
 
@@ -105,7 +100,7 @@ export function HowItWorksAnimation({ maxStamps = 5 }: { maxStamps?: number }) {
         >
           <div style={{ transform: "scale(0.8)", transformOrigin: "center center" }}>
             <StampIllustration
-              id="flat-white-cenital"
+              id={illustrationId}
               stamps={phase === "resetting" ? BONUS : visualStamps}
               maxStamps={visualMax}
               displayedStamps={phase === "resetting" ? BONUS : visualStamps}
