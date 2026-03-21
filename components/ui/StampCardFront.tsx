@@ -44,10 +44,13 @@ export function StampCardFront({
   cardId,
   onComplete,
   onStampAdded,
+  frontReady = true,
 }: {
   cardId: string;
   onComplete: () => void;
   onStampAdded: () => void;
+  /** Señal del padre: la tarjeta ya está de frente y visible */
+  frontReady?: boolean;
 }) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
@@ -165,14 +168,41 @@ export function StampCardFront({
 
   const stamps = card?.stamps ?? 0;
   const maxStamps = card?.maxStamps ?? 5;
-  const animatedStamps = useCountUp(stamps);
   const isComplete = card ? stamps >= maxStamps : false;
   const remaining = card ? maxStamps - stamps : 0;
   const milestone = card ? getMilestoneType(stamps, maxStamps) : null;
 
+  // displayedStamps: los stamps que se muestran visualmente.
+  // Cuando llega un sello nuevo via realtime, NO actualizamos el visual inmediatamente.
+  // Esperamos a que frontReady sea true (la tarjeta ya se volteó al frente).
+  const [displayedStamps, setDisplayedStamps] = useState(stamps);
+  const pendingStampsRef = useRef(stamps);
+
+  // Guardar stamps reales en pending
+  useEffect(() => {
+    pendingStampsRef.current = stamps;
+  }, [stamps]);
+
+  // Cuando frontReady cambia a true y hay stamps pendientes, aplicarlos
+  useEffect(() => {
+    if (frontReady && pendingStampsRef.current !== displayedStamps) {
+      setDisplayedStamps(pendingStampsRef.current);
+    }
+  }, [frontReady, displayedStamps]);
+
+  // Si los stamps cambian y ya estamos de frente, aplicar inmediatamente
+  // (caso: la tarjeta ya estaba al frente cuando llegó el sello)
+  useEffect(() => {
+    if (frontReady) {
+      setDisplayedStamps(stamps);
+    }
+  }, [stamps, frontReady]);
+
+  const animatedStamps = useCountUp(displayedStamps);
+
   // Fill radius: maps 0..maxStamps to 0..58 (cup inner radius)
   const CUP_RADIUS = 58;
-  const fillRadius = card ? (stamps / maxStamps) * CUP_RADIUS : 0;
+  const fillRadius = card ? (displayedStamps / maxStamps) * CUP_RADIUS : 0;
 
   // Mensajes personalizados con nombre de bebida
   const drinkLabel = lastDrink ? `¡Tu ${lastDrink} sumó!` : null;
