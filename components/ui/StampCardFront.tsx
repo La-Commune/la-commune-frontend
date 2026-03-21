@@ -59,7 +59,7 @@ export function StampCardFront({
   useEffect(() => {
     const sb = getSupabase();
     const channel = sb
-      .channel(`card-${cardId}`)
+      .channel(`card-front-${cardId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "tarjetas", filter: `id=eq.${cardId}` },
