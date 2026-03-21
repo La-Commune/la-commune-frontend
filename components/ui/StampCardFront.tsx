@@ -174,16 +174,24 @@ export function StampCardFront({
   const remaining = card ? maxStamps - stamps : 0;
   const milestone = card ? getMilestoneType(stamps, maxStamps) : null;
 
-  // displayedStamps: los stamps que se muestran visualmente.
+  // ── Endowed Progress Effect ──
+  // Visualmente mostramos 1 sello extra "de regalo" ya relleno.
+  // BD sigue manejando los stamps reales (ej. 5 sellos).
+  // El cliente ve maxStamps+1 posiciones, con la primera pre-llenada.
+  const BONUS = 1;
+  const visualStamps = stamps + BONUS;
+  const visualMax = maxStamps + BONUS;
+
+  // displayedStamps: los stamps visuales que se muestran (incluyendo bonus).
   // Cuando llega un sello nuevo via realtime, NO actualizamos el visual inmediatamente.
   // Esperamos a que frontReady sea true (la tarjeta ya se volteó al frente).
-  const [displayedStamps, setDisplayedStamps] = useState(stamps);
-  const pendingStampsRef = useRef(stamps);
+  const [displayedStamps, setDisplayedStamps] = useState(visualStamps);
+  const pendingStampsRef = useRef(visualStamps);
 
-  // Guardar stamps reales en pending
+  // Guardar visual stamps en pending
   useEffect(() => {
-    pendingStampsRef.current = stamps;
-  }, [stamps]);
+    pendingStampsRef.current = visualStamps;
+  }, [visualStamps]);
 
   // Cuando frontReady cambia a true y hay stamps pendientes, aplicarlos
   useEffect(() => {
@@ -195,15 +203,15 @@ export function StampCardFront({
   // Si los stamps cambian y ya estamos de frente, aplicar inmediatamente
   useEffect(() => {
     if (frontReady) {
-      setDisplayedStamps(stamps);
+      setDisplayedStamps(visualStamps);
     }
-  }, [stamps, frontReady]);
+  }, [visualStamps, frontReady]);
 
   const animatedStamps = useCountUp(displayedStamps);
 
-  // Fill radius: maps 0..maxStamps to 0..58 (cup inner radius)
+  // Fill radius: maps 0..visualMax to 0..58 (cup inner radius)
   const CUP_RADIUS = 58;
-  const fillRadius = card ? (displayedStamps / maxStamps) * CUP_RADIUS : 0;
+  const fillRadius = card ? (displayedStamps / visualMax) * CUP_RADIUS : 0;
 
   // Mensajes personalizados con nombre de bebida
   const drinkLabel = lastDrink ? `¡Tu ${lastDrink} sumó!` : null;
@@ -314,14 +322,16 @@ export function StampCardFront({
       <div className="flex-1 flex items-center justify-center relative">
         <StampIllustration
           id={illustrationId}
-          stamps={stamps}
-          maxStamps={maxStamps}
+          stamps={visualStamps}
+          maxStamps={visualMax}
           displayedStamps={displayedStamps}
           animatedStamps={animatedStamps}
           isComplete={isComplete}
           isNewStamp={isNewStamp}
           isDark={isDark}
           fillRadius={fillRadius}
+          realStamps={stamps}
+          realMaxStamps={maxStamps}
         />
       </div>
 

@@ -1053,8 +1053,11 @@ function RewardConfig() {
     [],
   );
 
-  /** Props base para las miniaturas de StampIllustration */
-  const previewStamps = Math.floor(stamps / 2);
+  /** Endowed Progress: +1 sello bonus visual */
+  const BONUS = 1;
+  const visualMax = stamps + BONUS;
+  /** Preview muestra la mitad de sellos reales + bonus */
+  const previewStamps = Math.floor(stamps / 2) + BONUS;
 
   useEffect(() => {
     getDefaultReward().then((r) => {
@@ -1194,13 +1197,15 @@ function RewardConfig() {
                           <StampIllustration
                             id={ilu.id}
                             stamps={previewStamps}
-                            maxStamps={stamps}
+                            maxStamps={visualMax}
                             displayedStamps={previewStamps}
                             animatedStamps={0}
                             isComplete={false}
                             isNewStamp={false}
                             isDark={isDark}
                             fillRadius={0}
+                            realStamps={Math.floor(stamps / 2)}
+                            realMaxStamps={stamps}
                           />
                         </div>
                       </div>
@@ -1224,18 +1229,20 @@ function RewardConfig() {
             <StampIllustration
               id={illustration}
               stamps={previewStamps}
-              maxStamps={stamps}
+              maxStamps={visualMax}
               displayedStamps={previewStamps}
               animatedStamps={0}
               isComplete={false}
               isNewStamp={false}
               isDark={isDark}
               fillRadius={0}
+              realStamps={Math.floor(stamps / 2)}
+              realMaxStamps={stamps}
             />
           </div>
         </div>
         <p className="text-[11px] text-stone-500 dark:text-stone-500 mt-2 text-center">
-          {previewStamps} de {stamps} sellos — {ILLUSTRATION_CATALOG.find((i) => i.id === illustration)?.name}
+          {Math.floor(stamps / 2)} de {stamps} sellos (+1 de regalo) — {ILLUSTRATION_CATALOG.find((i) => i.id === illustration)?.name}
         </p>
       </div>
 
