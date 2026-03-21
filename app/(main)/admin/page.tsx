@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/models/card.model";
@@ -1036,6 +1036,25 @@ function RewardConfig() {
   const [rewardName, setRewardName] = useState("");
   const [rewardDesc, setRewardDesc] = useState("");
   const [illustration, setIllustration] = useState<IllustrationId>("flat-white-cenital");
+  const [isDark, setIsDark] = useState(false);
+
+  // Detectar tema una vez al montar y cuando cambie
+  useEffect(() => {
+    const check = () => setIsDark(document.documentElement.classList.contains("dark"));
+    check();
+    const observer = new MutationObserver(check);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
+  /** Categorías únicas del catálogo (constante, no cambia) */
+  const categories = useMemo(
+    () => Array.from(new Set(ILLUSTRATION_CATALOG.map((i) => i.category))),
+    [],
+  );
+
+  /** Props base para las miniaturas de StampIllustration */
+  const previewStamps = Math.floor(stamps / 2);
 
   useEffect(() => {
     getDefaultReward().then((r) => {
@@ -1065,7 +1084,7 @@ function RewardConfig() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch {
-      // silently fail
+      toast({ title: "Error al guardar", description: "No se pudieron guardar los cambios. Intenta de nuevo.", variant: "destructive" });
     }
     setSaving(false);
   };
@@ -1145,13 +1164,12 @@ function RewardConfig() {
           Ilustración de la tarjeta
         </p>
         <div className="space-y-4">
-          {Array.from(new Set(ILLUSTRATION_CATALOG.map((i) => i.category))).map((cat) => (
+          {categories.map((cat) => (
             <div key={cat}>
               <p className="text-[9px] uppercase tracking-[0.2em] text-stone-400/70 dark:text-stone-600/70 mb-2">{cat}</p>
               <div className="grid grid-cols-3 gap-2">
                 {ILLUSTRATION_CATALOG.filter((i) => i.category === cat).map((ilu) => {
                   const isSelected = illustration === ilu.id;
-                  const isDark = typeof window !== "undefined" && document.documentElement.classList.contains("dark");
                   return (
                     <button
                       key={ilu.id}
@@ -1175,9 +1193,9 @@ function RewardConfig() {
                         <div style={{ transform: "scale(0.35)", transformOrigin: "center center" }}>
                           <StampIllustration
                             id={ilu.id}
-                            stamps={Math.floor(stamps / 2)}
+                            stamps={previewStamps}
                             maxStamps={stamps}
-                            displayedStamps={Math.floor(stamps / 2)}
+                            displayedStamps={previewStamps}
                             animatedStamps={0}
                             isComplete={false}
                             isNewStamp={false}
@@ -1205,19 +1223,19 @@ function RewardConfig() {
           <div style={{ transform: "scale(0.6)", transformOrigin: "top center" }}>
             <StampIllustration
               id={illustration}
-              stamps={Math.floor(stamps / 2)}
+              stamps={previewStamps}
               maxStamps={stamps}
-              displayedStamps={Math.floor(stamps / 2)}
+              displayedStamps={previewStamps}
               animatedStamps={0}
               isComplete={false}
               isNewStamp={false}
-              isDark={typeof window !== "undefined" && document.documentElement.classList.contains("dark")}
+              isDark={isDark}
               fillRadius={0}
             />
           </div>
         </div>
         <p className="text-[11px] text-stone-500 dark:text-stone-500 mt-2 text-center">
-          {Math.floor(stamps / 2)} de {stamps} sellos — {ILLUSTRATION_CATALOG.find((i) => i.id === illustration)?.name}
+          {previewStamps} de {stamps} sellos — {ILLUSTRATION_CATALOG.find((i) => i.id === illustration)?.name}
         </p>
       </div>
 
