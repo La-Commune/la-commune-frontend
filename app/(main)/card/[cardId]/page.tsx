@@ -9,8 +9,7 @@ import { DownloadCardButton } from "@/components/ui/DownloadCardButton";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Customer } from "@/models/customer.model";
 import type { Card } from "@/models/card.model";
-import { Reward } from "@/models/reward.model";
-import { formatDate } from "@/lib/utils";
+import { Reward, RecompensaRow, mapRecompensaToReward } from "@/models/reward.model";
 import { getCardByCustomer } from "@/services/card.service";
 import { getDefaultReward } from "@/services/reward.service";
 import { logger } from "@/lib/logger";
@@ -123,6 +122,7 @@ export default function CardEntry() {
         if (!row) return;
         setCardDoc({
           id: row.id as string,
+          rewardId: row.recompensa_id as string,
           stamps: row.sellos as number,
           maxStamps: row.sellos_maximos as number,
           status: row.estado as Card["status"],
@@ -144,6 +144,7 @@ export default function CardEntry() {
           const row = payload.new as Record<string, unknown>;
           setCardDoc({
             id: row.id as string,
+            rewardId: row.recompensa_id as string,
             stamps: row.sellos as number,
             maxStamps: row.sellos_maximos as number,
             status: row.estado as Card["status"],
@@ -157,13 +158,6 @@ export default function CardEntry() {
       supabase.removeChannel(channel);
     };
   }, [cardIdParam]);
-
-  // Auto-redirect a la página de canje cuando la tarjeta se completa
-  useEffect(() => {
-    if (!cardId) return;
-    if (cardDoc?.status !== "completada") return;
-    router.replace(`/card/${cardIdParam}/redeem`);
-  }, [cardDoc?.status, cardId, cardIdParam, router]);
 
   // Si la tarjeta fue canjeada, buscar la nueva tarjeta activa y redirigir
   const canjeRedirectRef = useRef(false);
@@ -222,13 +216,14 @@ export default function CardEntry() {
       const supabase = getSupabase();
       supabase
         .from("tarjetas")
-        .select("id, sellos, sellos_maximos, estado, creado_en")
+        .select("id, recompensa_id, sellos, sellos_maximos, estado, creado_en")
         .eq("id", cardIdParam)
         .single()
         .then(({ data: row }) => {
           if (!row) return;
           setCardDoc({
             id: row.id as string,
+            rewardId: row.recompensa_id as string,
             stamps: row.sellos as number,
             maxStamps: row.sellos_maximos as number,
             status: row.estado as Card["status"],
@@ -328,22 +323,19 @@ if (loading || !cardId) {
         className="min-h-screen bg-stone-50 dark:bg-neutral-950 flex flex-col items-center justify-center gap-10 px-4"
       >
         {/* Skeleton saludo */}
-        <div className="text-center space-y-3">
-          <div className="h-2.5 w-28 bg-stone-200 dark:bg-stone-900 rounded-full animate-pulse mx-auto" />
-          <div className="h-9 w-48 bg-stone-200 dark:bg-stone-900 rounded-xl animate-pulse mx-auto" />
-          <div className="h-2.5 w-36 bg-stone-200 dark:bg-stone-900 rounded-full animate-pulse mx-auto" />
+        <div className="text-center space-y-2">
+          <div className="h-2 w-24 bg-stone-200 dark:bg-stone-900 rounded-full animate-pulse mx-auto" />
+          <div className="h-8 w-40 bg-stone-200 dark:bg-stone-900 rounded-xl animate-pulse mx-auto" />
         </div>
         {/* Skeleton tarjeta */}
-        <div className="w-[320px] h-[210px] bg-stone-200 dark:bg-stone-900 rounded-[24px] animate-pulse" />
-        {/* Skeleton boton */}
-        <div className="h-10 w-44 bg-stone-200 dark:bg-stone-900 rounded-full animate-pulse" />
+        <div className="w-[300px] h-[380px] bg-stone-200 dark:bg-stone-900 rounded-[24px] animate-pulse" />
       </motion.div>
     );
   }
 
   const isCompleted = cardDoc?.status === "completada";
 
-  return <Card cardId={cardId} customerId={resolvedCustomerId!} customer={customer as Customer} isCompleted={isCompleted} />;
+  return <Card cardId={cardId} customerId={resolvedCustomerId!} customer={customer as Customer} isCompleted={isCompleted} rewardId={cardDoc?.rewardId} />;
 }
 
 
@@ -352,34 +344,45 @@ function Card({
   customerId,
   customer,
   isCompleted,
+  rewardId,
 }: {
   cardId: string;
   customerId: string;
   customer?: Customer;
   isCompleted?: boolean;
+  rewardId?: string;
 }) {
   const router = useRouter();
   const name = customer?.name?.trim();
-  const lastVisit = formatDate(customer?.lastVisitAt);
-  const memberSince = formatDate(customer?.createdAt);
-  const totalVisits = customer?.totalVisits ?? 0;
 
-  // Reward info
+  // Reward info — usa el rewardId de la tarjeta, fallback a default
   const [rewardDoc, setRewardDoc] = useState<Reward | null>(null);
 
   useEffect(() => {
-    getDefaultReward().then((reward) => {
-      if (reward) {
-        setRewardDoc(reward);
-      }
-    });
-  }, []);
+    if (rewardId) {
+      const supabase = getSupabase();
+      supabase
+        .from("recompensas")
+        .select("*")
+        .eq("id", rewardId)
+        .single()
+        .then(({ data }) => {
+          if (data) {
+            setRewardDoc(mapRecompensaToReward(data as RecompensaRow));
+          }
+        });
+    } else {
+      // Fallback si la tarjeta no tiene rewardId (no debería pasar)
+      getDefaultReward().then((reward) => {
+        if (reward) setRewardDoc(reward);
+      });
+    }
+  }, [rewardId]);
 
   const rewardName: string = rewardDoc?.name ?? "Bebida gratis";
-  const requiredStamps: number = rewardDoc?.requiredStamps ?? 5;
 
   // Promos
-  const { promos, loaded: promosLoaded } = useActivePromos();
+  const { promos } = useActivePromos();
   const hasPromos = promos.length > 0;
 
   const [isOnline, setIsOnline] = useState(
@@ -567,94 +570,50 @@ function Card({
       </AnimatePresence>
 
       {/* Contenido */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-10 px-4 pb-16">
+      <div className="flex-1 flex flex-col items-center justify-center gap-5 px-4 pb-10">
 
-        {/* Saludo */}
+        {/* Saludo — compacto */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-center space-y-2"
+          transition={{ duration: 0.6 }}
+          className="text-center"
         >
-          <p className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">
-            Bienvenido de vuelta
-          </p>
-          <h1 className="font-display text-4xl sm:text-5xl font-light tracking-wide">
+          <h1 className="font-display text-3xl sm:text-4xl font-light tracking-wide">
             {name ? `Hola, ${name}` : "Hola"}
           </h1>
-          {lastVisit && (
-            <p className="text-[11px] text-stone-400 dark:text-stone-600 tracking-wide">
-              Ultima visita: {lastVisit}
-            </p>
-          )}
-          {memberSince && (
-            <p className="text-[11px] text-stone-400 dark:text-stone-600 tracking-wide">
-              Miembro desde {memberSince}
-            </p>
-          )}
-          {totalVisits > 0 && (
-            <p className="text-[11px] text-stone-400 dark:text-stone-600 tracking-wide">
-              {totalVisits} visitas totales
-            </p>
-          )}
         </motion.div>
 
-        {/* Promos activas — si no hay promos, muestra el reward goal aquí */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.15 }}
-          className="w-full max-w-xs"
-        >
-          {hasPromos ? (
-            <div className="space-y-4">
-              <PromoBannerInline />
-              {!isCompleted && rewardDoc && (
-                <p className="text-[11px] text-stone-400 dark:text-stone-500 tracking-wide text-center">
-                  Completa {requiredStamps + 1} sellos y gana: <span className="text-stone-600 dark:text-stone-300">{rewardName}</span>
-                </p>
-              )}
-            </div>
-          ) : promosLoaded && !isCompleted && rewardDoc ? (
-            <div className="text-center space-y-1.5">
-              <div className="flex items-center justify-center gap-3">
-                <span aria-hidden="true" className="w-5 h-px bg-stone-300/40 dark:bg-stone-700/40" />
-                <p className="text-[10px] uppercase tracking-[0.35em] text-stone-400/80 dark:text-stone-500/70">
-                  Recompensa
-                </p>
-                <span aria-hidden="true" className="w-5 h-px bg-stone-300/40 dark:bg-stone-700/40" />
-              </div>
-              <p className="font-display text-lg sm:text-xl font-light tracking-wide text-stone-700 dark:text-stone-200">
-                {rewardName}
-              </p>
-              <p className="text-[11px] text-stone-400 dark:text-stone-600 leading-snug">
-                Completa {requiredStamps + 1} sellos para obtenerla
-              </p>
-            </div>
-          ) : null}
-        </motion.div>
+        {/* Promo inline — solo si hay promos activas */}
+        {hasPromos && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="w-full max-w-xs"
+          >
+            <PromoBannerInline />
+          </motion.div>
+        )}
 
         {/* Tarjeta */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
+          transition={{ duration: 0.7, delay: 0.15 }}
         >
           <StampCardView cardId={cardId} />
         </motion.div>
-
-        {/* Push notification prompt — se muestra una vez, desaparece al aceptar/cerrar */}
-        <PushPrompt clienteId={customerId} />
 
         {/* CTA de canje cuando tarjeta completa */}
         <AnimatePresence>
           {isCompleted && (
             <motion.div
               key="redeem-cta"
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 12 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
             >
               <Link
                 href={`/card/${cardId}/redeem`}
@@ -666,44 +625,46 @@ function Card({
           )}
         </AnimatePresence>
 
-        {/* Actions: Historial + Descargar + Invitar (movil) */}
+        {/* Actions: Historial + Descargar + Invitar */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="flex items-center justify-center gap-6"
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="flex items-center justify-center gap-5"
         >
           <Link
             href={`/card/${cardId}/history`}
-            className="flex flex-col items-center gap-1.5 group"
+            className="flex flex-col items-center gap-1 group"
           >
-            <span className="w-10 h-10 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center group-hover:border-stone-500 dark:group-hover:border-stone-500 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-stone-400 dark:text-stone-500 group-hover:text-stone-700 dark:group-hover:text-stone-300 transition-colors">
+            <span className="w-9 h-9 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center group-hover:border-stone-500 dark:group-hover:border-stone-500 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-stone-400 dark:text-stone-500 group-hover:text-stone-700 dark:group-hover:text-stone-300 transition-colors">
                 <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
               </svg>
             </span>
-            <span className="text-[9px] uppercase tracking-[0.25em] text-stone-400 dark:text-stone-600 group-hover:text-stone-600 dark:group-hover:text-stone-400 transition-colors">
+            <span className="text-[8px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-600 group-hover:text-stone-600 dark:group-hover:text-stone-400 transition-colors">
               Historial
             </span>
           </Link>
 
           <DownloadCardButton cardId={cardId} customerName={name} />
 
-          {/* Invitar: solo movil */}
           <button
             onClick={handleShare}
-            className="flex flex-col items-center gap-1.5 group sm:hidden"
+            className="flex flex-col items-center gap-1 group sm:hidden"
           >
-            <span className="w-10 h-10 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center group-hover:border-stone-500 dark:group-hover:border-stone-500 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-stone-400 dark:text-stone-500 group-hover:text-stone-700 dark:group-hover:text-stone-300 transition-colors">
+            <span className="w-9 h-9 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center group-hover:border-stone-500 dark:group-hover:border-stone-500 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-stone-400 dark:text-stone-500 group-hover:text-stone-700 dark:group-hover:text-stone-300 transition-colors">
                 <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
               </svg>
             </span>
-            <span className="text-[9px] uppercase tracking-[0.25em] text-stone-400 dark:text-stone-600 group-hover:text-stone-600 dark:group-hover:text-stone-400 transition-colors">
+            <span className="text-[8px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-600 group-hover:text-stone-600 dark:group-hover:text-stone-400 transition-colors">
               {copied ? "Copiado!" : "Invitar"}
             </span>
           </button>
         </motion.div>
+
+        {/* Push notification prompt */}
+        <PushPrompt clienteId={customerId} />
 
       </div>
 

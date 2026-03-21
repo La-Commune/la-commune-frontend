@@ -1,3 +1,5 @@
+import type { IllustrationId } from "@/components/ui/stamp-illustrations";
+
 export interface Reward {
   id?: string;
   name: string;
@@ -6,6 +8,7 @@ export interface Reward {
   type: "drink" | "discount" | "custom";
   active: boolean;
   expiresAt?: string | Date;
+  illustration: IllustrationId;
 }
 
 /** Fila cruda de Supabase (tabla recompensas) */
@@ -19,6 +22,7 @@ export interface RecompensaRow {
   activa: boolean;
   es_default: boolean;
   expira_en?: string | null;
+  ilustracion: string;
   creado_en: string;
   actualizado_en: string;
 }
@@ -32,5 +36,6 @@ export function mapRecompensaToReward(row: RecompensaRow): Reward & { id: string
     type: row.tipo,
     active: row.activa,
     expiresAt: row.expira_en ?? undefined,
+    illustration: (row.ilustracion || "flat-white-cenital") as IllustrationId,
   };
 }
