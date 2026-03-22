@@ -468,9 +468,9 @@ export default function Home() {
       {cardId ? (
         /* Usuario registrado → video cinematográfico + CTA directo */
         <PremiumSection
-          eyebrow="Para los que construyen"
+          eyebrow="Programa de fidelidad"
           title={`Lo que se da\nvuelve`}
-          subtitle="Cada visita es un ladrillo. A la quinta, la casa te devuelve algo."
+          subtitle={`Junta ${rewardStamps} sellos y tu siguiente bebida va por la casa.`}
           videoSrc="/videos/coffee-slow.mp4"
           videoPoster="/images/poster-loyalty.jpg"
           ctaText="Ver mi tarjeta"
@@ -500,7 +500,7 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="text-[10px] uppercase tracking-[0.45em] text-[#6b6458] mb-4 sm:mb-5"
           >
-            Para los que construyen
+            Programa de fidelidad
           </motion.p>
 
           {/* Título emotivo */}
@@ -522,7 +522,7 @@ export default function Home() {
             transition={{ duration: 1, delay: 0.3 }}
             className="text-sm sm:text-base text-[#6b6458] text-center max-w-md leading-relaxed mb-8 sm:mb-10"
           >
-            Cada visita es un ladrillo. A la quinta, la casa te devuelve algo.
+            {`Junta ${rewardStamps} sellos y tu siguiente bebida va por la casa.`}
           </motion.p>
 
           {/* Animación de la taza */}
@@ -542,17 +542,17 @@ export default function Home() {
               {
                 step: "01",
                 title: "Regístrate",
-                desc: "Abre la app y pon tu nombre. Tu tarjeta se crea al instante.",
+                desc: "Solo necesitas tu WhatsApp. Tu tarjeta digital se crea al instante.",
               },
               {
                 step: "02",
                 title: "Acumula",
-                desc: "Cada café suma un sello automáticamente. Sin códigos, sin filas.",
+                desc: "Con cada compra, el barista agrega un sello a tu tarjeta.",
               },
               {
                 step: "03",
                 title: "Disfruta",
-                desc: "Al completar la tarjeta, tu siguiente bebida va por la casa.",
+                desc: `Al juntar ${rewardStamps} sellos, tu siguiente bebida va por la casa.`,
               },
             ].map((item, i) => (
               <motion.div

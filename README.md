@@ -48,13 +48,15 @@ Tablas compartidas con el POS (una sola fuente de verdad):
 | `categorias_menu` | Categorías del menú |
 | `productos` | Productos del menú (precio_base, disponible, visible_menu) |
 | `opciones_tamano` | Tamaños por producto con precio_adicional |
+| `push_subscriptions` | Suscripciones Web Push por cliente |
+| `push_notifications_log` | Historial de notificaciones enviadas |
 
 ### Funciones PostgreSQL (RPC)
 
 - `agregar_sello_a_tarjeta()` — Transacción atómica para agregar sello
 - `deshacer_sello()` — Revertir último sello
 - `canjear_tarjeta()` — Canjear tarjeta completa + crear nueva
-- `login_por_pin()` — Auth por PIN individual
+- `login_por_pin()` — Auth por PIN individual (bcrypt)
 
 ---
 
@@ -70,22 +72,30 @@ npm install
 
 ### 2. Variables de entorno
 
-Crea `.env.local`:
+Copia `.env.example` y crea los archivos por ambiente:
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=<tu-url-de-supabase>
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<tu-anon-key>
-NEXT_PUBLIC_NEGOCIO_ID=<uuid-del-negocio>
-ADMIN_HMAC_KEY=<secreto-para-el-pin-del-barista>
+```bash
+cp .env.example .env.development    # Para desarrollo
+cp .env.example .env.production     # Para producción
 ```
+
+Llena los valores en cada archivo. Ver `.env.example` para la documentación de cada variable.
+
+| Archivo | Supabase | Uso |
+|---|---|---|
+| `.env.development` | Proyecto dev (`ntfmubmmykpzbltbeujv`) | Dev local |
+| `.env.production` | Proyecto prod (`vzreodbrwksaoqmsnnqk`) | Build/deploy producción |
+
+> **Nota:** Si existe un `.env.local`, Next.js lo carga con mayor prioridad que los archivos `--env-file`. Se recomienda no usar `.env.local` para evitar conflictos.
 
 ### 3. Iniciar servidor
 
 ```bash
-npm run dev
+npm run dev          # Dev local → Supabase development
+npm run dev:prod     # Dev local → Supabase producción
 ```
 
-El servidor arranca en `http://localhost:3003`.
+El servidor arranca en `http://localhost:3004`.
 
 ---
 
@@ -103,6 +113,29 @@ Acceso mediante PIN numérico individual por usuario:
 - Cookie `barista-session`: token firmado HMAC-SHA256 con `{ userId, nombre, rol, exp }` (2 horas)
 - Rate limiting: 10 intentos por IP en ventana de 15 minutos
 - Roles: admin (todo), barista (sellos+clientes), camarero (solo QR)
+- PIN hasheado con bcrypt en base de datos (columna `pin_hash`)
+
+---
+
+## Push Notifications
+
+Sistema completo de Web Push para notificar a clientes:
+
+| Componente | Ubicación |
+|---|---|
+| SW Push Listener | `public/sw.js` |
+| API Subscribe | `app/api/push/subscribe/route.ts` |
+| Hook | `hooks/usePushNotifications.ts` |
+| PushPrompt (banner UI) | `components/ui/PushPrompt.tsx` |
+
+Triggers automáticos desde la base de datos:
+- Sello agregado → progreso "Llevas X/Y sellos"
+- 50% completada → "¡Vas a la mitad!"
+- Casi completa (faltan 1-2) → "¡Solo falta 1 sello!"
+- Tarjeta completada → "¡Tu bebida de cortesía te espera!"
+- Primera tarjeta → bienvenida
+
+Las VAPID keys se configuran como variables de entorno (`NEXT_PUBLIC_VAPID_PUBLIC_KEY` y `VAPID_PRIVATE_KEY`).
 
 ---
 
@@ -117,14 +150,26 @@ Precios con tamaños: `precio_base = min(sizes)`, cada `precio_adicional = size.
 
 ---
 
+## Endowed Progress Effect
+
+Las tarjetas de sellos muestran un sello visual bonus (+1) para motivar al cliente con sensación de progreso adelantado. La base de datos no cambia — es puramente visual en `StampCardFront.tsx`.
+
+---
+
 ## Scripts
 
-| Comando | Descripción |
-|---|---|
-| `npm run dev` | Servidor de desarrollo (puerto 3003) |
-| `npm run build` | Build de producción |
-| `npm run test` | Tests unitarios (Vitest) |
-| `npm run test:e2e` | Tests E2E (Playwright) |
+| Comando | Entorno | Descripción |
+|---|---|---|
+| `npm run dev` | development | Servidor de desarrollo (puerto 3004) |
+| `npm run dev:prod` | production | Dev local contra Supabase producción |
+| `npm run build` | production | Build de producción |
+| `npm run build:dev` | development | Build contra Supabase development |
+| `npm run start` | — | Iniciar servidor Next.js |
+| `npm run lint` | — | ESLint |
+| `npm run test` | — | Tests unitarios (Vitest) |
+| `npm run test:e2e` | — | Tests E2E (Playwright) |
+| `npm run test:e2e:ui` | — | E2E con UI interactiva |
+| `npm run test:e2e:headed` | — | E2E con browser visible |
 
 ---
 
@@ -136,7 +181,7 @@ Precios con tamaños: `precio_base = min(sizes)`, cada `precio_adicional = size.
 - `services/__tests__/menu.service.test.ts` — getFullMenu, deleteMenuItem
 - `app/actions/__tests__/verifyAdminPin.test.ts` — session tokens, rate limiting
 
-### E2E (Playwright — 25 tests, mock mode)
+### E2E (Playwright — 24 tests, mock mode, mobile iPhone 14)
 
 - `e2e/landing.spec.ts` — Landing page, links, navegación
 - `e2e/onboarding.spec.ts` — Registro completo, validaciones
@@ -158,24 +203,33 @@ Netlify despliega automáticamente al mergear.
 
 ---
 
-## PWA
-
-- Service Worker v2 con cache por capas en `public/sw.js`
-- Íconos PNG para iOS: `public/icons/icon-180.png`, `icon-192.png`, `icon-512.png`
-- El SW excluye videos del caché (206 Partial Content no es cacheable)
-
----
-
 ## Despliegue en Netlify
 
-Variables de entorno requeridas:
+| Sitio | URL | Entorno |
+|---|---|---|
+| `lacommune` | `lacommune.netlify.app` | Producción |
+| `lacommunedevelopment` | `lacommunedevelopment.netlify.app` | Desarrollo |
+
+Variables de entorno requeridas en Netlify:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY
 NEXT_PUBLIC_NEGOCIO_ID
+NEXT_PUBLIC_VAPID_PUBLIC_KEY
+VAPID_PRIVATE_KEY
 ADMIN_HMAC_KEY
 ```
+
+---
+
+## PWA
+
+- Service Worker v2 con cache por capas en `public/sw.js`
+- Web Push listener integrado en el SW
+- Íconos PNG para iOS: `public/icons/icon-180.png`, `icon-192.png`, `icon-512.png`
+- El SW excluye videos del caché (206 Partial Content no es cacheable)
 
 ---
 
