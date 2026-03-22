@@ -35,7 +35,7 @@ export async function getFullMenu(options?: { forAdmin?: boolean }): Promise<Men
     .order("orden", { ascending: true });
 
   if (!forAdmin) {
-    prodQuery = prodQuery.eq("disponible", true).eq("visible_menu", true);
+    prodQuery = prodQuery.eq("visible_menu", true);
   }
 
   const [productsRes, sizesRes] = await Promise.all([
