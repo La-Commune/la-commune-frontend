@@ -8,7 +8,7 @@ export default defineConfig({
   workers: process.env.CI ? 2 : undefined,
   reporter: "html",
   use: {
-    baseURL: "http://localhost:3003",
+    baseURL: process.env.PW_BASE_URL || "http://localhost:3003",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },
@@ -18,7 +18,7 @@ export default defineConfig({
         { name: "chromium", use: { ...devices["Desktop Chrome"] } },
         { name: "mobile", use: { ...devices["iPhone 14"] } },
       ],
-  webServer: {
+  webServer: process.env.PW_BASE_URL ? undefined : {
     command: process.env.CI ? "npx next start -p 3003" : "npm run dev",
     url: "http://localhost:3003",
     reuseExistingServer: !process.env.CI,

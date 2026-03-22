@@ -37,11 +37,98 @@ import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
 import { PushPrompt } from "@/components/ui/PushPrompt";
 
 
+// Pantalla cuando el cliente o tarjeta ya no existe
+function GoneScreen() {
+  const router = useRouter();
+
+  const messages = [
+    {
+      title: "Tus granos se fueron con el viento",
+      subtitle: "Parece que tu cuenta fue eliminada. Pero hey, siempre puedes empezar de nuevo.",
+    },
+    {
+      title: "Alguien derramó tu café",
+      subtitle: "Tu cuenta ya no existe en nuestro sistema. Crea una nueva y vuelve a sumar sellos.",
+    },
+    {
+      title: "Tu taza está vacía",
+      subtitle: "No encontramos tu cuenta. Puede que haya sido eliminada, pero una nueva aventura cafetera te espera.",
+    },
+  ];
+
+  const [msg] = useState(() => messages[Math.floor(Math.random() * messages.length)]);
+
+  const handleGoHome = async () => {
+    localStorage.removeItem("cardId");
+    localStorage.removeItem("customerId");
+    await clearCustomerSession();
+    router.replace("/");
+  };
+
+  return (
+    <div className="min-h-screen bg-stone-50 text-stone-900 dark:bg-neutral-950 dark:text-white flex flex-col">
+      <nav className="flex items-center justify-center px-6 py-5">
+        <span className="text-[10px] uppercase tracking-[0.45em] text-stone-400 dark:text-stone-500">
+          La Commune
+        </span>
+      </nav>
+      <div className="flex-1 flex items-center justify-center px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="text-center max-w-sm space-y-8"
+        >
+          {/* Icono taza rota */}
+          <motion.div
+            initial={{ scale: 0.8, rotate: -5 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-6xl"
+          >
+            ☕️
+          </motion.div>
+
+          <div className="space-y-3">
+            <h1 className="font-display text-2xl sm:text-3xl font-light tracking-wide">
+              {msg.title}
+            </h1>
+            <p className="text-sm leading-relaxed text-stone-500 dark:text-stone-400">
+              {msg.subtitle}
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <button
+              onClick={handleGoHome}
+              className="w-full rounded-full bg-stone-800 text-white dark:bg-white dark:text-neutral-900 py-3 text-sm tracking-wide transition hover:bg-stone-900 dark:hover:bg-stone-100"
+            >
+              Volver al inicio
+            </button>
+            <Link
+              href="/onboarding"
+              onClick={() => {
+                localStorage.removeItem("cardId");
+                localStorage.removeItem("customerId");
+              }}
+              className="block text-[11px] text-stone-400 dark:text-stone-600 underline underline-offset-2 hover:text-stone-600 dark:hover:text-stone-300 transition-colors tracking-wide"
+            >
+              Crear nueva cuenta
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+
 export default function CardEntry() {
   const { cardId: cardIdParam } = useParams<{ cardId: string }>();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
+  const [gone, setGone] = useState(false);
   const [cardId, setCardId] = useState<string | null>(null);
   const [resolvedCustomerId, setResolvedCustomerId] = useState<string | null>(null);
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -81,7 +168,11 @@ export default function CardEntry() {
       .eq("negocio_id", NEGOCIO_ID)
       .single()
       .then(({ data }) => {
-        if (data) setCustomer(mapClienteRow(data as Record<string, unknown>));
+        if (!data || !(data as Record<string, unknown>).activo) {
+          setGone(true);
+          return;
+        }
+        setCustomer(mapClienteRow(data as Record<string, unknown>));
       });
 
     // Suscripción realtime para cambios futuros
@@ -96,7 +187,16 @@ export default function CardEntry() {
           filter: `id=eq.${resolvedCustomerId}`,
         },
         (payload) => {
-          setCustomer(mapClienteRow(payload.new as Record<string, unknown>));
+          if (payload.eventType === "DELETE") {
+            setGone(true);
+            return;
+          }
+          const row = payload.new as Record<string, unknown>;
+          if (row.activo === false) {
+            setGone(true);
+            return;
+          }
+          setCustomer(mapClienteRow(row));
         }
       )
       .subscribe();
@@ -118,8 +218,11 @@ export default function CardEntry() {
       .select("*")
       .eq("id", cardIdParam)
       .single()
-      .then(({ data: row }) => {
-        if (!row) return;
+      .then(({ data: row, error }) => {
+        if (!row || error) {
+          setGone(true);
+          return;
+        }
         setCardDoc({
           id: row.id as string,
           rewardId: row.recompensa_id as string,
@@ -141,6 +244,10 @@ export default function CardEntry() {
           filter: `id=eq.${cardIdParam}`,
         },
         (payload) => {
+          if (payload.eventType === "DELETE") {
+            setGone(true);
+            return;
+          }
           const row = payload.new as Record<string, unknown>;
           setCardDoc({
             id: row.id as string,
@@ -219,8 +326,11 @@ export default function CardEntry() {
         .select("id, recompensa_id, sellos, sellos_maximos, estado, creado_en")
         .eq("id", cardIdParam)
         .single()
-        .then(({ data: row }) => {
-          if (!row) return;
+        .then(({ data: row, error }) => {
+          if (!row || error) {
+            setGone(true);
+            return;
+          }
           setCardDoc({
             id: row.id as string,
             rewardId: row.recompensa_id as string,
@@ -314,7 +424,11 @@ export default function CardEntry() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cardIdParam, router]);
 
-if (loading || !cardId) {
+if (gone) {
+    return <GoneScreen />;
+  }
+
+  if (loading || !cardId) {
     return (
       <motion.div
         initial={{ opacity: 1 }}

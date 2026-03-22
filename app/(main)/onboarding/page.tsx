@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState, Suspense } from "react";
+import { useState, useRef, Suspense } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,11 @@ export default function OnboardingPage() {
   );
 }
 
+const shakeAnimation = {
+  x: [0, -8, 8, -6, 6, -3, 3, 0],
+  transition: { duration: 0.4 },
+};
+
 function OnboardingForm() {
   const params = useSearchParams();
   const router = useRouter();
@@ -35,19 +40,56 @@ function OnboardingForm() {
   const [error, setError] = useState<string | null>(null);
   const [phoneTouched, setPhoneTouched] = useState(false);
   const [emailTouched, setEmailTouched] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [shakePhone, setShakePhone] = useState(false);
+  const [shakePin, setShakePin] = useState(false);
+
+  const phoneRef = useRef<HTMLInputElement>(null);
+  const pinRef = useRef<HTMLInputElement>(null);
 
   const isValidPhone = phone.length === 10;
   const isValidPin = pin.length === 4;
   const isValidEmail = email === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const phoneError = phoneTouched && phone.length > 0 && phone.length < 10
-    ? "Ingresa los 10 digitos"
-    : null;
-  const emailError = emailTouched && email.length > 0 && !isValidEmail
-    ? "Ingresa un email valido"
-    : null;
+
+  const showPhoneError = (phoneTouched || submitted) && !isValidPhone && phone.length > 0;
+  const showPhoneRequired = submitted && phone.length === 0;
+  const showPinRequired = submitted && pin.length === 0;
+  const showPinIncomplete = (submitted) && pin.length > 0 && !isValidPin;
+  const showEmailError = (emailTouched || submitted) && email.length > 0 && !isValidEmail;
+
+  const phoneErrorMsg = showPhoneRequired
+    ? "Tu WhatsApp es necesario para crear la tarjeta"
+    : showPhoneError
+      ? "Ingresa los 10 digitos"
+      : null;
+
+  const pinErrorMsg = showPinRequired
+    ? "Crea un PIN para recuperar tu tarjeta"
+    : showPinIncomplete
+      ? "El PIN debe tener 4 digitos"
+      : null;
+
+  const emailErrorMsg = showEmailError ? "Ingresa un email valido" : null;
+
+  const canSubmit = isValidPhone && isValidPin && isValidEmail;
 
   const handleSubmit = async () => {
-    if (!phone || !isValidPin) return;
+    setSubmitted(true);
+
+    if (!canSubmit) {
+      // Shake invalid fields & focus the first one
+      if (!isValidPhone) {
+        setShakePhone(true);
+        setTimeout(() => setShakePhone(false), 500);
+        phoneRef.current?.focus();
+      } else if (!isValidPin) {
+        setShakePin(true);
+        setTimeout(() => setShakePin(false), 500);
+        pinRef.current?.focus();
+      }
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -138,6 +180,8 @@ function OnboardingForm() {
     setPhone(onlyNumbers.slice(0, 10));
   };
 
+  const completedSteps = (isValidPhone ? 1 : 0) + (isValidPin ? 1 : 0);
+
   return (
     <div id="main-content" className="min-h-screen bg-stone-50 text-stone-900 dark:bg-neutral-950 dark:text-white flex flex-col">
 
@@ -162,42 +206,51 @@ function OnboardingForm() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="w-full max-w-sm space-y-10 text-center"
+          className="w-full max-w-sm space-y-8 text-center"
         >
-          {/* Header */}
-          <div className="space-y-3">
-            <p className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">
-              Programa de fidelidad
-            </p>
-            <h1 className="font-display text-4xl font-light tracking-wide">
-              Tu tarjeta, siempre contigo
+          {/* Header — directo, tipo instrucción */}
+          <div className="space-y-2">
+            <h1 className="font-display text-3xl font-light tracking-wide">
+              Crea tu tarjeta
             </h1>
-            <p className="text-sm leading-relaxed text-stone-500 dark:text-stone-400">
-              Crea tu tarjeta de fidelidad. Solo necesitas tu WhatsApp y un PIN
-              de 4 digitos para recuperarla despues.
+            <p className="text-sm text-stone-500 dark:text-stone-400">
+              Ingresa tu WhatsApp y un PIN de 4 digitos.
             </p>
           </div>
 
-          {/* Form */}
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <label htmlFor="name" className="block text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 text-left">
-                Nombre <span className="text-stone-300 dark:text-stone-700">(opcional)</span>
-              </label>
-              <Input
-                id="name"
-                placeholder="Tu nombre"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="text-base text-center bg-white dark:bg-neutral-900 border-stone-300 dark:border-stone-700 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600 focus:border-stone-500"
-              />
+          {/* Progress indicator */}
+          <div className="flex items-center justify-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full transition-colors duration-300 ${isValidPhone ? "bg-emerald-500" : "bg-stone-300 dark:bg-stone-700"}`} />
+              <span className={`text-[11px] transition-colors duration-300 ${isValidPhone ? "text-emerald-500" : "text-stone-400 dark:text-stone-600"}`}>
+                WhatsApp
+              </span>
             </div>
+            <span className="w-4 h-px bg-stone-300 dark:bg-stone-700" />
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full transition-colors duration-300 ${isValidPin ? "bg-emerald-500" : "bg-stone-300 dark:bg-stone-700"}`} />
+              <span className={`text-[11px] transition-colors duration-300 ${isValidPin ? "text-emerald-500" : "text-stone-400 dark:text-stone-600"}`}>
+                PIN
+              </span>
+            </div>
+            <span className="ml-1 text-[11px] text-stone-400 dark:text-stone-600">
+              {completedSteps}/2
+            </span>
+          </div>
 
-            <div className="space-y-1.5">
-              <label htmlFor="phone" className="block text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 text-left">
-                WhatsApp <span className="text-red-500/70">*</span>
+          {/* Form — campos obligatorios primero */}
+          <div className="space-y-5">
+
+            {/* WhatsApp — obligatorio */}
+            <motion.div
+              className="space-y-1.5"
+              animate={shakePhone ? shakeAnimation : {}}
+            >
+              <label htmlFor="phone" className="block text-[10px] uppercase tracking-[0.3em] text-left font-medium text-stone-600 dark:text-stone-400">
+                WhatsApp
               </label>
               <Input
+                ref={phoneRef}
                 id="phone"
                 required
                 type="tel"
@@ -209,49 +262,31 @@ function OnboardingForm() {
                 onChange={handlePhoneChange}
                 onBlur={() => setPhoneTouched(true)}
                 className={`text-base text-center tracking-widest bg-white dark:bg-neutral-900 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600 focus:border-stone-500 ${
-                  phoneError ? "border-red-400 dark:border-red-500" : "border-stone-300 dark:border-stone-700"
+                  phoneErrorMsg ? "border-red-400 dark:border-red-500" : "border-stone-300 dark:border-stone-700"
                 }`}
               />
-              <div className="flex justify-between">
-                {phoneError ? (
-                  <p className="text-[11px] text-red-500 dark:text-red-400">{phoneError}</p>
+              <div className="flex justify-between items-center min-h-[18px]">
+                {phoneErrorMsg ? (
+                  <p className="text-[11px] text-red-500 dark:text-red-400">{phoneErrorMsg}</p>
                 ) : (
                   <span />
                 )}
                 <p className={`text-[11px] ${isValidPhone ? "text-emerald-500" : "text-stone-400 dark:text-stone-600"}`}>
-                  {phone.length}/10{isValidPhone && " ✓"}
+                  {phone.length}/10{isValidPhone && " \u2713"}
                 </p>
               </div>
-            </div>
+            </motion.div>
 
-            {/* Email */}
-            <div className="space-y-1.5">
-              <label htmlFor="email" className="block text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 text-left">
-                Email <span className="text-stone-300 dark:text-stone-700">(opcional)</span>
+            {/* PIN — obligatorio */}
+            <motion.div
+              className="space-y-1.5"
+              animate={shakePin ? shakeAnimation : {}}
+            >
+              <label htmlFor="pin" className="block text-[10px] uppercase tracking-[0.3em] text-left font-medium text-stone-600 dark:text-stone-400">
+                PIN de recuperacion
               </label>
               <Input
-                id="email"
-                type="email"
-                inputMode="email"
-                placeholder="tu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value.trim())}
-                onBlur={() => setEmailTouched(true)}
-                className={`text-base text-center bg-white dark:bg-neutral-900 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600 focus:border-stone-500 ${
-                  emailError ? "border-red-400 dark:border-red-500" : "border-stone-300 dark:border-stone-700"
-                }`}
-              />
-              {emailError && (
-                <p className="text-[11px] text-red-500 dark:text-red-400">{emailError}</p>
-              )}
-            </div>
-
-            {/* PIN */}
-            <div className="space-y-1.5">
-              <label htmlFor="pin" className="block text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 text-left">
-                PIN de recuperacion <span className="text-red-500/70">*</span>
-              </label>
-              <Input
+                ref={pinRef}
                 id="pin"
                 required
                 type="password"
@@ -261,13 +296,19 @@ function OnboardingForm() {
                 placeholder="4 digitos"
                 value={pin}
                 onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                className="text-base text-center tracking-[0.5em] bg-white dark:bg-neutral-900 border-stone-300 dark:border-stone-700 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600 focus:border-stone-500"
+                className={`text-base text-center tracking-[0.5em] bg-white dark:bg-neutral-900 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600 focus:border-stone-500 ${
+                  pinErrorMsg ? "border-red-400 dark:border-red-500" : "border-stone-300 dark:border-stone-700"
+                }`}
               />
-              <div className="flex items-center justify-between">
-                <p className="text-[11px] text-stone-400 dark:text-stone-600 text-left">
-                  Lo necesitaras si cambias de dispositivo.
-                </p>
-                <div className="flex gap-1.5">
+              <div className="flex items-center justify-between min-h-[18px]">
+                {pinErrorMsg ? (
+                  <p className="text-[11px] text-red-500 dark:text-red-400">{pinErrorMsg}</p>
+                ) : (
+                  <p className="text-[11px] text-stone-400 dark:text-stone-600 text-left">
+                    Para recuperar tu tarjeta si cambias de celular.
+                  </p>
+                )}
+                <div className="flex gap-1.5 shrink-0">
                   {[0, 1, 2, 3].map((i) => (
                     <span
                       key={i}
@@ -280,34 +321,82 @@ function OnboardingForm() {
                   ))}
                 </div>
               </div>
+            </motion.div>
+
+            {/* Separador visual */}
+            <div className="flex items-center gap-3 pt-1">
+              <span className="flex-1 h-px bg-stone-200 dark:bg-stone-800" />
+              <span className="text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600">
+                Opcional
+              </span>
+              <span className="flex-1 h-px bg-stone-200 dark:bg-stone-800" />
             </div>
 
-            <label className="flex items-start gap-3 text-xs text-stone-500 leading-snug text-left">
-              <input
-                type="checkbox"
-                checked={consentWhatsApp}
-                onChange={(e) => setConsentWhatsApp(e.target.checked)}
-                className="mt-0.5 accent-stone-400"
+            {/* Nombre — opcional */}
+            <div className="space-y-1.5">
+              <label htmlFor="name" className="block text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 text-left">
+                Nombre
+              </label>
+              <Input
+                id="name"
+                placeholder="Tu nombre"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="text-base text-center bg-white dark:bg-neutral-900 border-stone-200 dark:border-stone-800 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600 focus:border-stone-500"
               />
-              <span>
-                Acepto recibir mensajes por WhatsApp relacionados con mi tarjeta y
-                promociones del cafe.
-              </span>
-            </label>
+            </div>
 
-            {email && (
+            {/* Email — opcional */}
+            <div className="space-y-1.5">
+              <label htmlFor="email" className="block text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 text-left">
+                Email
+              </label>
+              <Input
+                id="email"
+                type="email"
+                inputMode="email"
+                placeholder="tu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value.trim())}
+                onBlur={() => setEmailTouched(true)}
+                className={`text-base text-center bg-white dark:bg-neutral-900 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600 focus:border-stone-500 ${
+                  emailErrorMsg ? "border-red-400 dark:border-red-500" : "border-stone-200 dark:border-stone-800"
+                }`}
+              />
+              {emailErrorMsg && (
+                <p className="text-[11px] text-red-500 dark:text-red-400">{emailErrorMsg}</p>
+              )}
+            </div>
+
+            {/* Consents */}
+            <div className="space-y-3 pt-1">
               <label className="flex items-start gap-3 text-xs text-stone-500 leading-snug text-left">
                 <input
                   type="checkbox"
-                  checked={consentEmail}
-                  onChange={(e) => setConsentEmail(e.target.checked)}
+                  checked={consentWhatsApp}
+                  onChange={(e) => setConsentWhatsApp(e.target.checked)}
                   className="mt-0.5 accent-stone-400"
                 />
                 <span>
-                  Acepto recibir correos con promociones y novedades del cafe.
+                  Acepto recibir mensajes por WhatsApp relacionados con mi tarjeta y
+                  promociones del cafe.
                 </span>
               </label>
-            )}
+
+              {email && (
+                <label className="flex items-start gap-3 text-xs text-stone-500 leading-snug text-left">
+                  <input
+                    type="checkbox"
+                    checked={consentEmail}
+                    onChange={(e) => setConsentEmail(e.target.checked)}
+                    className="mt-0.5 accent-stone-400"
+                  />
+                  <span>
+                    Acepto recibir correos con promociones y novedades del cafe.
+                  </span>
+                </label>
+              )}
+            </div>
           </div>
 
           {/* Error */}
@@ -315,12 +404,12 @@ function OnboardingForm() {
             <p className="text-[11px] text-red-500 dark:text-red-400 tracking-wide">{error}</p>
           )}
 
-          {/* CTA */}
+          {/* CTA — siempre habilitado, valida al click */}
           <div className="space-y-4">
             <Button
-              className="w-full rounded-full bg-stone-800 text-white dark:bg-white dark:text-neutral-900 py-6 text-sm tracking-wide transition hover:bg-stone-900 dark:hover:bg-stone-100 disabled:opacity-30"
+              className="w-full rounded-full bg-stone-800 text-white dark:bg-white dark:text-neutral-900 py-6 text-sm tracking-wide transition hover:bg-stone-900 dark:hover:bg-stone-100 disabled:opacity-50"
               onClick={handleSubmit}
-              disabled={!isValidPhone || !isValidPin || !isValidEmail || loading}
+              disabled={loading}
             >
               {loading ? (
                 <span className="inline-flex items-center gap-2">
