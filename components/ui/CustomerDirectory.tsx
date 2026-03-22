@@ -2,10 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useFirestore } from "reactfire";
-import { doc } from "firebase/firestore";
 import { Customer } from "@/models/customer.model";
-import { getAllCustomers, updateCustomerNotes, deleteCustomer } from "@/services/customer.service";
+import { getAllCustomers, updateCustomerNotes, updateCustomerEmail, deleteCustomer } from "@/services/customer.service";
 import { getCustomerTopDrinks } from "@/services/analytics.service";
 import { formatDate } from "@/lib/utils";
 import { toast } from "@/components/ui/use-toast";
@@ -24,14 +22,17 @@ function toDateStr(val: unknown): string {
 }
 
 function exportCSV(customers: CustomerRow[]) {
-  const headers = ["Nombre", "Telefono", "Visitas", "Sellos", "Ultima visita", "Miembro desde"];
+  const headers = ["Nombre", "Telefono", "Email", "Visitas", "Sellos", "Ultima visita", "Miembro desde", "Consent WhatsApp", "Consent Email"];
   const rows = customers.map((c) => [
     c.name ?? "",
     c.phone ?? "",
+    c.email ?? "",
     c.totalVisits ?? 0,
     c.totalStamps ?? 0,
     toDateStr(c.lastVisitAt),
     toDateStr(c.createdAt),
+    c.consentWhatsApp ? "Si" : "No",
+    c.consentEmail ? "Si" : "No",
   ]);
   const csvContent = [headers, ...rows]
     .map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
@@ -66,7 +67,6 @@ function CustomerDrawer({
   onNotesSaved: (id: string, notes: string) => void;
   onDeleted: (id: string) => void;
 }) {
-  const firestore = useFirestore();
   const [notes, setNotes] = useState(customer.notes ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -75,21 +75,20 @@ function CustomerDrawer({
   const [topDrinks, setTopDrinks] = useState<{ drink: string; count: number }[] | null>(null);
 
   useEffect(() => {
-    const customerRef = doc(firestore, "customers", customer.id);
-    getCustomerTopDrinks(firestore, customerRef)
+    getCustomerTopDrinks(customer.id)
       .then(setTopDrinks)
       .catch(() => setTopDrinks([]));
-  }, [customer.id, firestore]);
+  }, [customer.id]);
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      await updateCustomerNotes(firestore, customer.id, notes);
+      await updateCustomerNotes(customer.id, notes);
       onNotesSaved(customer.id, notes);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (e) {
-      console.error("Error al guardar nota:", e);
+      if (process.env.NODE_ENV === "development") console.error("Error al guardar nota:", e);
       toast({
         variant: "destructive",
         title: "No se pudo guardar la nota",
@@ -104,14 +103,14 @@ function CustomerDrawer({
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      await deleteCustomer(firestore, customer.id);
+      await deleteCustomer(customer.id);
       onDeleted(customer.id);
     } catch (e) {
-      console.error("Error al eliminar cliente:", e);
+      if (process.env.NODE_ENV === "development") console.error("Error al eliminar cliente:", e);
       toast({
         variant: "destructive",
         title: "No se pudo eliminar el cliente",
-        description: "Revisa la conexion o los permisos de Firestore.",
+        description: "Revisa la conexion o los permisos de Supabase.",
         duration: 5000,
       });
       setDeleting(false);
@@ -152,6 +151,9 @@ function CustomerDrawer({
               </h2>
               {customer.phone && (
                 <p className="text-sm text-stone-500">{customer.phone}</p>
+              )}
+              {customer.email && (
+                <p className="text-sm text-stone-500">{customer.email}</p>
               )}
             </div>
 
@@ -324,7 +326,6 @@ const SEGMENTS: { id: Segment; label: string }[] = [
 /* -- Componente principal ----------------------------------- */
 
 export function CustomerDirectory() {
-  const firestore = useFirestore();
   const [customers, setCustomers] = useState<CustomerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -333,19 +334,19 @@ export function CustomerDirectory() {
 
   const load = useCallback(() => {
     setLoading(true);
-    getAllCustomers(firestore)
+    getAllCustomers()
       .then(setCustomers)
       .catch((e) => {
-        console.error("Error al cargar clientes:", e);
+        if (process.env.NODE_ENV === "development") console.error("Error al cargar clientes:", e);
         toast({
           variant: "destructive",
           title: "No se pudo cargar el directorio",
-          description: "Revisa la conexion o los permisos de Firestore.",
+          description: "Revisa la conexion o los permisos de Supabase.",
           duration: 6000,
         });
       })
       .finally(() => setLoading(false));
-  }, [firestore]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
@@ -357,12 +358,14 @@ export function CustomerDirectory() {
     if (segment === "all") return true;
     if (segment === "inactive") {
       if (!c.lastVisitAt) return true;
-      return (c.lastVisitAt as { toDate: () => Date }).toDate() < thirtyDaysAgo;
+      const d = typeof c.lastVisitAt === "string" ? new Date(c.lastVisitAt) : c.lastVisitAt;
+      return d < thirtyDaysAgo;
     }
     if (segment === "top") return (c.totalVisits ?? 0) >= 5;
     if (segment === "new") {
       if (!c.createdAt) return false;
-      return (c.createdAt as { toDate: () => Date }).toDate() >= startOfMonth;
+      const d = typeof c.createdAt === "string" ? new Date(c.createdAt) : c.createdAt;
+      return d >= startOfMonth;
     }
     return true;
   });
@@ -371,7 +374,8 @@ export function CustomerDirectory() {
     const q = search.toLowerCase();
     return (
       (c.name ?? "").toLowerCase().includes(q) ||
-      (c.phone ?? "").includes(q)
+      (c.phone ?? "").includes(q) ||
+      (c.email ?? "").toLowerCase().includes(q)
     );
   });
 
@@ -433,7 +437,7 @@ export function CustomerDirectory() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por nombre o telefono…"
+          placeholder="Buscar por nombre, telefono o email…"
           className="w-full bg-white dark:bg-neutral-900 border border-stone-200 dark:border-stone-800 rounded-xl pl-10 pr-4 py-3 text-sm text-stone-900 dark:text-white placeholder:text-stone-300 dark:placeholder:text-stone-700 focus:outline-none focus:border-stone-400 dark:focus:border-stone-600 transition-colors"
         />
       </div>
@@ -476,6 +480,9 @@ export function CustomerDirectory() {
               </p>
               {customer.phone && (
                 <p className="text-[11px] text-stone-400 dark:text-stone-600 truncate">{customer.phone}</p>
+              )}
+              {customer.email && (
+                <p className="text-[10px] text-stone-300 dark:text-stone-700 truncate">{customer.email}</p>
               )}
             </div>
 

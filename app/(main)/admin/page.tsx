@@ -1,10 +1,8 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { doc, getDoc, DocumentReference } from "firebase/firestore";
-import { useFirestore, useFirestoreDocData } from "reactfire";
 import { Card } from "@/models/card.model";
 import { Customer } from "@/models/customer.model";
 import { QrScanner } from "@/components/ui/QrScanner";
@@ -13,12 +11,16 @@ import { PromosAdmin } from "@/components/ui/promos/PromosAdmin";
 import { CustomerDirectory } from "@/components/ui/CustomerDirectory";
 import { AnalyticsDashboard } from "@/components/ui/AnalyticsDashboard";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { verifyAdminPin, checkBaristaSession, logoutBarista } from "@/app/actions/verifyAdminPin";
+import { verifyAdminPin, checkBaristaSession, logoutBarista, type SessionResult } from "@/app/actions/verifyAdminPin";
 import { addStamp, redeemCard, undoStamp } from "@/services/card.service";
+import { getDefaultReward, upsertDefaultReward } from "@/services/reward.service";
+import { Reward } from "@/models/reward.model";
+import { ILLUSTRATION_CATALOG, StampIllustration, type IllustrationId } from "@/components/ui/stamp-illustrations";
 import { getFullMenu } from "@/services/menu.service";
 import { timeAgo } from "@/lib/utils";
 import { toast } from "@/components/ui/use-toast";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
 import {
   enqueue,
   removeFromQueue,
@@ -33,9 +35,49 @@ import {
 
 type Screen = "pin" | "stamp" | "success" | "redeemed" | "queued";
 
-interface AdminConfig {
-  pinLength?: number;
-  pinHmac?: string;
+type AdminTabId = "stamps" | "menu" | "promos" | "customers" | "analytics" | "config";
+
+const ADMIN_ROLE_ACCESS: Record<AdminTabId, string[]> = {
+  stamps:    ["admin", "barista", "camarero"],
+  menu:      ["admin"],
+  promos:    ["admin"],
+  customers: ["admin", "barista"],
+  analytics: ["admin"],
+  config:    ["admin"],
+};
+
+const TAB_LABELS: Record<AdminTabId, string> = {
+  stamps: "Sellos",
+  menu: "Menu",
+  promos: "Promos",
+  customers: "Clientes",
+  analytics: "Analytics",
+  config: "Config",
+};
+
+const TAB_TITLES: Record<AdminTabId, string> = {
+  stamps: "Añadir sello",
+  menu: "Gestionar menu",
+  promos: "Promociones",
+  customers: "Clientes",
+  analytics: "Analytics",
+  config: "Configuracion",
+};
+
+function getTabsForRole(rol: string): AdminTabId[] {
+  return (Object.keys(ADMIN_ROLE_ACCESS) as AdminTabId[]).filter(
+    (tab) => ADMIN_ROLE_ACCESS[tab].includes(rol)
+  );
+}
+
+function getRoleLabel(rol: string): string {
+  switch (rol) {
+    case "admin": return "Administrador";
+    case "barista": return "Barista";
+    case "camarero": return "Camarero";
+    case "cocina": return "Cocina";
+    default: return rol;
+  }
 }
 
 interface LoadedCard {
@@ -43,7 +85,7 @@ interface LoadedCard {
   stamps: number;
   maxStamps: number;
   status: string;
-  customerId: DocumentReference | undefined;
+  customerId: string | undefined;
   customerName: string;
 }
 
@@ -51,7 +93,6 @@ interface LoadedCard {
 function PinPad({
   value,
   onChange,
-  onSubmit,
   error,
   loading,
   pinLength = 4,
@@ -65,10 +106,32 @@ function PinPad({
   pinLength?: number;
   lockoutSeconds?: number;
 }) {
+  const [shaking, setShaking] = useState(false);
+  const prevError = useRef(error);
+
   const press = (digit: string) => {
-    if (value.length < pinLength) onChange(value + digit);
+    if (value.length < pinLength && !loading && lockoutSeconds <= 0) {
+      onChange(value + digit);
+      if (navigator.vibrate) navigator.vibrate(20);
+    }
   };
-  const del = () => onChange(value.slice(0, -1));
+  const del = () => {
+    if (!loading && lockoutSeconds <= 0) {
+      onChange(value.slice(0, -1));
+      if (navigator.vibrate) navigator.vibrate(10);
+    }
+  };
+
+  // Shake en error
+  useEffect(() => {
+    if (error && !prevError.current) {
+      setShaking(true);
+      if (navigator.vibrate) navigator.vibrate([40, 30, 40, 30, 40]);
+      const t = setTimeout(() => setShaking(false), 600);
+      return () => clearTimeout(t);
+    }
+    prevError.current = error;
+  }, [error]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -77,71 +140,117 @@ function PinPad({
         if (value.length < pinLength) onChange(value + e.key);
       } else if (e.key === "Backspace") {
         onChange(value.slice(0, -1));
-      } else if (e.key === "Enter" && value.length >= pinLength) {
-        onSubmit();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [value, pinLength, onChange, onSubmit, loading, lockoutSeconds]);
+  }, [value, pinLength, onChange, loading, lockoutSeconds]);
+
+  const isLocked = lockoutSeconds > 0;
+  const lockLabel = `Bloqueado ${String(Math.floor(lockoutSeconds / 60)).padStart(2, "0")}:${String(lockoutSeconds % 60).padStart(2, "0")}`;
 
   return (
     <div className="flex flex-col items-center gap-8">
-      {/* Indicadores dinamicos */}
-      <div className="flex gap-3 flex-wrap justify-center max-w-[260px]">
-        {Array.from({ length: pinLength }).map((_, i) => (
-          <div
-            key={i}
-            className={`w-3 h-3 rounded-full border transition-all duration-200 ${
-              i < value.length
-                ? "bg-stone-700 border-stone-700 dark:bg-stone-200 dark:border-stone-200"
-                : "bg-transparent border-stone-300 dark:border-stone-700"
-            }`}
-          />
-        ))}
+      {/* Indicador editorial: guiones bajos → dots */}
+      <motion.div
+        className="flex gap-5 justify-center items-end"
+        animate={shaking ? { x: [0, -14, 14, -10, 10, -4, 0] } : { x: 0 }}
+        transition={shaking ? { duration: 0.5, ease: "easeInOut" } : {}}
+      >
+        {Array.from({ length: pinLength }).map((_, i) => {
+          const filled = i < value.length;
+          const isError = shaking;
+          return (
+            <div key={i} className="flex flex-col items-center gap-1">
+              {/* Dot que aparece con spring */}
+              <motion.div
+                className="w-2.5 h-2.5 rounded-full"
+                initial={false}
+                animate={{
+                  scale: filled ? 1 : 0,
+                  opacity: filled ? 1 : 0,
+                }}
+                transition={{ type: "spring", stiffness: 500, damping: 20 }}
+              >
+                <div className={`w-full h-full rounded-full ${
+                  isError
+                    ? "bg-red-500"
+                    : "bg-stone-800 dark:bg-stone-100"
+                }`} />
+              </motion.div>
+              {/* Línea base */}
+              <motion.div
+                className={`w-7 h-px ${
+                  isError
+                    ? "bg-red-500"
+                    : filled
+                    ? "bg-stone-800 dark:bg-stone-100"
+                    : "bg-stone-300 dark:bg-stone-700"
+                }`}
+                animate={{
+                  scaleX: filled ? 1 : 0.6,
+                  opacity: isError ? [1, 0.4, 1] : 1,
+                }}
+                transition={{
+                  scaleX: { type: "spring", stiffness: 300, damping: 20 },
+                  opacity: isError ? { duration: 0.3, repeat: 1 } : {},
+                }}
+              />
+            </div>
+          );
+        })}
+      </motion.div>
+
+      {/* Error / Lockout / Loading */}
+      <div className="h-5 flex items-center justify-center">
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <motion.p
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0.4, 1, 0.4] }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              className="text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-500 font-mono"
+            >
+              Verificando
+            </motion.p>
+          ) : (error || isLocked) ? (
+            <motion.p
+              key={error || lockLabel}
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="text-[10px] uppercase tracking-[0.3em] font-mono text-red-500 dark:text-red-400"
+            >
+              {isLocked ? lockLabel : error}
+            </motion.p>
+          ) : null}
+        </AnimatePresence>
       </div>
 
-      {/* Error */}
-      <AnimatePresence>
-        {error && (
-          <motion.p
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="text-[10px] uppercase tracking-widest text-red-500 dark:text-red-400"
-          >
-            {error}
-          </motion.p>
-        )}
-      </AnimatePresence>
-
-      {/* Teclado */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* Teclado — limpio, sin bordes, tipografía bold */}
+      <div className="grid grid-cols-3 gap-1 w-full max-w-[280px] mx-auto">
         {["1","2","3","4","5","6","7","8","9","","0","⌫"].map((k, i) => {
-          if (k === "") return <div key={i} />;
+          if (k === "") return <div key={i} className="aspect-square" />;
+          const disabled = loading || isLocked;
           return (
-            <button
+            <motion.button
               key={i}
               onClick={() => (k === "⌫" ? del() : press(k))}
-              className="w-16 h-16 rounded-2xl border border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-300 text-lg font-light hover:border-stone-400 dark:hover:border-stone-600 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-900 active:scale-95 transition-all duration-150"
+              disabled={disabled}
+              whileTap={disabled ? {} : { scale: 0.85 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              className={`aspect-square rounded-full flex items-center justify-center select-none transition-colors duration-100 disabled:opacity-20 disabled:cursor-not-allowed ${
+                k === "⌫"
+                  ? "text-lg text-stone-400 dark:text-stone-500 active:text-stone-600 dark:active:text-stone-300"
+                  : "text-[26px] sm:text-[30px] font-medium text-stone-700 dark:text-stone-200 active:bg-stone-200/60 dark:active:bg-stone-700/40"
+              }`}
             >
               {k}
-            </button>
+            </motion.button>
           );
         })}
       </div>
-
-      <button
-        onClick={onSubmit}
-        disabled={value.length < pinLength || loading || lockoutSeconds > 0}
-        className="mt-2 w-full max-w-[220px] py-3 rounded-full bg-stone-800 text-white dark:bg-stone-200 dark:text-neutral-900 text-[11px] uppercase tracking-[0.35em] hover:bg-stone-900 dark:hover:bg-white transition-colors duration-200 disabled:opacity-20 disabled:cursor-not-allowed"
-      >
-        {loading
-          ? "Verificando…"
-          : lockoutSeconds > 0
-          ? `Bloqueado ${String(Math.floor(lockoutSeconds / 60)).padStart(2, "0")}:${String(lockoutSeconds % 60).padStart(2, "0")}`
-          : "Entrar"}
-      </button>
     </div>
   );
 }
@@ -155,7 +264,6 @@ interface StampEntry {
 
 /* -- Vista de anadir sello ----------------------------------- */
 function StampView({ onLogout }: { onLogout: () => void }) {
-  const firestore = useFirestore();
   const [cardInput, setCardInput] = useState("");
   const [card, setCard] = useState<LoadedCard | null>(null);
   const [loading, setLoading] = useState(false);
@@ -181,21 +289,20 @@ function StampView({ onLogout }: { onLogout: () => void }) {
   const [pendingQueue, setPendingQueue] = useState<QueuedStamp[]>([]);
   const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "error">("idle");
 
-  // Cargar bebidas disponibles del menu
+  // Cargar TODAS las bebidas del menu (admin ve todo, incluyendo deshabilitadas)
   useEffect(() => {
-    getFullMenu(firestore)
+    getFullMenu({ forAdmin: true })
       .then((sections) => {
         const drinks = sections
-          .filter((s) => s.type === "drink" && s.active)
+          .filter((s) => s.type === "drink")
           .flatMap((s) => s.items ?? [])
-          .filter((item) => item.available !== false)
           .map((item) => item.name);
         setMenuDrinks(drinks);
       })
       .catch(() => {
         toast({ variant: "destructive", title: "No se pudo cargar el menu de bebidas" });
       });
-  }, [firestore]);
+  }, []);
 
   // Cleanup al desmontar
   useEffect(() => {
@@ -218,11 +325,8 @@ function StampView({ onLogout }: { onLogout: () => void }) {
     let syncedCount = 0;
     for (const item of pending) {
       try {
-        const customerIdRef = item.customerId
-          ? doc(firestore, item.customerId)
-          : undefined;
-        await addStamp(firestore, item.cardId, {
-          customerId: customerIdRef,
+        await addStamp(item.cardId, {
+          customerId: item.customerId,
           addedBy: "barista",
           drinkType: item.drinkType,
           size: item.size,
@@ -257,7 +361,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
         setPendingQueue(getQueue());
       }, 3000);
     }
-  }, [firestore]);
+  }, []);
 
   // Auto-sync al recuperar conexion o al montar con pendientes
   useEffect(() => {
@@ -303,24 +407,37 @@ function StampView({ onLogout }: { onLogout: () => void }) {
     setError("");
     setCard(null);
     try {
-      const snap = await getDoc(doc(firestore, "cards", id));
-      if (!snap.exists()) {
+      const supabase = getSupabase();
+      const { data: cardData, error: cardError } = await supabase
+        .from("tarjetas")
+        .select("*")
+        .eq("id", id)
+        .eq("negocio_id", NEGOCIO_ID)
+        .single();
+
+      if (cardError || !cardData) {
         setError("Tarjeta no encontrada");
         setLoading(false);
         return;
       }
-      const data = snap.data() as Card;
+
       let customerName = "";
-      if (data.customerId) {
-        const custSnap = await getDoc(data.customerId);
-        if (custSnap.exists()) customerName = (custSnap.data() as Customer)?.name ?? "";
+      if (cardData.cliente_id) {
+        const { data: custData } = await supabase
+          .from("clientes")
+          .select("nombre")
+          .eq("id", cardData.cliente_id)
+          .eq("negocio_id", NEGOCIO_ID)
+          .single();
+        customerName = custData?.nombre ?? "";
       }
+
       setCard({
-        id: snap.id,
-        stamps: data.stamps,
-        maxStamps: data.maxStamps,
-        status: data.status,
-        customerId: data.customerId,
+        id: cardData.id,
+        stamps: cardData.sellos,
+        maxStamps: cardData.sellos_maximos,
+        status: cardData.estado,
+        customerId: cardData.cliente_id,
         customerName,
       });
     } catch {
@@ -331,7 +448,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
       );
     }
     setLoading(false);
-  }, [firestore]);
+  }, []);
 
   const handleQrScan = useCallback((value: string) => {
     setScanning(false);
@@ -362,7 +479,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
       const optimisticStamps = Math.min(card.stamps + 1, card.maxStamps);
       enqueue({
         cardId: card.id,
-        customerId: card.customerId?.path,
+        customerId: card.customerId,
         customerName: card.customerName,
         drinkType: finalDrink,
         size: stampSize || undefined,
@@ -383,7 +500,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
     setLoading(true);
     setError("");
     try {
-      const result = await addStamp(firestore, card.id, {
+      const result = await addStamp(card.id, {
         customerId: card.customerId ?? undefined,
         addedBy: "barista",
         drinkType: finalDrink,
@@ -416,22 +533,22 @@ function StampView({ onLogout }: { onLogout: () => void }) {
       setError("Error al anadir el sello. Intenta de nuevo.");
     }
     setLoading(false);
-  }, [card, firestore, selectedDrink, customDrink, stampSize, clearUndoCountdown, isOnline, resetStampForm]);
+  }, [card, selectedDrink, customDrink, stampSize, clearUndoCountdown, isOnline, resetStampForm]);
 
   const handleUndo = useCallback(async () => {
     if (!card || !lastEventId) return;
     setLoading(true);
     try {
-      await undoStamp(firestore, card.id, lastEventId);
+      await undoStamp(card.id, lastEventId);
       clearUndoCountdown();
-      setCard({ ...card, stamps: Math.max(0, card.stamps - 1), status: "active" });
+      setCard({ ...card, stamps: Math.max(0, card.stamps - 1), status: "activa" });
       setScreen("stamp");
       if (resetTimer.current) clearTimeout(resetTimer.current);
     } catch {
       setError("Error al deshacer el sello.");
     }
     setLoading(false);
-  }, [card, lastEventId, firestore, clearUndoCountdown]);
+  }, [card, lastEventId, clearUndoCountdown]);
 
   const handleRedeem = useCallback(async () => {
     if (!card) return;
@@ -440,12 +557,21 @@ function StampView({ onLogout }: { onLogout: () => void }) {
     setLoading(true);
     setError("");
     try {
-      const rewardRef = doc(firestore, "rewards", "default");
       if (!card.customerId) throw new Error("Cliente no encontrado");
-      await redeemCard(firestore, {
+      // Obtener la recompensa default para crear la nueva tarjeta
+      const { data: defaultReward } = await getSupabase()
+        .from("recompensas")
+        .select("id")
+        .eq("negocio_id", NEGOCIO_ID)
+        .eq("es_default", true)
+        .eq("activa", true)
+        .single();
+      if (!defaultReward) throw new Error("No hay recompensa default configurada");
+
+      await redeemCard({
         oldCardId: card.id,
-        customerRef: card.customerId,
-        rewardRef,
+        customerId: card.customerId,
+        rewardRef: defaultReward.id,
       });
       setScreen("redeemed");
       resetTimer.current = setTimeout(() => {
@@ -457,7 +583,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
       setError("Error al canjear. Intenta de nuevo.");
     }
     setLoading(false);
-  }, [card, firestore, clearUndoCountdown]);
+  }, [card, clearUndoCountdown]);
 
   const isComplete = card ? card.stamps >= card.maxStamps : false;
   const progress = card ? (card.stamps / card.maxStamps) * 100 : 0;
@@ -568,9 +694,9 @@ function StampView({ onLogout }: { onLogout: () => void }) {
         {/* Separador */}
         {!scanning && (
           <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-stone-200 dark:bg-stone-800" />
+            <div aria-hidden="true" className="flex-1 h-px bg-stone-200 dark:bg-stone-800" />
             <span className="text-[10px] uppercase tracking-widest text-stone-300 dark:text-stone-700">o</span>
-            <div className="flex-1 h-px bg-stone-200 dark:bg-stone-800" />
+            <div aria-hidden="true" className="flex-1 h-px bg-stone-200 dark:bg-stone-800" />
           </div>
         )}
 
@@ -900,20 +1026,258 @@ function StampView({ onLogout }: { onLogout: () => void }) {
   );
 }
 
+/* -- Config del reward ---------------------------------------- */
+function RewardConfig() {
+  const [reward, setReward] = useState<(Reward & { id: string }) | null>(null);
+  const [loadingReward, setLoadingReward] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [stamps, setStamps] = useState(5);
+  const [rewardName, setRewardName] = useState("");
+  const [rewardDesc, setRewardDesc] = useState("");
+  const [illustration, setIllustration] = useState<IllustrationId>("flat-white-cenital");
+  const [isDark, setIsDark] = useState(false);
+
+  // Detectar tema una vez al montar y cuando cambie
+  useEffect(() => {
+    const check = () => setIsDark(document.documentElement.classList.contains("dark"));
+    check();
+    const observer = new MutationObserver(check);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
+  /** Categorías únicas del catálogo (constante, no cambia) */
+  const categories = useMemo(
+    () => Array.from(new Set(ILLUSTRATION_CATALOG.map((i) => i.category))),
+    [],
+  );
+
+  /** Endowed Progress: +1 sello bonus visual */
+  const BONUS = 1;
+  const visualMax = stamps + BONUS;
+  /** Preview muestra la mitad de sellos reales + bonus */
+  const previewStamps = Math.floor(stamps / 2) + BONUS;
+
+  useEffect(() => {
+    getDefaultReward().then((r) => {
+      if (r) {
+        setReward(r);
+        setStamps(r.requiredStamps);
+        setRewardName(r.name);
+        setRewardDesc(r.description);
+        setIllustration(r.illustration || "flat-white-cenital");
+      }
+      setLoadingReward(false);
+    });
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSaved(false);
+    try {
+      await upsertDefaultReward({
+        name: rewardName || "Bebida gratis",
+        description: rewardDesc || "Completa tu tarjeta y recibe una bebida gratis",
+        requiredStamps: stamps,
+        type: "drink",
+        active: true,
+        illustration,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch {
+      toast({ title: "Error al guardar", description: "No se pudieron guardar los cambios. Intenta de nuevo.", variant: "destructive" });
+    }
+    setSaving(false);
+  };
+
+  if (loadingReward) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="w-5 h-5 border-2 border-stone-300 dark:border-stone-700 border-t-stone-700 dark:border-t-stone-300 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-sm mx-auto space-y-8">
+      {/* Reward principal */}
+      <div className="space-y-5">
+        <p className="text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600">
+          Recompensa principal
+        </p>
+
+        <div className="space-y-1.5">
+          <label className="block text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600">
+            Nombre
+          </label>
+          <input
+            type="text"
+            value={rewardName}
+            onChange={(e) => setRewardName(e.target.value)}
+            placeholder="Bebida gratis"
+            className="w-full px-4 py-2.5 rounded-lg bg-white dark:bg-neutral-900 border border-stone-200 dark:border-stone-800 text-sm text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600 focus:outline-none focus:border-stone-400 dark:focus:border-stone-600 transition-colors"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="block text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600">
+            Descripcion
+          </label>
+          <input
+            type="text"
+            value={rewardDesc}
+            onChange={(e) => setRewardDesc(e.target.value)}
+            placeholder="Completa tu tarjeta y recibe una bebida gratis"
+            className="w-full px-4 py-2.5 rounded-lg bg-white dark:bg-neutral-900 border border-stone-200 dark:border-stone-800 text-sm text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600 focus:outline-none focus:border-stone-400 dark:focus:border-stone-600 transition-colors"
+          />
+        </div>
+
+        <div className="space-y-3">
+          <label className="block text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600">
+            Sellos para completar tarjeta
+          </label>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setStamps(Math.max(1, stamps - 1))}
+              className="w-10 h-10 rounded-lg bg-stone-100 dark:bg-neutral-900 border border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-neutral-800 transition-colors text-lg"
+            >
+              -
+            </button>
+            <span className="text-3xl font-light tracking-wide text-stone-700 dark:text-stone-200 min-w-[3ch] text-center tabular-nums">
+              {stamps}
+            </span>
+            <button
+              onClick={() => setStamps(Math.min(20, stamps + 1))}
+              className="w-10 h-10 rounded-lg bg-stone-100 dark:bg-neutral-900 border border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-neutral-800 transition-colors text-lg"
+            >
+              +
+            </button>
+          </div>
+          <p className="text-[11px] text-stone-400 dark:text-stone-600">
+            Las tarjetas nuevas usaran este numero. Las existentes no se afectan.
+          </p>
+        </div>
+      </div>
+
+      {/* Ilustración con vista previa SVG */}
+      <div className="space-y-3">
+        <p className="text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600">
+          Ilustración de la tarjeta
+        </p>
+        <div className="space-y-4">
+          {categories.map((cat) => (
+            <div key={cat}>
+              <p className="text-[9px] uppercase tracking-[0.2em] text-stone-400/70 dark:text-stone-600/70 mb-2">{cat}</p>
+              <div className="grid grid-cols-3 gap-2">
+                {ILLUSTRATION_CATALOG.filter((i) => i.category === cat).map((ilu) => {
+                  const isSelected = illustration === ilu.id;
+                  return (
+                    <button
+                      key={ilu.id}
+                      type="button"
+                      onClick={() => setIllustration(ilu.id)}
+                      className={`relative flex flex-col items-center gap-1.5 p-2 rounded-xl border transition-all duration-200 ${
+                        isSelected
+                          ? "border-stone-700 dark:border-stone-300 bg-stone-200/60 dark:bg-neutral-800 ring-1 ring-stone-700/30 dark:ring-stone-300/30"
+                          : "border-stone-200 dark:border-stone-800 bg-white dark:bg-neutral-900 hover:border-stone-300 dark:hover:border-stone-700"
+                      }`}
+                    >
+                      {isSelected && (
+                        <div className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-stone-700 dark:bg-stone-300 flex items-center justify-center z-10">
+                          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-white dark:text-neutral-900">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        </div>
+                      )}
+                      {/* Miniatura SVG real */}
+                      <div className="w-full aspect-square flex items-center justify-center overflow-hidden rounded-lg pointer-events-none" style={{ maxHeight: 80 }}>
+                        <div style={{ transform: "scale(0.35)", transformOrigin: "center center" }}>
+                          <StampIllustration
+                            id={ilu.id}
+                            stamps={previewStamps}
+                            maxStamps={visualMax}
+                            displayedStamps={previewStamps}
+                            animatedStamps={0}
+                            isComplete={false}
+                            isNewStamp={false}
+                            isDark={isDark}
+                            fillRadius={0}
+                            realStamps={Math.floor(stamps / 2)}
+                            realMaxStamps={stamps}
+                          />
+                        </div>
+                      </div>
+                      <span className="text-[8px] text-stone-500 dark:text-stone-500 text-center leading-tight truncate w-full">{ilu.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Preview grande de la seleccionada */}
+      <div className="p-4 rounded-xl bg-stone-100 dark:bg-neutral-900 border border-stone-200 dark:border-stone-800">
+        <p className="text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 mb-3">
+          Vista previa
+        </p>
+        <div className="flex justify-center">
+          <div style={{ transform: "scale(0.6)", transformOrigin: "top center" }}>
+            <StampIllustration
+              id={illustration}
+              stamps={previewStamps}
+              maxStamps={visualMax}
+              displayedStamps={previewStamps}
+              animatedStamps={0}
+              isComplete={false}
+              isNewStamp={false}
+              isDark={isDark}
+              fillRadius={0}
+              realStamps={Math.floor(stamps / 2)}
+              realMaxStamps={stamps}
+            />
+          </div>
+        </div>
+        <p className="text-[11px] text-stone-500 dark:text-stone-500 mt-2 text-center">
+          {Math.floor(stamps / 2)} de {stamps} sellos (+1 de regalo) — {ILLUSTRATION_CATALOG.find((i) => i.id === illustration)?.name}
+        </p>
+      </div>
+
+      {/* Guardar */}
+      <button
+        onClick={handleSave}
+        disabled={saving}
+        className={`w-full py-3 rounded-full text-sm tracking-wide transition-all duration-300 ${
+          saved
+            ? "bg-emerald-600 text-white"
+            : "bg-stone-800 text-white dark:bg-stone-200 dark:text-neutral-900 hover:bg-stone-900 dark:hover:bg-stone-100"
+        } disabled:opacity-50`}
+      >
+        {saving ? "Guardando..." : saved ? "Guardado" : "Guardar cambios"}
+      </button>
+    </div>
+  );
+}
+
 /* -- Pagina principal ---------------------------------------- */
 export default function AdminPage() {
-  const firestore = useFirestore();
-  const configRef = doc(firestore, "config", "admin");
-  const { data: adminConfig } = useFirestoreDocData(configRef, { suspense: false });
-  const pinLength = (adminConfig as AdminConfig)?.pinLength ?? 4;
+  const pinLength = 4;
 
   const [authed, setAuthed] = useState(false);
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
   const [pinLoading, setPinLoading] = useState(false);
-  const [adminTab, setAdminTab] = useState<"stamps" | "menu" | "promos" | "customers" | "analytics">("stamps");
+  const [adminTab, setAdminTab] = useState<AdminTabId>("stamps");
   const [lockout, setLockout] = useState(0);
+  const [userName, setUserName] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const pinLoadingRef = useRef(false);
+
+  // Tabs disponibles segun el rol
+  const allowedTabs = userRole ? getTabsForRole(userRole) : [];
 
   // Countdown del lockout
   useEffect(() => {
@@ -926,8 +1290,15 @@ export default function AdminPage() {
 
   // Auto-auth si la cookie de sesion sigue siendo valida
   useEffect(() => {
-    checkBaristaSession().then((valid) => {
-      if (valid) setAuthed(true);
+    checkBaristaSession().then((session) => {
+      if (session.valid) {
+        setAuthed(true);
+        setUserName(session.nombre);
+        setUserRole(session.rol);
+        // Set initial tab to first allowed
+        const tabs = getTabsForRole(session.rol);
+        if (tabs.length > 0) setAdminTab(tabs[0]);
+      }
     });
   }, []);
 
@@ -939,7 +1310,12 @@ export default function AdminPage() {
       const result = await verifyAdminPin(pinValue);
       if (result.ok) {
         setAuthed(true);
+        setUserName(result.nombre);
+        setUserRole(result.rol);
         setPinError("");
+        // Set initial tab to first allowed
+        const tabs = getTabsForRole(result.rol);
+        if (tabs.length > 0) setAdminTab(tabs[0]);
       } else if (result.blocked) {
         setLockout(result.retryAfter);
         setPinError("");
@@ -972,7 +1348,7 @@ export default function AdminPage() {
           href="/"
           className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors duration-300 group"
         >
-          <span className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
+          <span aria-hidden="true" className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
           Inicio
         </Link>
         <span className="text-[10px] uppercase tracking-[0.45em] text-stone-400 dark:text-stone-500">
@@ -994,16 +1370,16 @@ export default function AdminPage() {
               transition={{ duration: 0.5 }}
               className="flex flex-col items-center gap-8 w-full"
             >
-              <div className="text-center space-y-2">
-                <p className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">
-                  Acceso barista
-                </p>
+              <div className="text-center space-y-3">
                 <h1
-                  className="text-4xl font-light tracking-wide text-stone-700 dark:text-stone-200"
+                  className="text-3xl sm:text-4xl font-semibold tracking-tight text-stone-800 dark:text-stone-100"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
-                  Panel de sellos
+                  La Commune
                 </h1>
+                <p className="text-[10px] uppercase tracking-[0.35em] text-stone-400 dark:text-stone-600 font-mono">
+                  Ingresa tu PIN
+                </p>
               </div>
 
               <PinPad
@@ -1023,49 +1399,43 @@ export default function AdminPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5 }}
-              className={`flex flex-col items-center gap-6 w-full ${adminTab === "menu" || adminTab === "promos" ? "justify-start" : ""}`}
+              className={`flex flex-col items-center gap-6 w-full ${adminTab === "menu" || adminTab === "promos" || adminTab === "config" ? "justify-start" : ""}`}
             >
               {/* Header */}
               <div className="text-center space-y-2">
                 <p className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">
-                  Barista
+                  {userName ? `Hola, ${userName}` : "Panel"} {userRole ? `· ${getRoleLabel(userRole)}` : ""}
                 </p>
                 <h1
                   className="text-4xl font-light tracking-wide text-stone-700 dark:text-stone-200"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
-                  {adminTab === "stamps" ? "Anadir sello"
-                    : adminTab === "menu" ? "Gestionar menu"
-                    : adminTab === "promos" ? "Promociones"
-                    : adminTab === "customers" ? "Clientes"
-                    : "Analytics"}
+                  {TAB_TITLES[adminTab] ?? "Panel"}
                 </h1>
               </div>
 
-              {/* Tabs */}
-              <div className="flex gap-1 p-1 bg-stone-100 dark:bg-neutral-900 border border-stone-200 dark:border-stone-800 rounded-xl flex-wrap justify-center">
-                {(["stamps", "menu", "promos", "customers", "analytics"] as const).map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setAdminTab(tab)}
-                    className={`px-4 py-2 rounded-lg text-[10px] uppercase tracking-[0.3em] transition-all duration-200 ${
-                      adminTab === tab
-                        ? "bg-stone-800 text-white dark:bg-stone-200 dark:text-neutral-900"
-                        : "text-stone-400 dark:text-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
-                    }`}
-                  >
-                    {tab === "stamps" ? "Sellos"
-                      : tab === "menu" ? "Menu"
-                      : tab === "promos" ? "Promos"
-                      : tab === "customers" ? "Clientes"
-                      : "Analytics"}
-                  </button>
-                ))}
-              </div>
+              {/* Tabs — solo mostrar si hay mas de 1 tab */}
+              {allowedTabs.length > 1 && (
+                <div className="flex gap-1 p-1 bg-stone-100 dark:bg-neutral-900 border border-stone-200 dark:border-stone-800 rounded-xl flex-wrap justify-center">
+                  {allowedTabs.map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setAdminTab(tab)}
+                      className={`px-4 py-2 rounded-lg text-[10px] uppercase tracking-[0.3em] transition-all duration-200 ${
+                        adminTab === tab
+                          ? "bg-stone-800 text-white dark:bg-stone-200 dark:text-neutral-900"
+                          : "text-stone-400 dark:text-stone-600 hover:text-stone-700 dark:hover:text-stone-300"
+                      }`}
+                    >
+                      {TAB_LABELS[tab]}
+                    </button>
+                  ))}
+                </div>
+              )}
 
-              {/* Contenido */}
+              {/* Contenido — solo renderiza tabs permitidas */}
               <AnimatePresence mode="wait">
-                {adminTab === "stamps" && (
+                {adminTab === "stamps" && allowedTabs.includes("stamps") && (
                   <motion.div
                     key="stamps-view"
                     initial={{ opacity: 0, x: -8 }}
@@ -1074,10 +1444,10 @@ export default function AdminPage() {
                     transition={{ duration: 0.2 }}
                     className="w-full"
                   >
-                    <StampView onLogout={() => { logoutBarista(); setAuthed(false); setPin(""); }} />
+                    <StampView onLogout={() => { logoutBarista(); setAuthed(false); setPin(""); setUserName(null); setUserRole(null); }} />
                   </motion.div>
                 )}
-                {adminTab === "menu" && (
+                {adminTab === "menu" && allowedTabs.includes("menu") && (
                   <motion.div
                     key="menu-view"
                     initial={{ opacity: 0, x: 8 }}
@@ -1089,7 +1459,7 @@ export default function AdminPage() {
                     <MenuAdmin />
                   </motion.div>
                 )}
-                {adminTab === "promos" && (
+                {adminTab === "promos" && allowedTabs.includes("promos") && (
                   <motion.div
                     key="promos-view"
                     initial={{ opacity: 0, x: 8 }}
@@ -1101,7 +1471,7 @@ export default function AdminPage() {
                     <PromosAdmin />
                   </motion.div>
                 )}
-                {adminTab === "customers" && (
+                {adminTab === "customers" && allowedTabs.includes("customers") && (
                   <motion.div
                     key="customers-view"
                     initial={{ opacity: 0, x: 8 }}
@@ -1113,7 +1483,7 @@ export default function AdminPage() {
                     <CustomerDirectory />
                   </motion.div>
                 )}
-                {adminTab === "analytics" && (
+                {adminTab === "analytics" && allowedTabs.includes("analytics") && (
                   <motion.div
                     key="analytics-view"
                     initial={{ opacity: 0, x: 8 }}
@@ -1123,6 +1493,18 @@ export default function AdminPage() {
                     className="w-full"
                   >
                     <AnalyticsDashboard />
+                  </motion.div>
+                )}
+                {adminTab === "config" && allowedTabs.includes("config") && (
+                  <motion.div
+                    key="config-view"
+                    initial={{ opacity: 0, x: 8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -8 }}
+                    transition={{ duration: 0.2 }}
+                    className="w-full"
+                  >
+                    <RewardConfig />
                   </motion.div>
                 )}
               </AnimatePresence>

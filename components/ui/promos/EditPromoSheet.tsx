@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useFirestore } from "reactfire";
-import { Timestamp } from "firebase/firestore";
 import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
 import { Promotion } from "@/models/promotion.model";
 import { updatePromotion } from "@/services/promotion.service";
@@ -25,8 +23,8 @@ const DAY_OPTIONS = [
   { value: 6, label: "S" },
 ];
 
-function toDateStr(d: Timestamp | string): string {
-  const date = d instanceof Timestamp ? d.toDate() : new Date(d);
+function toDateStr(d: string | Date): string {
+  const date = d instanceof Date ? d : new Date(d);
   return date.toISOString().split("T")[0];
 }
 
@@ -39,7 +37,6 @@ export function EditPromoSheet({
   onSaved: () => void;
   onCancel: () => void;
 }) {
-  const firestore = useFirestore();
   const keyboardOffset = useKeyboardOffset();
   const [title, setTitle] = useState(promo.title);
   const [description, setDescription] = useState(promo.description);
@@ -59,12 +56,12 @@ export function EditPromoSheet({
   const handleSave = async () => {
     if (!title.trim()) return;
     setSaving(true);
-    await updatePromotion(firestore, promo.id!, {
+    await updatePromotion(promo.id!, {
       title: title.trim(),
       description: description.trim(),
       type,
-      startsAt: Timestamp.fromDate(new Date(startsAt + "T00:00:00")),
-      endsAt: Timestamp.fromDate(new Date(endsAt + "T23:59:59")),
+      startsAt: new Date(startsAt + "T00:00:00"),
+      endsAt: new Date(endsAt + "T23:59:59"),
       daysOfWeek,
       appliesTo: appliesTo.trim() || undefined,
     });

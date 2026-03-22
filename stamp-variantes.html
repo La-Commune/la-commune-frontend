@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Commune — Variantes de Stamp Card</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0c0b09; color: #e8ddd5; font-family: system-ui, -apple-system, sans-serif; }
+  .header { text-align: center; padding: 60px 20px 40px; }
+  .header h1 { font-size: 14px; letter-spacing: 0.4em; text-transform: uppercase; color: #c8956c; font-weight: 300; }
+  .header p { font-size: 12px; color: #6b6458; margin-top: 8px; letter-spacing: 0.15em; }
+  .section { padding: 30px 20px; max-width: 1200px; margin: 0 auto; }
+  .section-title { font-size: 11px; letter-spacing: 0.35em; text-transform: uppercase; color: #c8956c; margin-bottom: 6px; font-weight: 400; }
+  .section-desc { font-size: 12px; color: #6b6458; margin-bottom: 30px; line-height: 1.6; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+  .card-wrap { background: #161412; border: 1px solid #2a2722; border-radius: 20px; overflow: hidden; }
+  .card-label { padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e1b17; }
+  .card-label h3 { font-size: 13px; font-weight: 500; color: #e8ddd5; }
+  .card-label span { font-size: 10px; color: #6b6458; letter-spacing: 0.15em; text-transform: uppercase; }
+  .card-preview { padding: 24px; display: flex; justify-content: center; }
+  .stamp-card {
+    width: 300px; height: 380px; border-radius: 24px; overflow: hidden;
+    background: linear-gradient(145deg, #FAF7F4, #F0E9E0);
+    display: flex; flex-direction: column;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.14);
+  }
+  .stamp-card .card-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid #E8E0D8;
+  }
+  .stamp-card .card-header .brand { font-size: 12px; letter-spacing: 0.3em; text-transform: uppercase; color: #2B2B2B; font-weight: 300; }
+  .stamp-card .card-header .badge { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: #A89E97; }
+  .stamp-card .card-body { flex: 1; display: flex; align-items: center; justify-content: center; }
+  .stamp-card .card-footer { padding: 0 20px 16px; }
+  .stamp-card .card-footer .msg { font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: #A89E97; margin-bottom: 6px; }
+  .stamp-card .card-footer .counter { display: flex; justify-content: space-between; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; }
+  .stamp-card .card-footer .counter .left { color: #A89E97; }
+  .stamp-card .card-footer .counter .right { color: #8b6b3d; }
+  .divider { height: 1px; background: #1e1b17; margin: 50px 0; }
+  .tag { display: inline-block; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; padding: 3px 10px; border-radius: 20px; border: 1px solid #2a2722; color: #6b6458; margin-left: 8px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>La Commune · Variantes de Tarjeta</h1>
+  <p>Propuestas de ilustración para el sistema de sellos — elige una por recompensa</p>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECCIÓN 1: TAZAS (para recompensa Bebida) -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <p class="section-title">Tazas — para recompensa "Bebida gratis"</p>
+  <p class="section-desc">Las 4 variantes de taza. La A3 (Flat White Cenital) es la actual.</p>
+  <div class="grid">
+
+    <!-- A1: Latte lateral -->
+    <div class="card-wrap">
+      <div class="card-label">
+        <h3>A1 · Latte Lateral</h3>
+        <span>Vista de perfil</span>
+      </div>
+      <div class="card-preview">
+        <div class="stamp-card">
+          <div class="card-header"><span class="brand">La Commune</span><span class="badge">Fidelidad</span></div>
+          <div class="card-body">
+            <svg viewBox="0 0 180 200" width="170" height="190">
+              <defs>
+                <linearGradient id="coffeeFillA1" x1="0" y1="1" x2="0" y2="0">
+                  <stop offset="0%" stop-color="#5a3f20"/>
+                  <stop offset="50%" stop-color="#8b6b3d"/>
+                  <stop offset="100%" stop-color="#c8956c"/>
+                </linearGradient>
+                <clipPath id="cupClipA1">
+                  <path d="M45 50 Q42 50 40 55 L32 155 Q30 165 45 168 L135 168 Q150 165 148 155 L140 55 Q138 50 135 50Z"/>
+                </clipPath>
+              </defs>
+              <!-- Platito -->
+              <ellipse cx="90" cy="172" rx="75" ry="10" fill="none" stroke="#d8d0c8" stroke-width="1.5"/>
+              <!-- Taza cuerpo -->
+              <path d="M45 50 Q42 50 40 55 L32 155 Q30 165 45 168 L135 168 Q150 165 148 155 L140 55 Q138 50 135 50Z" fill="#f0e9e0" stroke="#c7b7a3" stroke-width="2"/>
+              <!-- Asa -->
+              <path d="M140 70 Q165 70 165 100 Q165 130 140 130" fill="none" stroke="#c7b7a3" stroke-width="2.5" stroke-linecap="round"/>
+              <!-- Café fill (3/5) -->
+              <rect x="30" y="100" width="120" height="70" fill="url(#coffeeFillA1)" clip-path="url(#cupClipA1)" opacity="0.9">
+                <animate attributeName="y" from="170" to="100" dur="1.5s" fill="freeze"/>
+              </rect>
+              <!-- Borde superior -->
+              <path d="M43 50 L137 50" stroke="#c7b7a3" stroke-width="3" stroke-linecap="round"/>
+              <!-- Número -->
+              <text x="90" y="135" text-anchor="middle" font-size="32" fill="#f5f0ea" font-weight="300" font-family="Georgia, serif" opacity="0.8">3</text>
+              <text x="90" y="152" text-anchor="middle" font-size="6" fill="#f5f0ea" font-family="system-ui" letter-spacing="2" text-transform="uppercase" opacity="0.5">de 5</text>
+            </svg>
+          </div>
+          <div class="card-footer">
+            <p class="msg">¡Ya vas a la mitad!</p>
+            <div class="counter"><span class="left">2 restantes</span><span class="right">3 / 5</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- A2: Cappuccino Cenital -->
+    <div class="card-wrap">
+      <div class="card-label">
+        <h3>A2 · Cappuccino Cenital</h3>
+        <span>Espuma texturizada</span>
+      </div>
+      <div class="card-preview">
+        <div class="stamp-card">
+          <div class="card-header"><span class="brand">La Commune</span><span class="badge">Fidelidad</span></div>
+          <div class="card-body">
+            <svg viewBox="0 0 180 180" width="170" height="170">
+              <defs>
+                <radialGradient id="foamFillA2" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#f5f0ea"/>
+                  <stop offset="40%" stop-color="#e8ddd5"/>
+                  <stop offset="70%" stop-color="#d4c8be"/>
+                  <stop offset="100%" stop-color="#c7b7a3"/>
+                </radialGradient>
+                <clipPath id="cupClipA2"><circle cx="90" cy="90" r="58"/></clipPath>
+              </defs>
+              <!-- Platito -->
+              <circle cx="90" cy="90" r="78" fill="none" stroke="#d8d0c8" stroke-width="1.5"/>
+              <!-- Borde taza -->
+              <circle cx="90" cy="90" r="62" fill="none" stroke="#c7b7a3" stroke-width="2.5"/>
+              <!-- Interior -->
+              <circle cx="90" cy="90" r="58" fill="#f0e9e0"/>
+              <!-- Asa -->
+              <path d="M148 78 Q170 78 170 90 Q170 102 148 102" fill="none" stroke="#c7b7a3" stroke-width="2.5" stroke-linecap="round"/>
+              <!-- Espuma (fill) -->
+              <circle cx="90" cy="90" r="40" fill="url(#foamFillA2)" clip-path="url(#cupClipA2)" opacity="0.95">
+                <animate attributeName="r" from="0" to="40" dur="1s" fill="freeze"/>
+              </circle>
+              <!-- Textura de espuma — arte de cappuccino -->
+              <circle cx="78" cy="80" r="12" fill="none" stroke="#c7b7a3" stroke-width="0.5" opacity="0.3"/>
+              <circle cx="100" cy="85" r="10" fill="none" stroke="#c7b7a3" stroke-width="0.5" opacity="0.25"/>
+              <circle cx="88" cy="98" r="8" fill="none" stroke="#c7b7a3" stroke-width="0.5" opacity="0.2"/>
+              <!-- Número -->
+              <text x="90" y="87" text-anchor="middle" dominant-baseline="central" font-size="30" fill="#8b6b3d" font-weight="300" font-family="Georgia, serif" opacity="0.7">3</text>
+              <text x="90" y="108" text-anchor="middle" font-size="5.5" fill="#a07850" font-family="system-ui" letter-spacing="2.5" opacity="0.6">de 5</text>
+            </svg>
+          </div>
+          <div class="card-footer">
+            <p class="msg">¡Ya vas a la mitad!</p>
+            <div class="counter"><span class="left">2 restantes</span><span class="right">3 / 5</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- A3: Flat White Cenital (ACTUAL) -->
+    <div class="card-wrap" style="border-color: #c8956c;">
+      <div class="card-label" style="border-color: #2a2722;">
+        <h3>A3 · Flat White Cenital <span class="tag" style="border-color:#c8956c; color:#c8956c;">Actual</span></h3>
+        <span>Café oscuro + rosetta</span>
+      </div>
+      <div class="card-preview">
+        <div class="stamp-card">
+          <div class="card-header"><span class="brand">La Commune</span><span class="badge">Fidelidad</span></div>
+          <div class="card-body">
+            <svg viewBox="0 0 180 180" width="170" height="170">
+              <defs>
+                <radialGradient id="coffeeFillA3" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#8b6b3d"/>
+                  <stop offset="55%" stop-color="#a07850"/>
+                  <stop offset="85%" stop-color="#c8956c"/>
+                  <stop offset="100%" stop-color="#b08860"/>
+                </radialGradient>
+                <clipPath id="cupClipA3"><circle cx="90" cy="90" r="58"/></clipPath>
+              </defs>
+              <circle cx="90" cy="90" r="78" fill="none" stroke="#d8d0c8" stroke-width="1.5"/>
+              <circle cx="90" cy="90" r="62" fill="none" stroke="#c7b7a3" stroke-width="2.5"/>
+              <circle cx="90" cy="90" r="58" fill="#f0e9e0"/>
+              <path d="M148 78 Q170 78 170 90 Q170 102 148 102" fill="none" stroke="#c7b7a3" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="90" cy="90" r="35" fill="url(#coffeeFillA3)" clip-path="url(#cupClipA3)">
+                <animate attributeName="r" from="0" to="35" dur="1s" fill="freeze"/>
+              </circle>
+              <text x="90" y="87" text-anchor="middle" dominant-baseline="central" font-size="30" fill="#f5f0ea" font-weight="300" font-family="Georgia, serif" opacity="0.85">3</text>
+              <text x="90" y="108" text-anchor="middle" font-size="5.5" fill="#f5f0ea" font-family="system-ui" letter-spacing="2.5" opacity="0.5">de 5</text>
+            </svg>
+          </div>
+          <div class="card-footer">
+            <p class="msg">¡Ya vas a la mitad!</p>
+            <div class="counter"><span class="left">2 restantes</span><span class="right">3 / 5</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- A4: Espresso Shot -->
+    <div class="card-wrap">
+      <div class="card-label">
+        <h3>A4 · Espresso Shot</h3>
+        <span>Taza pequeña + crema</span>
+      </div>
+      <div class="card-preview">
+        <div class="stamp-card">
+          <div class="card-header"><span class="brand">La Commune</span><span class="badge">Fidelidad</span></div>
+          <div class="card-body">
+            <svg viewBox="0 0 180 200" width="160" height="180">
+              <defs>
+                <linearGradient id="espressoFill" x1="0" y1="1" x2="0" y2="0">
+                  <stop offset="0%" stop-color="#3d2810"/>
+                  <stop offset="60%" stop-color="#5a3f20"/>
+                  <stop offset="90%" stop-color="#8b6b3d"/>
+                  <stop offset="100%" stop-color="#c8956c"/>
+                </linearGradient>
+                <clipPath id="espressoClip">
+                  <path d="M55 80 Q52 80 50 85 L46 145 Q44 155 55 158 L125 158 Q136 155 134 145 L130 85 Q128 80 125 80Z"/>
+                </clipPath>
+              </defs>
+              <!-- Platito pequeño -->
+              <ellipse cx="90" cy="162" rx="55" ry="8" fill="none" stroke="#d8d0c8" stroke-width="1.5"/>
+              <!-- Taza demitasse -->
+              <path d="M55 80 Q52 80 50 85 L46 145 Q44 155 55 158 L125 158 Q136 155 134 145 L130 85 Q128 80 125 80Z" fill="#f0e9e0" stroke="#c7b7a3" stroke-width="2"/>
+              <!-- Asa pequeña -->
+              <path d="M130 90 Q150 90 150 110 Q150 130 130 130" fill="none" stroke="#c7b7a3" stroke-width="2" stroke-linecap="round"/>
+              <!-- Espresso fill -->
+              <rect x="44" y="105" width="92" height="55" fill="url(#espressoFill)" clip-path="url(#espressoClip)" opacity="0.95">
+                <animate attributeName="y" from="158" to="105" dur="1.2s" fill="freeze"/>
+              </rect>
+              <!-- Crema top line -->
+              <path d="M52 107 Q70 103 90 105 Q110 107 128 104" fill="none" stroke="#d4a57c" stroke-width="1.5" opacity="0.6">
+                <animate attributeName="opacity" from="0" to="0.6" dur="0.5s" begin="1s" fill="freeze"/>
+              </path>
+              <!-- Borde superior -->
+              <path d="M53 80 L127 80" stroke="#c7b7a3" stroke-width="2.5" stroke-linecap="round"/>
+              <!-- Número -->
+              <text x="90" y="132" text-anchor="middle" font-size="28" fill="#f5f0ea" font-weight="300" font-family="Georgia, serif" opacity="0.8">3</text>
+              <text x="90" y="148" text-anchor="middle" font-size="5.5" fill="#f5f0ea" font-family="system-ui" letter-spacing="2" opacity="0.5">de 5</text>
+            </svg>
+          </div>
+          <div class="card-footer">
+            <p class="msg">¡Ya vas a la mitad!</p>
+            <div class="counter"><span class="left">2 restantes</span><span class="right">3 / 5</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECCIÓN 2: POSTRES (para recompensa Postre) -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <p class="section-title">Postres — para recompensa "Postre gratis"</p>
+  <p class="section-desc">El concepto: un pastel/cupcake que se va armando capa por capa con cada sello.</p>
+  <div class="grid">
+
+    <!-- B1: Cupcake -->
+    <div class="card-wrap">
+      <div class="card-label">
+        <h3>B1 · Cupcake</h3>
+        <span>Base → frosting → cereza</span>
+      </div>
+      <div class="card-preview">
+        <div class="stamp-card">
+          <div class="card-header"><span class="brand">La Commune</span><span class="badge">Fidelidad</span></div>
+          <div class="card-body">
+            <svg viewBox="0 0 180 200" width="160" height="180">
+              <!-- Capacillo (siempre visible) -->
+              <path d="M55 120 L48 170 Q46 178 56 180 L124 180 Q134 178 132 170 L125 120Z" fill="none" stroke="#c7b7a3" stroke-width="1.5"/>
+              <line x1="60" y1="122" x2="54" y2="170" stroke="#d8d0c8" stroke-width="0.5" opacity="0.5"/>
+              <line x1="75" y1="120" x2="72" y2="175" stroke="#d8d0c8" stroke-width="0.5" opacity="0.5"/>
+              <line x1="90" y1="120" x2="90" y2="178" stroke="#d8d0c8" stroke-width="0.5" opacity="0.5"/>
+              <line x1="105" y1="120" x2="108" y2="175" stroke="#d8d0c8" stroke-width="0.5" opacity="0.5"/>
+              <line x1="120" y1="122" x2="126" y2="170" stroke="#d8d0c8" stroke-width="0.5" opacity="0.5"/>
+              <!-- Pan (sello 1-2) -->
+              <path d="M55 120 Q55 95 68 90 Q80 86 90 85 Q100 86 112 90 Q125 95 125 120Z" fill="#d4a57c" stroke="#c7b7a3" stroke-width="1.5" opacity="0.9"/>
+              <!-- Frosting (sello 3-4) -->
+              <path d="M50 92 Q55 70 70 65 Q80 62 90 60 Q100 62 110 65 Q125 70 130 92Z" fill="#f0e0f0" stroke="#d8c0d8" stroke-width="1" opacity="0.85"/>
+              <path d="M58 88 Q65 78 75 74 Q85 71 90 70 Q95 71 105 74 Q115 78 122 88Z" fill="#e8d0e8" stroke="none" opacity="0.5"/>
+              <!-- Cereza (sello 5 = completado) — todavía no -->
+              <circle cx="90" cy="55" r="0" fill="#c0392b" stroke="#a93226" stroke-width="1">
+                <!--<animate attributeName="r" from="0" to="8" dur="0.5s" fill="freeze"/>-->
+              </circle>
+              <!-- Número -->
+              <text x="90" y="105" text-anchor="middle" font-size="28" fill="#8b6b3d" font-weight="300" font-family="Georgia, serif" opacity="0.7">3</text>
+              <text x="90" y="120" text-anchor="middle" font-size="5.5" fill="#a89e97" font-family="system-ui" letter-spacing="2" opacity="0.6">de 5</text>
+            </svg>
+          </div>
+          <div class="card-footer">
+            <p class="msg">¡Ya vas a la mitad!</p>
+            <div class="counter"><span class="left">2 restantes</span><span class="right">3 / 5</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- B2: Rebanada de pastel -->
+    <div class="card-wrap">
+      <div class="card-label">
+        <h3>B2 · Rebanada de Pastel</h3>
+        <span>Capas que se apilan</span>
+      </div>
+      <div class="card-preview">
+        <div class="stamp-card">
+          <div class="card-header"><span class="brand">La Commune</span><span class="badge">Fidelidad</span></div>
+          <div class="card-body">
+            <svg viewBox="0 0 180 200" width="160" height="180">
+              <!-- Plato -->
+              <ellipse cx="90" cy="175" rx="70" ry="8" fill="none" stroke="#d8d0c8" stroke-width="1.5"/>
+              <!-- Capa 1 (base) — siempre visible -->
+              <rect x="45" y="145" width="90" height="28" rx="3" fill="#d4a57c" stroke="#c7b7a3" stroke-width="1"/>
+              <!-- Crema 1 -->
+              <rect x="45" y="140" width="90" height="6" rx="2" fill="#f5f0ea" stroke="none" opacity="0.8"/>
+              <!-- Capa 2 -->
+              <rect x="45" y="112" width="90" height="28" rx="3" fill="#c8956c" stroke="#b08860" stroke-width="1"/>
+              <!-- Crema 2 -->
+              <rect x="45" y="107" width="90" height="6" rx="2" fill="#f5f0ea" stroke="none" opacity="0.8"/>
+              <!-- Capa 3 (aún vacía — outline) -->
+              <rect x="45" y="79" width="90" height="28" rx="3" fill="none" stroke="#d8d0c8" stroke-width="1" stroke-dasharray="4 3" opacity="0.4"/>
+              <!-- Fresa (coronación al completar) — placeholder -->
+              <text x="90" y="72" text-anchor="middle" font-size="20" opacity="0.2">🍓</text>
+              <!-- Número -->
+              <text x="90" y="136" text-anchor="middle" font-size="26" fill="#f5f0ea" font-weight="300" font-family="Georgia, serif" opacity="0.8">3</text>
+              <text x="90" y="162" text-anchor="middle" font-size="5.5" fill="#f5f0ea" font-family="system-ui" letter-spacing="2" opacity="0.5">de 5</text>
+            </svg>
+          </div>
+          <div class="card-footer">
+            <p class="msg">¡Ya vas a la mitad!</p>
+            <div class="counter"><span class="left">2 restantes</span><span class="right">3 / 5</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECCIÓN 3: DESCUENTO (para recompensa %)  -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <p class="section-title">Descuento — para recompensa "10% descuento"</p>
+  <p class="section-desc">Un tag/etiqueta de descuento que se va llenando, o monedas que se apilan.</p>
+  <div class="grid">
+
+    <!-- C1: Tag circular -->
+    <div class="card-wrap">
+      <div class="card-label">
+        <h3>C1 · Tag de Descuento</h3>
+        <span>Círculo de progreso</span>
+      </div>
+      <div class="card-preview">
+        <div class="stamp-card">
+          <div class="card-header"><span class="brand">La Commune</span><span class="badge">Fidelidad</span></div>
+          <div class="card-body">
+            <svg viewBox="0 0 180 180" width="170" height="170">
+              <defs>
+                <linearGradient id="tagGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#c8956c"/>
+                  <stop offset="100%" stop-color="#8b6b3d"/>
+                </linearGradient>
+              </defs>
+              <!-- Anillo de fondo -->
+              <circle cx="90" cy="90" r="65" fill="none" stroke="#e8e0d8" stroke-width="6"/>
+              <!-- Progreso (3/5 = 216°) -->
+              <circle cx="90" cy="90" r="65" fill="none" stroke="url(#tagGrad)" stroke-width="6"
+                stroke-dasharray="408.4" stroke-dashoffset="163.4"
+                stroke-linecap="round" transform="rotate(-90 90 90)">
+                <animate attributeName="stroke-dashoffset" from="408.4" to="163.4" dur="1.2s" fill="freeze"/>
+              </circle>
+              <!-- Etiqueta interior -->
+              <circle cx="90" cy="90" r="48" fill="#FAF7F4" stroke="#e8e0d8" stroke-width="1"/>
+              <!-- % grande -->
+              <text x="90" y="82" text-anchor="middle" dominant-baseline="central" font-size="36" fill="#8b6b3d" font-weight="200" font-family="Georgia, serif">%</text>
+              <!-- Contador -->
+              <text x="90" y="112" text-anchor="middle" font-size="11" fill="#A89E97" font-family="system-ui" letter-spacing="1">3 de 5</text>
+              <!-- Cordón de la etiqueta -->
+              <line x1="90" y1="25" x2="90" y2="10" stroke="#c7b7a3" stroke-width="1.5"/>
+              <circle cx="90" cy="8" r="3" fill="none" stroke="#c7b7a3" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div class="card-footer">
+            <p class="msg">¡Ya vas a la mitad!</p>
+            <div class="counter"><span class="left">2 restantes</span><span class="right">3 / 5</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- C2: Monedas apiladas -->
+    <div class="card-wrap">
+      <div class="card-label">
+        <h3>C2 · Monedas</h3>
+        <span>Stack que crece</span>
+      </div>
+      <div class="card-preview">
+        <div class="stamp-card">
+          <div class="card-header"><span class="brand">La Commune</span><span class="badge">Fidelidad</span></div>
+          <div class="card-body">
+            <svg viewBox="0 0 180 200" width="160" height="180">
+              <!-- Base/sombra -->
+              <ellipse cx="90" cy="175" rx="45" ry="8" fill="#e8e0d8" opacity="0.5"/>
+              <!-- Moneda 1 (siempre) -->
+              <ellipse cx="90" cy="160" rx="40" ry="10" fill="#c8956c" stroke="#b08860" stroke-width="1"/>
+              <rect x="50" y="150" width="80" height="10" fill="#b08860"/>
+              <ellipse cx="90" cy="150" rx="40" ry="10" fill="#d4a57c" stroke="#c8956c" stroke-width="1"/>
+              <text x="90" y="154" text-anchor="middle" font-size="8" fill="#8b6b3d" font-family="Georgia" opacity="0.6">LC</text>
+              <!-- Moneda 2 -->
+              <ellipse cx="90" cy="136" rx="40" ry="10" fill="#c8956c" stroke="#b08860" stroke-width="1"/>
+              <rect x="50" y="126" width="80" height="10" fill="#b08860"/>
+              <ellipse cx="90" cy="126" rx="40" ry="10" fill="#d4a57c" stroke="#c8956c" stroke-width="1"/>
+              <text x="90" y="130" text-anchor="middle" font-size="8" fill="#8b6b3d" font-family="Georgia" opacity="0.6">LC</text>
+              <!-- Moneda 3 -->
+              <ellipse cx="90" cy="112" rx="40" ry="10" fill="#c8956c" stroke="#b08860" stroke-width="1"/>
+              <rect x="50" y="102" width="80" height="10" fill="#b08860"/>
+              <ellipse cx="90" cy="102" rx="40" ry="10" fill="#d4a57c" stroke="#c8956c" stroke-width="1"/>
+              <text x="90" y="106" text-anchor="middle" font-size="8" fill="#8b6b3d" font-family="Georgia" opacity="0.6">LC</text>
+              <!-- Monedas vacías (4 y 5) — outline -->
+              <ellipse cx="90" cy="82" rx="40" ry="10" fill="none" stroke="#d8d0c8" stroke-width="1" stroke-dasharray="4 3" opacity="0.4"/>
+              <ellipse cx="90" cy="62" rx="40" ry="10" fill="none" stroke="#d8d0c8" stroke-width="1" stroke-dasharray="4 3" opacity="0.3"/>
+              <!-- Número -->
+              <text x="90" y="192" text-anchor="middle" font-size="10" fill="#A89E97" font-family="system-ui" letter-spacing="1.5">3 / 5</text>
+            </svg>
+          </div>
+          <div class="card-footer">
+            <p class="msg">¡Ya vas a la mitad!</p>
+            <div class="counter"><span class="left">2 restantes</span><span class="right">3 / 5</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECCIÓN 4: GRANO DE CAFÉ (universal)      -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <p class="section-title">Grano de Café — universal, para cualquier recompensa</p>
+  <p class="section-desc">Un grano de café que se va llenando/tostando. Funciona para cualquier tipo de recompensa.</p>
+  <div class="grid">
+
+    <!-- D1: Grano cenital -->
+    <div class="card-wrap">
+      <div class="card-label">
+        <h3>D1 · Grano Cenital</h3>
+        <span>Se va tostando</span>
+      </div>
+      <div class="card-preview">
+        <div class="stamp-card">
+          <div class="card-header"><span class="brand">La Commune</span><span class="badge">Fidelidad</span></div>
+          <div class="card-body">
+            <svg viewBox="0 0 180 200" width="160" height="180">
+              <defs>
+                <linearGradient id="beanFill" x1="0" y1="1" x2="0" y2="0">
+                  <stop offset="0%" stop-color="#3d2810"/>
+                  <stop offset="50%" stop-color="#5a3f20"/>
+                  <stop offset="100%" stop-color="#8b6b3d"/>
+                </linearGradient>
+                <clipPath id="beanClip">
+                  <path d="M90 30 Q130 30 135 75 Q138 110 125 140 Q115 165 90 170 Q65 165 55 140 Q42 110 45 75 Q50 30 90 30Z"/>
+                </clipPath>
+              </defs>
+              <!-- Contorno del grano -->
+              <path d="M90 30 Q130 30 135 75 Q138 110 125 140 Q115 165 90 170 Q65 165 55 140 Q42 110 45 75 Q50 30 90 30Z"
+                fill="#f0e9e0" stroke="#c7b7a3" stroke-width="2"/>
+              <!-- Línea central del grano -->
+              <path d="M90 45 Q82 70 88 100 Q92 130 90 155"
+                fill="none" stroke="#c7b7a3" stroke-width="1.5" stroke-linecap="round"/>
+              <!-- Fill de tostado (3/5 = 60% de abajo hacia arriba) -->
+              <rect x="40" y="68" width="100" height="105" fill="url(#beanFill)" clip-path="url(#beanClip)" opacity="0.85">
+                <animate attributeName="y" from="170" to="68" dur="1.2s" fill="freeze"/>
+              </rect>
+              <!-- Línea central sobre el fill -->
+              <path d="M90 100 Q92 130 90 155"
+                fill="none" stroke="#1a1412" stroke-width="1" stroke-linecap="round" opacity="0.3"/>
+              <!-- Número -->
+              <text x="90" y="115" text-anchor="middle" font-size="30" fill="#f5f0ea" font-weight="300" font-family="Georgia, serif" opacity="0.8">3</text>
+              <text x="90" y="135" text-anchor="middle" font-size="5.5" fill="#f5f0ea" font-family="system-ui" letter-spacing="2" opacity="0.5">de 5</text>
+            </svg>
+          </div>
+          <div class="card-footer">
+            <p class="msg">¡Ya vas a la mitad!</p>
+            <div class="counter"><span class="left">2 restantes</span><span class="right">3 / 5</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- D2: Grano con aroma -->
+    <div class="card-wrap">
+      <div class="card-label">
+        <h3>D2 · Grano con Aroma</h3>
+        <span>Tostado + líneas de vapor</span>
+      </div>
+      <div class="card-preview">
+        <div class="stamp-card">
+          <div class="card-header"><span class="brand">La Commune</span><span class="badge">Fidelidad</span></div>
+          <div class="card-body">
+            <svg viewBox="0 0 180 200" width="160" height="180">
+              <defs>
+                <radialGradient id="beanFillD2" cx="50%" cy="60%" r="50%">
+                  <stop offset="0%" stop-color="#5a3f20"/>
+                  <stop offset="60%" stop-color="#8b6b3d"/>
+                  <stop offset="100%" stop-color="#c8956c"/>
+                </radialGradient>
+                <clipPath id="beanClipD2">
+                  <path d="M90 50 Q120 50 123 85 Q125 110 118 130 Q112 148 90 152 Q68 148 62 130 Q55 110 57 85 Q60 50 90 50Z"/>
+                </clipPath>
+              </defs>
+              <!-- Vapor (se muestra conforme avanzan los sellos) -->
+              <path d="M78 42 Q75 30 78 20" fill="none" stroke="#c7b7a3" stroke-width="1" stroke-linecap="round" opacity="0.4">
+                <animate attributeName="opacity" values="0.2;0.5;0.2" dur="2s" repeatCount="indefinite"/>
+              </path>
+              <path d="M90 38 Q87 25 90 15" fill="none" stroke="#c7b7a3" stroke-width="1" stroke-linecap="round" opacity="0.5">
+                <animate attributeName="opacity" values="0.3;0.6;0.3" dur="2.5s" repeatCount="indefinite"/>
+              </path>
+              <path d="M102 42 Q105 30 102 20" fill="none" stroke="#c7b7a3" stroke-width="1" stroke-linecap="round" opacity="0.4">
+                <animate attributeName="opacity" values="0.2;0.5;0.2" dur="2.2s" repeatCount="indefinite"/>
+              </path>
+              <!-- Contorno -->
+              <path d="M90 50 Q120 50 123 85 Q125 110 118 130 Q112 148 90 152 Q68 148 62 130 Q55 110 57 85 Q60 50 90 50Z"
+                fill="#f0e9e0" stroke="#c7b7a3" stroke-width="2"/>
+              <!-- Línea central -->
+              <path d="M90 60 Q84 80 88 100 Q92 120 90 142"
+                fill="none" stroke="#c7b7a3" stroke-width="1.5" stroke-linecap="round"/>
+              <!-- Fill -->
+              <rect x="54" y="82" width="72" height="72" fill="url(#beanFillD2)" clip-path="url(#beanClipD2)" opacity="0.85">
+                <animate attributeName="y" from="152" to="82" dur="1.2s" fill="freeze"/>
+              </rect>
+              <!-- Número -->
+              <text x="90" y="110" text-anchor="middle" font-size="28" fill="#f5f0ea" font-weight="300" font-family="Georgia, serif" opacity="0.8">3</text>
+              <text x="90" y="128" text-anchor="middle" font-size="5.5" fill="#f5f0ea" font-family="system-ui" letter-spacing="2" opacity="0.5">de 5</text>
+            </svg>
+          </div>
+          <div class="card-footer">
+            <p class="msg">¡Ya vas a la mitad!</p>
+            <div class="counter"><span class="left">2 restantes</span><span class="right">3 / 5</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SECCIÓN 5: BEBIDA ESPECIAL                -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="section">
+  <p class="section-title">Bebida Especial — para recompensas premium</p>
+  <p class="section-desc">Un vaso alto tipo frappé/cold brew que se llena. Para recompensas de bebida premium.</p>
+  <div class="grid">
+
+    <!-- E1: Cold Brew -->
+    <div class="card-wrap">
+      <div class="card-label">
+        <h3>E1 · Cold Brew</h3>
+        <span>Vaso tall + hielos</span>
+      </div>
+      <div class="card-preview">
+        <div class="stamp-card">
+          <div class="card-header"><span class="brand">La Commune</span><span class="badge">Fidelidad</span></div>
+          <div class="card-body">
+            <svg viewBox="0 0 180 210" width="155" height="185">
+              <defs>
+                <linearGradient id="coldBrewFill" x1="0" y1="1" x2="0" y2="0">
+                  <stop offset="0%" stop-color="#1a0f05"/>
+                  <stop offset="40%" stop-color="#3d2810"/>
+                  <stop offset="80%" stop-color="#5a3f20"/>
+                  <stop offset="100%" stop-color="#8b6b3d"/>
+                </linearGradient>
+                <clipPath id="glassClip">
+                  <path d="M62 40 L58 175 Q57 182 68 184 L112 184 Q123 182 122 175 L118 40Z"/>
+                </clipPath>
+              </defs>
+              <!-- Vaso -->
+              <path d="M62 40 L58 175 Q57 182 68 184 L112 184 Q123 182 122 175 L118 40Z"
+                fill="#faf7f4" stroke="#c7b7a3" stroke-width="1.5" opacity="0.9"/>
+              <!-- Borde grueso -->
+              <path d="M60 40 L120 40" stroke="#c7b7a3" stroke-width="3" stroke-linecap="round"/>
+              <!-- Café fill (3/5) -->
+              <rect x="56" y="90" width="70" height="96" fill="url(#coldBrewFill)" clip-path="url(#glassClip)" opacity="0.85">
+                <animate attributeName="y" from="184" to="90" dur="1.3s" fill="freeze"/>
+              </rect>
+              <!-- Hielos -->
+              <rect x="70" y="100" width="16" height="14" rx="3" fill="#f0e9e0" stroke="#d8d0c8" stroke-width="0.8" opacity="0.7" transform="rotate(-8 78 107)"/>
+              <rect x="94" y="110" width="14" height="12" rx="3" fill="#f0e9e0" stroke="#d8d0c8" stroke-width="0.8" opacity="0.6" transform="rotate(5 101 116)"/>
+              <rect x="78" y="125" width="13" height="11" rx="3" fill="#f0e9e0" stroke="#d8d0c8" stroke-width="0.8" opacity="0.5" transform="rotate(-3 84 130)"/>
+              <!-- Popote -->
+              <line x1="100" y1="20" x2="97" y2="140" stroke="#c7b7a3" stroke-width="2.5" stroke-linecap="round"/>
+              <!-- Número -->
+              <text x="82" y="165" text-anchor="middle" font-size="24" fill="#f5f0ea" font-weight="300" font-family="Georgia, serif" opacity="0.8">3</text>
+              <text x="82" y="178" text-anchor="middle" font-size="5" fill="#f5f0ea" font-family="system-ui" letter-spacing="2" opacity="0.5">de 5</text>
+            </svg>
+          </div>
+          <div class="card-footer">
+            <p class="msg">¡Ya vas a la mitad!</p>
+            <div class="counter"><span class="left">2 restantes</span><span class="right">3 / 5</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- E2: Matcha Latte -->
+    <div class="card-wrap">
+      <div class="card-label">
+        <h3>E2 · Matcha Latte</h3>
+        <span>Taza cenital verde</span>
+      </div>
+      <div class="card-preview">
+        <div class="stamp-card">
+          <div class="card-header"><span class="brand">La Commune</span><span class="badge">Fidelidad</span></div>
+          <div class="card-body">
+            <svg viewBox="0 0 180 180" width="170" height="170">
+              <defs>
+                <radialGradient id="matchaFill" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="#5a7a3d"/>
+                  <stop offset="55%" stop-color="#7a9850"/>
+                  <stop offset="85%" stop-color="#a0b878"/>
+                  <stop offset="100%" stop-color="#8ba860"/>
+                </radialGradient>
+                <clipPath id="matchaClip"><circle cx="90" cy="90" r="58"/></clipPath>
+              </defs>
+              <circle cx="90" cy="90" r="78" fill="none" stroke="#d8d0c8" stroke-width="1.5"/>
+              <circle cx="90" cy="90" r="62" fill="none" stroke="#a0b878" stroke-width="2.5"/>
+              <circle cx="90" cy="90" r="58" fill="#f0e9e0"/>
+              <path d="M148 78 Q170 78 170 90 Q170 102 148 102" fill="none" stroke="#a0b878" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="90" cy="90" r="35" fill="url(#matchaFill)" clip-path="url(#matchaClip)">
+                <animate attributeName="r" from="0" to="35" dur="1s" fill="freeze"/>
+              </circle>
+              <!-- Espuma de leche en zig-zag -->
+              <path d="M75 88 Q80 82 85 88 Q90 94 95 88 Q100 82 105 88" fill="none" stroke="#f5f0ea" stroke-width="0.8" opacity="0.5"/>
+              <text x="90" y="87" text-anchor="middle" dominant-baseline="central" font-size="30" fill="#f5f0ea" font-weight="300" font-family="Georgia, serif" opacity="0.85">3</text>
+              <text x="90" y="108" text-anchor="middle" font-size="5.5" fill="#f5f0ea" font-family="system-ui" letter-spacing="2.5" opacity="0.5">de 5</text>
+            </svg>
+          </div>
+          <div class="card-footer">
+            <p class="msg">¡Ya vas a la mitad!</p>
+            <div class="counter"><span class="left">2 restantes</span><span class="right">3 / 5</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div style="height:80px;"></div>
+
+</body>
+</html>

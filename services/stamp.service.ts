@@ -1,43 +1,27 @@
-import {
-    Firestore,
-    DocumentReference,
-    doc,
-    runTransaction,
-    Timestamp,
-    collection,
-  } from "firebase/firestore";
-  
-  export async function addStamp(
-    firestore: Firestore,
-    params: {
-      cardId: string;
-      customerRef?: DocumentReference;
-      source?: "manual" | "promo";
-    }
-  ) {
-    const cardRef = doc(firestore, "cards", params.cardId);
-    const eventsRef = collection(firestore, "stampEvents");
-  
-    await runTransaction(firestore, async (tx) => {
-      const snap = await tx.get(cardRef);
-      if (!snap.exists()) throw new Error("Card not found");
-  
-      const card = snap.data();
-      if (card.stamps >= card.maxStamps) return;
-  
-      tx.update(cardRef, {
-        stamps: card.stamps + 1,
-        lastStampAt: Timestamp.now(),
-        status:
-          card.stamps + 1 >= card.maxStamps ? "completed" : "active",
-      });
-  
-      tx.set(doc(eventsRef), {
-        cardId: cardRef,
-        customerId: params.customerRef ?? null,
-        createdAt: Timestamp.now(),
-        source: params.source ?? "manual",
-      });
-    });
-  }
+import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
+
+/**
+ * @deprecated Use card.service.ts addStamp() instead
+ * This file is kept for backward compatibility
+ */
+export async function addStamp(params: {
+  cardId: string;
+  customerId?: string;
+  source?: "manual" | "promo";
+}) {
+  const supabase = getSupabase();
+
+  // Call the RPC function from card service
+  const { data, error } = await supabase.rpc("agregar_sello_a_tarjeta", {
+    p_tarjeta_id: params.cardId,
+    p_cliente_id: params.customerId || null,
+    p_agregado_por: "system",
+    p_tipo_bebida: null,
+    p_tamano: null,
+    p_notas: null,
+  });
+
+  if (error) throw error;
+  return data;
+}
   

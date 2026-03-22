@@ -1,82 +1,136 @@
-import {
-  Firestore,
-  collection,
-  getDocs,
-  query,
-  where,
-  orderBy,
-  limit,
-  Timestamp,
-  DocumentReference,
-} from "firebase/firestore";
+import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
 
 export interface StampEventRaw {
   id: string;
-  createdAt: Timestamp;
+  createdAt: Date;
   source: string;
   drinkType?: string;
 }
 
-export async function getStampEventsInRange(
-  firestore: Firestore,
-  fromDate: Date,
+const BATCH_SIZE = 500;
+
+/**
+ * Fetch all stamp events from Supabase with optional date range filter.
+ * Uses cursor-based pagination to handle large datasets.
+ */
+async function fetchAllStampEventsPaginated(
+  whereClause?: { column: string; value: unknown; operator?: string }
 ): Promise<StampEventRaw[]> {
-  const q = query(
-    collection(firestore, "stamp-events"),
-    where("createdAt", ">=", Timestamp.fromDate(fromDate)),
-    orderBy("createdAt", "asc"),
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({
-    id: d.id,
-    ...(d.data() as Omit<StampEventRaw, "id">),
-  }));
+  const supabase = getSupabase();
+  const results: StampEventRaw[] = [];
+  let offset = 0;
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    let query = supabase
+      .from("eventos_sello")
+      .select("id, creado_en, origen, tipo_bebida")
+      .eq("negocio_id", NEGOCIO_ID)
+      .order("creado_en", { ascending: true })
+      .range(offset, offset + BATCH_SIZE - 1);
+
+    if (whereClause) {
+      if (whereClause.operator === ">=") {
+        query = query.gte(whereClause.column, whereClause.value);
+      } else {
+        query = query.eq(whereClause.column, whereClause.value);
+      }
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) break;
+
+    data.forEach((row) => {
+      results.push({
+        id: row.id,
+        createdAt: new Date(row.creado_en),
+        source: row.origen,
+        drinkType: row.tipo_bebida,
+      });
+    });
+
+    if (data.length < BATCH_SIZE) break;
+    offset += BATCH_SIZE;
+  }
+
+  return results;
 }
 
-export async function getAllStampEvents(firestore: Firestore): Promise<StampEventRaw[]> {
-  const q = query(collection(firestore, "stamp-events"), limit(1000));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({
-    id: d.id,
-    ...(d.data() as Omit<StampEventRaw, "id">),
-  }));
+/**
+ * Get stamp events created on or after a specific date
+ */
+export async function getStampEventsInRange(
+  fromDate: Date
+): Promise<StampEventRaw[]> {
+  return fetchAllStampEventsPaginated({
+    column: "creado_en",
+    value: fromDate.toISOString(),
+    operator: ">=",
+  });
 }
 
-export async function getTotalCustomers(firestore: Firestore): Promise<number> {
-  const q = query(
-    collection(firestore, "customers"),
-    where("active", "==", true),
-  );
-  const snap = await getDocs(q);
-  return snap.size;
+/**
+ * Get ALL stamp events using cursor-based pagination.
+ * Iterates in batches of 500 until all data is fetched.
+ */
+export async function getAllStampEvents(): Promise<StampEventRaw[]> {
+  return fetchAllStampEventsPaginated();
 }
 
-export async function getTotalRedemptions(firestore: Firestore): Promise<number> {
-  const q = query(
-    collection(firestore, "stamp-events"),
-    where("source", "==", "redemption"),
-  );
-  const snap = await getDocs(q);
-  return snap.size;
+/**
+ * Count total active customers without fetching full documents
+ */
+export async function getTotalCustomers(): Promise<number> {
+  const supabase = getSupabase();
+
+  const { count, error } = await supabase
+    .from("clientes")
+    .select("id", { count: "exact", head: true })
+    .eq("negocio_id", NEGOCIO_ID)
+    .eq("activo", true);
+
+  if (error) throw error;
+  return count || 0;
 }
 
+/**
+ * Count total redemptions without fetching full documents
+ */
+export async function getTotalRedemptions(): Promise<number> {
+  const supabase = getSupabase();
+
+  const { count, error } = await supabase
+    .from("eventos_sello")
+    .select("id", { count: "exact", head: true })
+    .eq("negocio_id", NEGOCIO_ID)
+    .eq("origen", "canje");
+
+  if (error) throw error;
+  return count || 0;
+}
+
+/**
+ * Get top drinks ordered by a specific customer
+ */
 export async function getCustomerTopDrinks(
-  firestore: Firestore,
-  customerId: DocumentReference,
-  limitN = 3,
+  customerId: string,
+  limitN = 3
 ): Promise<{ drink: string; count: number }[]> {
-  const q = query(
-    collection(firestore, "stamp-events"),
-    where("customerId", "==", customerId),
-  );
-  const snap = await getDocs(q);
+  const events = await fetchAllStampEventsPaginated({
+    column: "cliente_id",
+    value: customerId,
+  });
+
   const drinkCount: Record<string, number> = {};
-  snap.docs.forEach((d) => {
-    const data = d.data();
-    if (data.drinkType && data.source !== "redemption") {
-      drinkCount[data.drinkType] = (drinkCount[data.drinkType] ?? 0) + 1;
+  events.forEach((e) => {
+    if (e.drinkType && e.source !== "canje") {
+      drinkCount[e.drinkType] = (drinkCount[e.drinkType] ?? 0) + 1;
     }
   });
+
   return Object.entries(drinkCount)
     .map(([drink, count]) => ({ drink, count }))
     .sort((a, b) => b.count - a.count)

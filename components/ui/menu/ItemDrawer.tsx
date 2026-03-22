@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useFirestore } from "reactfire";
 import { MenuItem } from "@/models/menu.model";
 import { updateMenuItem } from "@/services/menu.service";
 
@@ -21,16 +20,25 @@ export function ItemDrawer({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const firestore = useFirestore();
-  const [toggling, setToggling] = useState(false);
+  const [togglingVisible, setTogglingVisible] = useState(false);
+  const [togglingAvailable, setTogglingAvailable] = useState(false);
 
-  const handleToggle = async () => {
-    setToggling(true);
-    await updateMenuItem(firestore, sectionId, item.id!, {
+  const handleToggleVisible = async () => {
+    setTogglingVisible(true);
+    await updateMenuItem(sectionId, item.id!, {
+      visible: !item.visible,
+    });
+    onUpdated({ visible: !item.visible });
+    setTogglingVisible(false);
+  };
+
+  const handleToggleAvailable = async () => {
+    setTogglingAvailable(true);
+    await updateMenuItem(sectionId, item.id!, {
       available: !item.available,
     });
     onUpdated({ available: !item.available });
-    setToggling(false);
+    setTogglingAvailable(false);
   };
 
   return (
@@ -84,13 +92,18 @@ export function ItemDrawer({
                   )}
                   <span
                     className={`text-[9px] uppercase tracking-widest rounded-full px-2.5 py-1 border ${
-                      item.available
-                        ? "text-stone-500 border-stone-200 dark:border-stone-800"
-                        : "text-stone-300 dark:text-stone-700 border-stone-100 dark:border-stone-900"
+                      item.visible
+                        ? "text-emerald-500 border-emerald-800/40"
+                        : "text-red-400 border-red-800/40"
                     }`}
                   >
-                    {item.available ? "Disponible" : "No disponible hoy"}
+                    {item.visible ? "Visible" : "Oculto"}
                   </span>
+                  {!item.available && (
+                    <span className="text-[9px] uppercase tracking-widest rounded-full px-2.5 py-1 border text-orange-400 border-orange-800/40">
+                      No disponible
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -161,17 +174,34 @@ export function ItemDrawer({
           {/* ── Acciones ── */}
           <div className="sm:w-52 shrink-0 flex flex-col gap-3">
 
-            {/* Toggle disponibilidad */}
+            {/* Toggle visibilidad en menú */}
             <button
-              onClick={handleToggle}
-              disabled={toggling}
+              onClick={handleToggleVisible}
+              disabled={togglingVisible}
               className={`w-full py-5 rounded-2xl border text-[11px] uppercase tracking-[0.35em] transition-all duration-200 disabled:opacity-40 ${
-                item.available
+                item.visible
                   ? "border-stone-200 dark:border-stone-800 text-stone-500 dark:text-stone-400 hover:border-stone-400 dark:hover:border-stone-600 hover:bg-stone-100 dark:hover:bg-stone-900 hover:text-stone-700 dark:hover:text-stone-200"
                   : "border-emerald-800/60 bg-emerald-900/20 text-emerald-400 hover:bg-emerald-900/40"
               }`}
             >
-              {toggling
+              {togglingVisible
+                ? "Guardando…"
+                : item.visible
+                ? "Ocultar del menú"
+                : "Mostrar en menú"}
+            </button>
+
+            {/* Toggle disponibilidad temporal */}
+            <button
+              onClick={handleToggleAvailable}
+              disabled={togglingAvailable}
+              className={`w-full py-5 rounded-2xl border text-[11px] uppercase tracking-[0.35em] transition-all duration-200 disabled:opacity-40 ${
+                item.available
+                  ? "border-stone-200 dark:border-stone-800 text-stone-500 dark:text-stone-400 hover:border-stone-400 dark:hover:border-stone-600 hover:bg-stone-100 dark:hover:bg-stone-900 hover:text-stone-700 dark:hover:text-stone-200"
+                  : "border-orange-800/60 bg-orange-900/20 text-orange-400 hover:bg-orange-900/40"
+              }`}
+            >
+              {togglingAvailable
                 ? "Guardando…"
                 : item.available
                 ? "No disponible hoy"

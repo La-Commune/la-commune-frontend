@@ -1,6 +1,6 @@
 # La Commune — Tarjeta de Fidelidad Digital
 
-PWA de programa de sellos digitales para el café **La Commune** (Mineral de la Reforma, MX).
+PWA de programa de sellos digitales para el café **La Commune** (Mineral de la Reforma, Hidalgo, MX).
 Los clientes acumulan sellos; el barista los agrega escaneando el QR de la tarjeta del cliente.
 
 **Creado por [⬡ David San Luis Aguirre](https://davidsanluisaguirre.com/)**
@@ -11,17 +11,14 @@ Los clientes acumulan sellos; el barista los agrega escaneando el QR de la tarje
 
 | Tecnología | Versión | Rol |
 |---|---|---|
-| [Next.js](https://nextjs.org/) | 15 (latest) | Framework — App Router |
-| [React](https://react.dev/) | 19 (latest) | UI |
+| [Next.js](https://nextjs.org/) | 16 | Framework — App Router |
+| [React](https://react.dev/) | 19 | UI |
 | [TypeScript](https://www.typescriptlang.org/) | latest | Tipado |
-| [Firebase SDK](https://firebase.google.com/) | 9.23 | Firestore + Auth (cliente) |
-| [reactfire](https://github.com/FirebaseExtended/reactfire) | 4.2 | Hooks de Firestore |
+| [Supabase](https://supabase.com/) | — | Base de datos, Auth (RPC), Realtime |
 | [Tailwind CSS](https://tailwindcss.com/) | 3.4 | Estilos |
 | [Framer Motion](https://www.framer-motion.com/) | 11 | Animaciones |
 | [Radix UI](https://www.radix-ui.com/) | — | Componentes accesibles |
 | [Netlify](https://www.netlify.com/) | — | Hosting / Despliegue |
-
-> Sin Firebase Admin SDK. Sin backend propio. La lógica de servidor corre como **Next.js Server Actions**.
 
 ---
 
@@ -30,29 +27,40 @@ Los clientes acumulan sellos; el barista los agrega escaneando el QR de la tarje
 ```
 app/(main)/
   page.tsx          — Landing page (marketing + acceso rápido a tarjeta)
-  onboarding/       — Registro / recuperación de tarjeta (por WhatsApp)
+  onboarding/       — Registro / recuperación de tarjeta
   card/[cardId]/    — Tarjeta del cliente (sellos + QR)
   admin/            — Panel de barista (escanea QR, agrega sellos, PIN protegido)
-  menu/             — Menú del café
+  menu/             — Menú público del café
 ```
 
 ---
 
-## Colecciones Firestore
+## Tablas en Supabase
 
-| Colección | Descripción |
+Tablas compartidas con el POS (una sola fuente de verdad):
+
+| Tabla | Descripción |
 |---|---|
-| `rewards/default` | Config base: `maxStamps`, descripción del premio |
-| `customers` | Un doc por cliente: nombre, teléfono, visitas, sellos totales |
-| `cards` | Una tarjeta por cliente: stamps, maxStamps, status, ref a customer |
-| `stamp-events` | Log de cada sello agregado (auditoría) |
-| `config/admin` | PIN del barista como HMAC-SHA256 + longitud del PIN |
+| `clientes` | Un doc por cliente: nombre, teléfono, nivel, puntos |
+| `tarjetas` | Tarjeta de sellos: stamps, maxStamps, estado |
+| `eventos_sello` | Audit trail de cada sello agregado |
+| `recompensas` | Config de recompensas por negocio |
+| `categorias_menu` | Categorías del menú |
+| `productos` | Productos del menú (precio_base, disponible, visible_menu) |
+| `opciones_tamano` | Tamaños por producto con precio_adicional |
+
+### Funciones PostgreSQL (RPC)
+
+- `agregar_sello_a_tarjeta()` — Transacción atómica para agregar sello
+- `deshacer_sello()` — Revertir último sello
+- `canjear_tarjeta()` — Canjear tarjeta completa + crear nueva
+- `login_por_pin()` — Auth por PIN individual
 
 ---
 
 ## Setup local
 
-### 1. Clonar e instalar dependencias
+### 1. Clonar e instalar
 
 ```bash
 git clone <repo-url>
@@ -60,115 +68,114 @@ cd la-commune-frontend
 npm install
 ```
 
-### 2. Configurar variables de entorno
+### 2. Variables de entorno
 
-Crea un archivo `.env.local` en la raíz con las credenciales de Firebase y las claves del servidor:
+Crea `.env.local`:
 
 ```env
-# Firebase (obtener en Firebase Console → Project settings → Web app)
-NEXT_PUBLIC_FIREBASE_API_KEY=
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
-NEXT_PUBLIC_FIREBASE_APP_ID=
-
-# Clave secreta del servidor para el PIN del barista (nunca NEXT_PUBLIC_)
-# Genera una con: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-ADMIN_HMAC_KEY=
+NEXT_PUBLIC_SUPABASE_URL=<tu-url-de-supabase>
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<tu-anon-key>
+NEXT_PUBLIC_NEGOCIO_ID=<uuid-del-negocio>
+ADMIN_HMAC_KEY=<secreto-para-el-pin-del-barista>
 ```
 
-### 3. Seed de Firestore
-
-Ejecuta una sola vez para crear los documentos base (`rewards/default`):
-
-```bash
-node scripts/seed.mjs
-```
-
-> Requiere que las reglas de Firestore permitan escritura. Activa `allow read, write: if true` temporalmente en Firebase Console, corre el seed, y luego despliega las reglas correctas.
-
-### 4. Configurar el PIN del barista
-
-```bash
-# Primera vez — establece el PIN inicial en Firestore
-node scripts/setAdminPin.mjs <pin>
-```
-
-Este script calcula el HMAC-SHA256 del PIN usando tu `ADMIN_HMAC_KEY` y lo guarda en `config/admin` en Firestore. **Para cambiar el PIN en el futuro, solo vuelve a ejecutar este comando** con el nuevo PIN — sin tocar Netlify ni hacer redeploy.
-
-### 5. Desplegar reglas de Firestore
-
-```bash
-firebase deploy --only firestore:rules
-```
-
-### 6. Iniciar el servidor de desarrollo
+### 3. Iniciar servidor
 
 ```bash
 npm run dev
 ```
 
-> Si hay errores raros de compilación, borra `.next/` y reinicia: `rm -rf .next && npm run dev`
+El servidor arranca en `http://localhost:3003`.
 
 ---
 
-## Scripts disponibles
-
-| Comando | Descripción |
-|---|---|
-| `npm run dev` | Servidor de desarrollo (Turbopack) |
-| `npm run build` | Build de producción |
-| `npm run lint` | Linter |
-| `node scripts/seed.mjs` | Crea documentos base en Firestore |
-| `node scripts/setAdminPin.mjs <pin>` | Actualiza el PIN del barista en Firestore |
-
----
-
-## Despliegue en Netlify
-
-### Variables de entorno requeridas en Netlify
-
-En **Site settings → Environment variables**, agrega:
-
-```
-NEXT_PUBLIC_FIREBASE_API_KEY
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-NEXT_PUBLIC_FIREBASE_PROJECT_ID
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-NEXT_PUBLIC_FIREBASE_APP_ID
-ADMIN_HMAC_KEY          ← misma clave que usas localmente en .env.local
-```
-
-> `ADMIN_HMAC_KEY` se configura **una sola vez**. Cambiar el PIN después solo requiere correr `node scripts/setAdminPin.mjs <nuevo-pin>` — sin modificar Netlify.
-
----
-
-## Flujo de autenticación
+## Auth
 
 ### Clientes
+
 Sin cuentas ni contraseñas. La sesión se guarda en `localStorage`:
 - `localStorage.cardId` — ID de la tarjeta activa
 - `localStorage.customerId` — ID del cliente
 
-Al entrar a `/card/[cardId]`, si no coincide con la sesión local se redirige a `/onboarding` para recuperar la tarjeta por número de WhatsApp.
-
 ### Baristas (panel admin)
-Acceso mediante PIN numérico. El PIN se verifica en el servidor (Server Action):
-1. El barista ingresa el PIN en `/admin`
-2. El Server Action calcula `HMAC-SHA256(pin, ADMIN_HMAC_KEY)` y compara con el hash en Firestore
-3. Si coincide, se habilita la pantalla de agregar sellos
 
-El PIN en texto plano **nunca se almacena** — solo su HMAC.
+Acceso mediante PIN numérico individual por usuario:
+- Cookie `barista-session`: token firmado HMAC-SHA256 con `{ userId, nombre, rol, exp }` (2 horas)
+- Rate limiting: 10 intentos por IP en ventana de 15 minutos
+- Roles: admin (todo), barista (sellos+clientes), camarero (solo QR)
+
+---
+
+## Menú unificado con POS
+
+Las tablas `categorias_menu`, `productos` y `opciones_tamano` son compartidas con el POS. El admin del POS controla la disponibilidad con dos toggles:
+
+- **"Ocultar del menú"** → `visible_menu` (permanente)
+- **"No disponible hoy"** → `disponible` (temporal)
+
+Precios con tamaños: `precio_base = min(sizes)`, cada `precio_adicional = size.price - precio_base`.
+
+---
+
+## Scripts
+
+| Comando | Descripción |
+|---|---|
+| `npm run dev` | Servidor de desarrollo (puerto 3003) |
+| `npm run build` | Build de producción |
+| `npm run test` | Tests unitarios (Vitest) |
+| `npm run test:e2e` | Tests E2E (Playwright) |
+
+---
+
+## Tests
+
+### Unitarios (Vitest — 25 tests)
+
+- `services/__tests__/card.service.test.ts` — addStamp, undoStamp, redeemCard
+- `services/__tests__/menu.service.test.ts` — getFullMenu, deleteMenuItem
+- `app/actions/__tests__/verifyAdminPin.test.ts` — session tokens, rate limiting
+
+### E2E (Playwright — 25 tests, mock mode)
+
+- `e2e/landing.spec.ts` — Landing page, links, navegación
+- `e2e/onboarding.spec.ts` — Registro completo, validaciones
+- `e2e/admin-pin.spec.ts` — PIN pad admin, dots, navegación
+- `e2e/card-view.spec.ts` — Vista tarjeta, QR code
+- `e2e/menu-public.spec.ts` — Menú, categorías, productos
+
+---
+
+## CI/CD
+
+GitHub Actions corre en cada push/PR a `main` y `develop`:
+
+1. **TypeCheck** — `tsc --noEmit`
+2. **Unit Tests** — Vitest
+3. **E2E Tests** — Playwright (solo en `develop`, no en `main`)
+
+Netlify despliega automáticamente al mergear.
 
 ---
 
 ## PWA
 
-- Service Worker en `public/sw.js` — versión por `NEXT_PUBLIC_BUILD_ID`
+- Service Worker v2 con cache por capas en `public/sw.js`
 - Íconos PNG para iOS: `public/icons/icon-180.png`, `icon-192.png`, `icon-512.png`
 - El SW excluye videos del caché (206 Partial Content no es cacheable)
+
+---
+
+## Despliegue en Netlify
+
+Variables de entorno requeridas:
+
+```
+NEXT_PUBLIC_SUPABASE_URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY
+NEXT_PUBLIC_NEGOCIO_ID
+ADMIN_HMAC_KEY
+```
 
 ---
 
@@ -176,7 +183,7 @@ El PIN en texto plano **nunca se almacena** — solo su HMAC.
 
 Este proyecto contiene código bajo diferentes licencias:
 
-- Porciones del código están basadas en una plantilla con licencia MIT de Gavin D. Johnsen y permanecen bajo la Licencia MIT. La licencia MIT aplica solo al código de la plantilla original.
+- Porciones del código están basadas en una plantilla con licencia MIT de Gavin D. Johnsen y permanecen bajo la Licencia MIT.
 - Todo el código original, modificaciones, lógica de negocio y componentes propietarios son © 2026 La Commune y no están licenciados para reutilización, distribución o modificación sin permiso explícito.
 
 Para consultas de licenciamiento, contacta a La Commune.

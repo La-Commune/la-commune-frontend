@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useFirestore } from "reactfire";
 import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
 import { addMenuItem } from "@/services/menu.service";
 
@@ -17,7 +16,6 @@ export function AddItemSheet({
   onCancel: () => void;
   nextOrder: number;
 }) {
-  const firestore = useFirestore();
   const keyboardOffset = useKeyboardOffset();
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
@@ -28,12 +26,13 @@ export function AddItemSheet({
   const handleSave = async () => {
     if (!name.trim()) return;
     setSaving(true);
-    await addMenuItem(firestore, sectionId, {
+    await addMenuItem(sectionId, {
       name: name.trim(),
       price: price ? Number(price) : undefined,
       ingredients: ingredients.split(",").map((s) => s.trim()).filter(Boolean),
       note: note.trim() || undefined,
       available: true,
+      visible: true,
       tags: [],
       highlight: false,
       seasonal: false,

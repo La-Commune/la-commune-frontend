@@ -7,12 +7,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { StampCardView } from "@/components/ui/stamp-card";
 import { DownloadCardButton } from "@/components/ui/DownloadCardButton";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { doc } from "firebase/firestore";
-import { useFirestore, useFirestoreDocData } from "reactfire";
 import { Customer } from "@/models/customer.model";
-import { formatDate } from "@/lib/utils";
+import type { Card } from "@/models/card.model";
+import { Reward, RecompensaRow, mapRecompensaToReward } from "@/models/reward.model";
 import { getCardByCustomer } from "@/services/card.service";
-import { PromoBannerInline } from "@/components/ui/promos/PromoBanner";
+import { getDefaultReward } from "@/services/reward.service";
+import { logger } from "@/lib/logger";
+import { PromoBannerInline, useActivePromos } from "@/components/ui/promos/PromoBanner";
 import {
   getCustomerSession,
   setCustomerSession,
@@ -32,56 +33,216 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
+import { PushPrompt } from "@/components/ui/PushPrompt";
 
 
 export default function CardEntry() {
   const { cardId: cardIdParam } = useParams<{ cardId: string }>();
   const router = useRouter();
-  const firestore = useFirestore();
 
   const [loading, setLoading] = useState(true);
   const [cardId, setCardId] = useState<string | null>(null);
   const [resolvedCustomerId, setResolvedCustomerId] = useState<string | null>(null);
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [cardDoc, setCardDoc] = useState<Card | null>(null);
 
-  const customerRef = doc(
-    firestore,
-    "customers",
-    resolvedCustomerId ?? "_placeholder",
-  );
-
-  const { data: customer } = useFirestoreDocData(customerRef, {
-    suspense: false,
-  });
-
-  // Escuchar estado de la tarjeta en tiempo real
-  const cardDocRef = doc(firestore, "cards", cardIdParam);
-  const { data: cardDoc } = useFirestoreDocData(cardDocRef, { suspense: false });
-
-  // Auto-redirect a la página de canje cuando la tarjeta se completa
+  // Realtime + fetch inicial de datos del cliente
   useEffect(() => {
-    if (!cardId) return;
-    if ((cardDoc as any)?.status !== "completed") return;
-    router.replace(`/card/${cardIdParam}/redeem`);
-  }, [(cardDoc as any)?.status, cardId, cardIdParam, router]);
-
-  // Si la tarjeta fue canjeada, buscar la nueva tarjeta activa y redirigir
-  useEffect(() => {
-    if (!cardDoc || (cardDoc as any).status !== "redeemed") return;
     if (!resolvedCustomerId) return;
 
-    const ref = doc(firestore, "customers", resolvedCustomerId);
-    getCardByCustomer(firestore, ref).then((newCard) => {
-      if (newCard) {
-        localStorage.setItem("cardId", newCard.id);
-        setCustomerSession(resolvedCustomerId, newCard.id);
-        router.replace(`/card/${newCard.id}`);
-      }
-    });
-  }, [(cardDoc as any)?.status, resolvedCustomerId, firestore, router]);
+    const supabase = getSupabase();
 
-  // Session resolution: localStorage first, then cookie fallback
+    function mapClienteRow(row: Record<string, unknown>): Customer {
+      return {
+        name: row.nombre as string,
+        phone: row.telefono as string,
+        email: row.email as string | undefined,
+        active: row.activo as boolean,
+        totalVisits: row.total_visitas as number,
+        totalStamps: row.total_sellos as number,
+        createdAt: new Date(row.creado_en as string),
+        lastVisitAt: row.ultima_visita ? new Date(row.ultima_visita as string) : undefined,
+        consentWhatsApp: row.consentimiento_whatsapp as boolean | undefined,
+        consentEmail: row.consentimiento_email as boolean | undefined,
+        pinHmac: row.pin_hmac as string | undefined,
+        notes: row.notas as string | undefined,
+        referrerCustomerId: row.id_referidor as string | undefined,
+        referralBonusGiven: row.bono_referido_entregado as boolean | undefined,
+        schemaVersion: 1,
+      };
+    }
+
+    // Fetch inicial
+    supabase
+      .from("clientes")
+      .select("*")
+      .eq("id", resolvedCustomerId)
+      .eq("negocio_id", NEGOCIO_ID)
+      .single()
+      .then(({ data }) => {
+        if (data) setCustomer(mapClienteRow(data as Record<string, unknown>));
+      });
+
+    // Suscripción realtime para cambios futuros
+    const channel = supabase
+      .channel(`customer-${resolvedCustomerId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "clientes",
+          filter: `id=eq.${resolvedCustomerId}`,
+        },
+        (payload) => {
+          setCustomer(mapClienteRow(payload.new as Record<string, unknown>));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [resolvedCustomerId]);
+
+  // Setup realtime subscription for card data + initial fetch with validation
+  useEffect(() => {
+    if (!cardIdParam) return;
+
+    const supabase = getSupabase();
+
+    // Fetch inicial — valida que la tarjeta exista y su estado actual
+    supabase
+      .from("tarjetas")
+      .select("*")
+      .eq("id", cardIdParam)
+      .single()
+      .then(({ data: row }) => {
+        if (!row) return;
+        setCardDoc({
+          id: row.id as string,
+          rewardId: row.recompensa_id as string,
+          stamps: row.sellos as number,
+          maxStamps: row.sellos_maximos as number,
+          status: row.estado as Card["status"],
+          createdAt: new Date(row.creado_en as string),
+        });
+      });
+
+    const channel = supabase
+      .channel(`card-page-${cardIdParam}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "tarjetas",
+          filter: `id=eq.${cardIdParam}`,
+        },
+        (payload) => {
+          const row = payload.new as Record<string, unknown>;
+          setCardDoc({
+            id: row.id as string,
+            rewardId: row.recompensa_id as string,
+            stamps: row.sellos as number,
+            maxStamps: row.sellos_maximos as number,
+            status: row.estado as Card["status"],
+            createdAt: new Date(row.creado_en as string),
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [cardIdParam]);
+
+  // Si la tarjeta fue canjeada, buscar la nueva tarjeta activa y redirigir
+  const canjeRedirectRef = useRef(false);
+
+  const findAndRedirectToActiveCard = async (customerId: string) => {
+    if (canjeRedirectRef.current) return;
+    canjeRedirectRef.current = true;
+
+    let attempts = 0;
+    const maxAttempts = 3;
+    const retryDelay = 800;
+
+    const tryRedirect = async () => {
+      attempts++;
+      try {
+        const newCard = await getCardByCustomer(customerId);
+        if (newCard) {
+          localStorage.setItem("cardId", newCard.id);
+          setCustomerSession(customerId, newCard.id);
+          router.replace(`/card/${newCard.id}`);
+          return;
+        }
+        if (attempts < maxAttempts) {
+          setTimeout(tryRedirect, retryDelay);
+        } else {
+          logger.error("card-page", "No active card found after redeem", { customerId });
+          router.replace("/");
+        }
+      } catch (err) {
+        logger.error("card-page", "Error finding new card after redeem", err);
+        if (attempts < maxAttempts) {
+          setTimeout(tryRedirect, retryDelay);
+        } else {
+          router.replace("/");
+        }
+      }
+    };
+
+    tryRedirect();
+  };
+
+  useEffect(() => {
+    if (!cardDoc || cardDoc.status !== "canjeada") return;
+    if (!resolvedCustomerId) return;
+    findAndRedirectToActiveCard(resolvedCustomerId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cardDoc?.status, resolvedCustomerId, router]);
+
+  // Revalidar al volver a la app (tab/app switch) — detecta cambios de otro dispositivo
+  useEffect(() => {
+    if (!cardIdParam) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") return;
+
+      const supabase = getSupabase();
+      supabase
+        .from("tarjetas")
+        .select("id, recompensa_id, sellos, sellos_maximos, estado, creado_en")
+        .eq("id", cardIdParam)
+        .single()
+        .then(({ data: row }) => {
+          if (!row) return;
+          setCardDoc({
+            id: row.id as string,
+            rewardId: row.recompensa_id as string,
+            stamps: row.sellos as number,
+            maxStamps: row.sellos_maximos as number,
+            status: row.estado as Card["status"],
+            createdAt: new Date(row.creado_en as string),
+          });
+        });
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [cardIdParam]);
+
+  // Session resolution: localStorage first, then cookie fallback.
+  // Also handles stale cardId (e.g. from another device or old URL).
   useEffect(() => {
     async function resolveSession() {
+      let customerId: string | null = null;
+
+      // 1. Try localStorage
       const storedCardId = localStorage.getItem("cardId");
       const storedCustomerId = localStorage.getItem("customerId");
 
@@ -92,19 +253,57 @@ export default function CardEntry() {
         return;
       }
 
-      // Cookie fallback — recovers session after cache clear
-      try {
-        const cookieSession = await getCustomerSession();
-        if (cookieSession && cookieSession.cardId === cardIdParam) {
-          localStorage.setItem("cardId", cookieSession.cardId);
-          localStorage.setItem("customerId", cookieSession.customerId);
-          setCardId(cookieSession.cardId);
-          setResolvedCustomerId(cookieSession.customerId);
-          setLoading(false);
-          return;
+      // Si tenemos customerId pero el cardId no coincide (otra tarjeta en la URL),
+      // verificar si la tarjeta activa del cliente es otra
+      if (storedCustomerId) {
+        customerId = storedCustomerId;
+      }
+
+      // 2. Cookie fallback
+      if (!customerId) {
+        try {
+          const cookieSession = await getCustomerSession();
+          if (cookieSession) {
+            customerId = cookieSession.customerId;
+            if (cookieSession.cardId === cardIdParam) {
+              localStorage.setItem("cardId", cookieSession.cardId);
+              localStorage.setItem("customerId", cookieSession.customerId);
+              setCardId(cookieSession.cardId);
+              setResolvedCustomerId(cookieSession.customerId);
+              setLoading(false);
+              return;
+            }
+          }
+        } catch {
+          // Cookie check failed, fall through
         }
-      } catch {
-        // Cookie check failed, fall through
+      }
+
+      // 3. Si tenemos customerId pero el cardId de la URL no coincide,
+      // buscar la tarjeta activa real del cliente y redirigir
+      if (customerId) {
+        try {
+          const activeCard = await getCardByCustomer(customerId);
+          if (activeCard && activeCard.id !== cardIdParam) {
+            // El cliente tiene otra tarjeta activa — redirigir
+            localStorage.setItem("cardId", activeCard.id);
+            setCustomerSession(customerId, activeCard.id);
+            router.replace(`/card/${activeCard.id}`);
+            return;
+          }
+          if (activeCard && activeCard.id === cardIdParam) {
+            // La tarjeta de la URL es la activa, actualizar sesión
+            localStorage.setItem("cardId", activeCard.id);
+            localStorage.setItem("customerId", customerId);
+            setCustomerSession(customerId, activeCard.id);
+            setCardId(activeCard.id);
+            setResolvedCustomerId(customerId);
+            setLoading(false);
+            return;
+          }
+        } catch {
+          // Fall through to recover
+        }
       }
 
       // No valid session — redirect to recovery
@@ -112,6 +311,7 @@ export default function CardEntry() {
     }
 
     resolveSession();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cardIdParam, router]);
 
 if (loading || !cardId) {
@@ -123,39 +323,67 @@ if (loading || !cardId) {
         className="min-h-screen bg-stone-50 dark:bg-neutral-950 flex flex-col items-center justify-center gap-10 px-4"
       >
         {/* Skeleton saludo */}
-        <div className="text-center space-y-3">
-          <div className="h-2.5 w-28 bg-stone-200 dark:bg-stone-900 rounded-full animate-pulse mx-auto" />
-          <div className="h-9 w-48 bg-stone-200 dark:bg-stone-900 rounded-xl animate-pulse mx-auto" />
-          <div className="h-2.5 w-36 bg-stone-200 dark:bg-stone-900 rounded-full animate-pulse mx-auto" />
+        <div className="text-center space-y-2">
+          <div className="h-2 w-24 bg-stone-200 dark:bg-stone-900 rounded-full animate-pulse mx-auto" />
+          <div className="h-8 w-40 bg-stone-200 dark:bg-stone-900 rounded-xl animate-pulse mx-auto" />
         </div>
         {/* Skeleton tarjeta */}
-        <div className="w-[320px] h-[210px] bg-stone-200 dark:bg-stone-900 rounded-[24px] animate-pulse" />
-        {/* Skeleton boton */}
-        <div className="h-10 w-44 bg-stone-200 dark:bg-stone-900 rounded-full animate-pulse" />
+        <div className="w-[300px] h-[380px] bg-stone-200 dark:bg-stone-900 rounded-[24px] animate-pulse" />
       </motion.div>
     );
   }
 
-  const isCompleted = (cardDoc as any)?.status === "completed";
+  const isCompleted = cardDoc?.status === "completada";
 
-  return <Card cardId={cardId} customer={customer as Customer} isCompleted={isCompleted} />;
+  return <Card cardId={cardId} customerId={resolvedCustomerId!} customer={customer as Customer} isCompleted={isCompleted} rewardId={cardDoc?.rewardId} />;
 }
 
 
 function Card({
   cardId,
+  customerId,
   customer,
   isCompleted,
+  rewardId,
 }: {
   cardId: string;
+  customerId: string;
   customer?: Customer;
   isCompleted?: boolean;
+  rewardId?: string;
 }) {
   const router = useRouter();
   const name = customer?.name?.trim();
-  const lastVisit = formatDate(customer?.lastVisitAt);
-  const memberSince = formatDate(customer?.createdAt);
-  const totalVisits = customer?.totalVisits ?? 0;
+
+  // Reward info — usa el rewardId de la tarjeta, fallback a default
+  const [rewardDoc, setRewardDoc] = useState<Reward | null>(null);
+
+  useEffect(() => {
+    if (rewardId) {
+      const supabase = getSupabase();
+      supabase
+        .from("recompensas")
+        .select("*")
+        .eq("id", rewardId)
+        .single()
+        .then(({ data }) => {
+          if (data) {
+            setRewardDoc(mapRecompensaToReward(data as RecompensaRow));
+          }
+        });
+    } else {
+      // Fallback si la tarjeta no tiene rewardId (no debería pasar)
+      getDefaultReward().then((reward) => {
+        if (reward) setRewardDoc(reward);
+      });
+    }
+  }, [rewardId]);
+
+  const rewardName: string = rewardDoc?.name ?? "Bebida gratis";
+
+  // Promos
+  const { promos } = useActivePromos();
+  const hasPromos = promos.length > 0;
 
   const [isOnline, setIsOnline] = useState(
     typeof navigator !== "undefined" ? navigator.onLine : true
@@ -293,7 +521,7 @@ function Card({
           href="/"
           className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors duration-300 group"
         >
-          <span className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
+          <span aria-hidden="true" className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
           Inicio
         </Link>
         <span className="text-[10px] uppercase tracking-[0.45em] text-stone-400 dark:text-stone-500">
@@ -306,7 +534,7 @@ function Card({
             className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors duration-300 group"
           >
             Menu
-            <span className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
+            <span aria-hidden="true" className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
           </Link>
         </div>
       </nav>
@@ -342,53 +570,37 @@ function Card({
       </AnimatePresence>
 
       {/* Contenido */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-10 px-4 pb-16">
+      <div className="flex-1 flex flex-col items-center justify-center gap-5 px-4 pb-10">
 
-        {/* Saludo */}
+        {/* Saludo — compacto */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-center space-y-2"
+          transition={{ duration: 0.6 }}
+          className="text-center"
         >
-          <p className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">
-            Bienvenido de vuelta
-          </p>
-          <h1 className="font-display text-4xl sm:text-5xl font-light tracking-wide">
+          <h1 className="font-display text-3xl sm:text-4xl font-light tracking-wide">
             {name ? `Hola, ${name}` : "Hola"}
           </h1>
-          {lastVisit && (
-            <p className="text-[11px] text-stone-400 dark:text-stone-600 tracking-wide">
-              Ultima visita: {lastVisit}
-            </p>
-          )}
-          {memberSince && (
-            <p className="text-[11px] text-stone-400 dark:text-stone-600 tracking-wide">
-              Miembro desde {memberSince}
-            </p>
-          )}
-          {totalVisits > 0 && (
-            <p className="text-[11px] text-stone-400 dark:text-stone-600 tracking-wide">
-              {totalVisits} visitas totales
-            </p>
-          )}
         </motion.div>
 
-        {/* Promos activas */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.15 }}
-          className="w-full max-w-xs"
-        >
-          <PromoBannerInline />
-        </motion.div>
+        {/* Promo inline — solo si hay promos activas */}
+        {hasPromos && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="w-full max-w-xs"
+          >
+            <PromoBannerInline />
+          </motion.div>
+        )}
 
         {/* Tarjeta */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
+          transition={{ duration: 0.7, delay: 0.15 }}
         >
           <StampCardView cardId={cardId} />
         </motion.div>
@@ -398,59 +610,61 @@ function Card({
           {isCompleted && (
             <motion.div
               key="redeem-cta"
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 12 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
             >
               <Link
                 href={`/card/${cardId}/redeem`}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-amber-100/50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700/50 text-amber-700 dark:text-amber-300 text-[11px] uppercase tracking-[0.3em] hover:bg-amber-100 dark:hover:bg-amber-900/50 hover:border-amber-400 dark:hover:border-amber-600 transition-colors duration-300"
               >
-                Canjear bebida gratis →
+                Canjear {rewardName.toLowerCase()} →
               </Link>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Actions: Historial + Descargar + Invitar (movil) */}
+        {/* Actions: Historial + Descargar + Invitar */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="flex items-center justify-center gap-6"
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="flex items-center justify-center gap-5"
         >
           <Link
             href={`/card/${cardId}/history`}
-            className="flex flex-col items-center gap-1.5 group"
+            className="flex flex-col items-center gap-1 group"
           >
-            <span className="w-10 h-10 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center group-hover:border-stone-500 dark:group-hover:border-stone-500 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-stone-400 dark:text-stone-500 group-hover:text-stone-700 dark:group-hover:text-stone-300 transition-colors">
+            <span className="w-9 h-9 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center group-hover:border-stone-500 dark:group-hover:border-stone-500 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-stone-400 dark:text-stone-500 group-hover:text-stone-700 dark:group-hover:text-stone-300 transition-colors">
                 <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
               </svg>
             </span>
-            <span className="text-[9px] uppercase tracking-[0.25em] text-stone-400 dark:text-stone-600 group-hover:text-stone-600 dark:group-hover:text-stone-400 transition-colors">
+            <span className="text-[8px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-600 group-hover:text-stone-600 dark:group-hover:text-stone-400 transition-colors">
               Historial
             </span>
           </Link>
 
           <DownloadCardButton cardId={cardId} customerName={name} />
 
-          {/* Invitar: solo movil */}
           <button
             onClick={handleShare}
-            className="flex flex-col items-center gap-1.5 group sm:hidden"
+            className="flex flex-col items-center gap-1 group sm:hidden"
           >
-            <span className="w-10 h-10 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center group-hover:border-stone-500 dark:group-hover:border-stone-500 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-stone-400 dark:text-stone-500 group-hover:text-stone-700 dark:group-hover:text-stone-300 transition-colors">
+            <span className="w-9 h-9 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center group-hover:border-stone-500 dark:group-hover:border-stone-500 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-stone-400 dark:text-stone-500 group-hover:text-stone-700 dark:group-hover:text-stone-300 transition-colors">
                 <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
               </svg>
             </span>
-            <span className="text-[9px] uppercase tracking-[0.25em] text-stone-400 dark:text-stone-600 group-hover:text-stone-600 dark:group-hover:text-stone-400 transition-colors">
+            <span className="text-[8px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-600 group-hover:text-stone-600 dark:group-hover:text-stone-400 transition-colors">
               {copied ? "Copiado!" : "Invitar"}
             </span>
           </button>
         </motion.div>
+
+        {/* Push notification prompt */}
+        <PushPrompt clienteId={customerId} />
 
       </div>
 

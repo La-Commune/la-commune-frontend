@@ -233,6 +233,7 @@ export function DownloadCardButton({}: {
       <button
         onClick={handleGenerate}
         disabled={generating}
+        aria-label="Guardar tarjeta como imagen"
         className="flex flex-col items-center gap-1.5 group"
       >
         <span className="w-10 h-10 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center group-hover:border-stone-500 dark:group-hover:border-stone-500 transition-colors">
@@ -259,6 +260,8 @@ export function DownloadCardButton({}: {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            role="dialog"
+            aria-label="Vista previa de tarjeta"
             className="fixed inset-0 z-[200] bg-black/90 flex flex-col items-center justify-center gap-6 p-6"
             onClick={() => setPreviewUrl(null)}
           >
@@ -276,6 +279,7 @@ export function DownloadCardButton({}: {
             />
             <button
               onClick={() => setPreviewUrl(null)}
+              aria-label="Cerrar vista previa"
               className="text-[10px] uppercase tracking-[0.3em] text-stone-500 hover:text-white transition-colors"
             >
               Cerrar
