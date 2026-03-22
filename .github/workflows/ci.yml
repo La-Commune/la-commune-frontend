@@ -1,11 +1,11 @@
 name: CI / Deploy
 
 # ═══════════════════════════════════════════════════════════════
-# Automático: Push/PR a main o development → corre tests
-#             Push a main → además mergea main → development
+# Automático: Push a main → tests → auto-merge main → development
+#             Push/PR a development → tests
 #
-# Manual:     workflow_dispatch desde development →
-#             Tests → merge development → production → Deploy Netlify
+# Manual:     workflow_dispatch → merge development → production → Deploy
+#             (sin tests, tú decides cuándo está listo)
 # ═══════════════════════════════════════════════════════════════
 
 permissions:
@@ -17,26 +17,17 @@ on:
   pull_request:
     branches: [main, development]
   workflow_dispatch:
-    inputs:
-      skip_tests:
-        description: "Saltar tests (solo emergencias)"
-        required: false
-        default: "false"
-        type: choice
-        options:
-          - "false"
-          - "true"
 
 env:
   NODE_VERSION: "22"
   NETLIFY_SITE_ID: "42d45a2e-6d3c-4b18-a5b6-50ab91d23139"
 
 jobs:
-  # ── 1. TypeCheck ─────────────────────────────────────────
+  # ── 1. TypeCheck (solo push/PR, no manual) ──────────────
   typecheck:
     name: TypeCheck
     runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.skip_tests != 'true' }}
+    if: ${{ github.event_name != 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -53,11 +44,11 @@ jobs:
         run: npm ci
       - run: npx tsc --noEmit
 
-  # ── 2. Unit Tests ────────────────────────────────────────
+  # ── 2. Unit Tests (solo push/PR) ────────────────────────
   unit-tests:
     name: Unit Tests (Vitest)
     runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.skip_tests != 'true' }}
+    if: ${{ github.event_name != 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -74,11 +65,11 @@ jobs:
         run: npm ci
       - run: npm run test
 
-  # ── 3. E2E Tests ─────────────────────────────────────────
+  # ── 3. E2E Tests (solo push/PR) ─────────────────────────
   e2e-tests:
     name: E2E Tests (Playwright)
     runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.skip_tests != 'true' }}
+    if: ${{ github.event_name != 'workflow_dispatch' }}
     needs: [typecheck, unit-tests]
     steps:
       - uses: actions/checkout@v4
@@ -133,7 +124,7 @@ jobs:
           path: playwright-report/
           retention-days: 14
 
-  # ── 4. Auto-merge main → development (solo en push a main)
+  # ── 4. Auto-merge main → development (solo push a main, si tests pasan)
   auto-merge-to-development:
     name: Auto-merge main → development
     runs-on: ubuntu-latest
@@ -153,12 +144,11 @@ jobs:
           git merge origin/main --no-edit -m "ci: auto-merge main → development (#${{ github.run_number }})"
           git push origin development
 
-  # ── 5. Merge development → production (solo deploy manual)
+  # ── 5. Merge development → production (solo manual) ─────
   merge-to-production:
     name: Merge development → production
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' }}
-    needs: [typecheck, unit-tests, e2e-tests]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -173,7 +163,7 @@ jobs:
           git merge origin/development --no-edit -m "ci: merge development → production (deploy #${{ github.run_number }})"
           git push origin production
 
-  # ── 6. Deploy a Netlify (solo deploy manual) ─────────────
+  # ── 6. Deploy a Netlify (solo manual) ────────────────────
   deploy:
     name: Deploy to Netlify
     runs-on: ubuntu-latest
