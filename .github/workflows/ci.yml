@@ -1,11 +1,11 @@
-name: CI / Deploy
+name: CI
 
 # ═══════════════════════════════════════════════════════════════
-# Automático: Push a main → tests → auto-merge main → development
-#             Push/PR a development → tests
+# Push a main o development → TypeCheck + Unit Tests + E2E
+# Push a main (si tests pasan) → auto-merge main → development
 #
-# Manual:     workflow_dispatch → merge development → production → Deploy
-#             (sin tests, tú decides cuándo está listo)
+# Deploy a producción lo maneja Netlify automáticamente
+# (conectado al repo, detecta push a la branch configurada)
 # ═══════════════════════════════════════════════════════════════
 
 permissions:
@@ -16,18 +16,15 @@ on:
     branches: [main, development]
   pull_request:
     branches: [main, development]
-  workflow_dispatch:
 
 env:
   NODE_VERSION: "22"
-  NETLIFY_SITE_ID: "42d45a2e-6d3c-4b18-a5b6-50ab91d23139"
 
 jobs:
-  # ── 1. TypeCheck (solo push/PR, no manual) ──────────────
+  # ── 1. TypeCheck ──────────────────────────────────────────
   typecheck:
     name: TypeCheck
     runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -44,11 +41,10 @@ jobs:
         run: npm ci
       - run: npx tsc --noEmit
 
-  # ── 2. Unit Tests (solo push/PR) ────────────────────────
+  # ── 2. Unit Tests ─────────────────────────────────────────
   unit-tests:
     name: Unit Tests (Vitest)
     runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -65,11 +61,10 @@ jobs:
         run: npm ci
       - run: npm run test
 
-  # ── 3. E2E Tests (solo push/PR) ─────────────────────────
+  # ── 3. E2E Tests ──────────────────────────────────────────
   e2e-tests:
     name: E2E Tests (Playwright)
     runs-on: ubuntu-latest
-    if: ${{ github.event_name != 'workflow_dispatch' }}
     needs: [typecheck, unit-tests]
     steps:
       - uses: actions/checkout@v4
@@ -143,59 +138,3 @@ jobs:
           git checkout development
           git merge origin/main --no-edit -m "ci: auto-merge main → development (#${{ github.run_number }})"
           git push origin development
-
-  # ── 5. Merge development → production (solo manual) ─────
-  merge-to-production:
-    name: Merge development → production
-    runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Merge development → production
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin
-          git checkout production
-          git merge origin/development --no-edit -m "ci: merge development → production (deploy #${{ github.run_number }})"
-          git push origin production
-
-  # ── 6. Deploy a Netlify (solo manual) ────────────────────
-  deploy:
-    name: Deploy to Netlify
-    runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' }}
-    needs: [merge-to-production]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: production
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-      - name: Cache node_modules
-        id: cache-modules
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: node-modules-${{ hashFiles('package-lock.json') }}
-      - name: Install dependencies
-        if: steps.cache-modules.outputs.cache-hit != 'true'
-        run: npm ci
-      - name: Build for production
-        run: npm run build
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_NEGOCIO_ID: ${{ secrets.NEXT_PUBLIC_NEGOCIO_ID }}
-          NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          ADMIN_HMAC_KEY: ${{ secrets.ADMIN_HMAC_KEY }}
-          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
-      - name: Deploy to Netlify
-        run: npx netlify-cli deploy --prod --dir=.next --site=${{ env.NETLIFY_SITE_ID }}
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
