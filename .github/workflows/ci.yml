@@ -130,11 +130,11 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Merge main → development
+      - name: Sync development with main (fast-forward)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git fetch origin
           git checkout development
-          git merge origin/main --no-edit -m "ci: auto-merge main → development (#${{ github.run_number }})"
-          git push origin development
+          git reset --hard origin/main
+          git push --force-with-lease origin development
