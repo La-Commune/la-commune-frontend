@@ -268,7 +268,7 @@ const PremiumSection: React.FC<SectionProps> = ({
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="mb-6 text-[10px] uppercase tracking-[0.35em] text-[#a89f90]"
+            className="mb-6 text-xs uppercase tracking-[0.35em] text-[#a89f90]"
           >
             {eyebrow}
           </motion.p>
@@ -297,7 +297,7 @@ const PremiumSection: React.FC<SectionProps> = ({
             className={`mt-10 ${align === "center" ? "mx-auto" : ""} max-w-sm`}
           >
             <div aria-hidden="true" className="w-6 h-px bg-[#2a2722] mb-4" />
-            <p className="text-[13px] italic font-light text-[#6b6458] leading-relaxed tracking-wide">
+            <p className="text-sm italic font-light text-[#a89f90] leading-relaxed tracking-wide">
               &ldquo;{manifesto}&rdquo;
             </p>
           </motion.div>
@@ -349,14 +349,14 @@ const PremiumSection: React.FC<SectionProps> = ({
           transition={{ delay: 2.5, duration: 1 }}
           className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-3"
         >
-          <div className="w-[22px] h-[36px] rounded-[11px] border-[1.5px] border-[#3a3630] flex justify-center">
+          <div className="w-[22px] h-[36px] rounded-[11px] border-[1.5px] border-[#6b6458] flex justify-center">
             <motion.div
               animate={prefersReduced ? {} : { y: [0, 8, 0], opacity: [1, 0.3, 1] }}
               transition={prefersReduced ? {} : { duration: 2, repeat: Infinity, ease: "easeInOut" }}
               className="w-[2px] h-[6px] bg-[#c8956c] rounded-sm mt-2"
             />
           </div>
-          <span className="text-[9px] uppercase tracking-[0.35em] text-[#3a3630]">
+          <span className="text-xs uppercase tracking-[0.35em] text-[#6b6458]">
             Scroll
           </span>
         </motion.div>
@@ -431,18 +431,18 @@ export default function Home() {
 
       {/* Nav editorial — fijo arriba */}
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 sm:px-10 py-5">
-        <span className="font-mono text-[0.65rem] font-medium tracking-[0.25em] uppercase text-[#e8e0d2]">
+        <span className="font-mono text-xs font-medium tracking-[0.25em] uppercase text-[#e8e0d2]">
           La Commune
         </span>
         <div className="hidden sm:flex gap-8">
           {[
-            { label: "Menú", href: "/menu" },
+            { label: "Menu", href: "/menu" },
             { label: "Fidelidad", href: loyaltyCta.link },
           ].map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="font-mono text-[0.6rem] tracking-[0.12em] uppercase text-[#6b6458] hover:text-[#c8956c] transition-colors duration-300 relative group"
+              className="font-mono text-xs tracking-[0.12em] uppercase text-[#a89f90] hover:text-[#c8956c] transition-colors duration-300 relative group"
             >
               {item.label}
               <span className="absolute bottom-[-2px] left-0 w-0 h-px bg-[#c8956c] group-hover:w-full transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]" />
@@ -483,127 +483,149 @@ export default function Home() {
       ) : (
         /* Usuario nuevo → explicación completa con animación + 3 pasos */
         <section className="snap-start min-h-[100dvh] flex flex-col items-center justify-center bg-[#0c0b09] px-6 sm:px-10 py-16 sm:py-20 relative overflow-hidden">
-          {/* Línea decorativa */}
-          <motion.div
-            initial={{ scaleX: 0 }}
-            whileInView={{ scaleX: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-            className="w-12 h-px bg-[#c8956c] mb-8 sm:mb-10 origin-center"
-          />
+          {/* Desktop: layout asimetrico 2 columnas */}
+          <div className="w-full max-w-6xl mx-auto flex flex-col desktop-loyalty">
 
-          {/* Eyebrow */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="text-[10px] uppercase tracking-[0.45em] text-[#6b6458] mb-4 sm:mb-5"
-          >
-            Programa de fidelidad
-          </motion.p>
-
-          {/* Título emotivo */}
-          <motion.h2
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-            className="font-display text-4xl sm:text-5xl md:text-6xl font-light text-[#e8e0d2] text-center tracking-wide mb-3 sm:mb-4"
-          >
-            Lo que se da, vuelve
-          </motion.h2>
-
-          {/* Subtítulo */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1, delay: 0.3 }}
-            className="text-sm sm:text-base text-[#6b6458] text-center max-w-md leading-relaxed mb-8 sm:mb-10"
-          >
-            {`Junta ${rewardStamps} sellos y tu siguiente bebida va por la casa.`}
-          </motion.p>
-
-          {/* Animación de la taza */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-            className="mb-8 sm:mb-10"
-          >
-            <HowItWorksAnimation maxStamps={rewardStamps} illustrationId={rewardIllustration} />
-          </motion.div>
-
-          {/* 3 pasos */}
-          <div className="grid grid-cols-3 gap-4 sm:gap-8 max-w-2xl w-full mb-8 sm:mb-10">
-            {[
-              {
-                step: "01",
-                title: "Regístrate",
-                desc: "Solo necesitas tu WhatsApp. Tu tarjeta digital se crea al instante.",
-              },
-              {
-                step: "02",
-                title: "Acumula",
-                desc: "Con cada compra, el barista agrega un sello a tu tarjeta.",
-              },
-              {
-                step: "03",
-                title: "Disfruta",
-                desc: `Al juntar ${rewardStamps} sellos, tu siguiente bebida va por la casa.`,
-              },
-            ].map((item, i) => (
+            {/* Columna izquierda: texto + pasos */}
+            <div className="flex flex-col items-center desktop-loyalty-text">
+              {/* Linea decorativa */}
               <motion.div
-                key={item.step}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ scaleX: 0 }}
+                whileInView={{ scaleX: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                className="w-12 h-px bg-[#c8956c] mb-8 sm:mb-10 origin-center"
+              />
+
+              {/* Eyebrow */}
+              <motion.p
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+                className="text-xs uppercase tracking-[0.45em] text-[#a89f90] mb-4 sm:mb-5"
+              >
+                Programa de fidelidad
+              </motion.p>
+
+              {/* Titulo */}
+              <motion.h2
+                initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.7, delay: 0.3 + i * 0.12, ease: [0.16, 1, 0.3, 1] }}
-                className="flex flex-col items-center text-center gap-2"
+                transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+                className="font-display text-4xl sm:text-5xl md:text-6xl font-light text-[#e8e0d2] text-center tracking-wide mb-3 sm:mb-4"
               >
-                <span className="w-6 h-6 rounded-full border border-[#c8956c]/30 flex items-center justify-center text-[9px] font-mono tracking-wider text-[#c8956c]/70">
-                  {item.step}
-                </span>
-                <h3 className="font-display text-base sm:text-lg font-light text-[#e8e0d2] tracking-wide">
-                  {item.title}
-                </h3>
-                <p className="text-[10px] sm:text-[11px] text-[#6b6458] leading-relaxed max-w-[180px]">
-                  {item.desc}
-                </p>
-              </motion.div>
-            ))}
-          </div>
+                Lo que se da, vuelve
+              </motion.h2>
 
-          {/* CTAs */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="flex flex-col items-center gap-3"
-          >
-            <Link
-              href="/onboarding"
-              className="inline-flex items-center gap-3 px-8 py-3.5 rounded-full border border-[#c8956c]/30 text-[11px] uppercase tracking-[0.3em] text-[#c8956c] hover:bg-[#c8956c]/10 hover:border-[#c8956c]/50 transition-all duration-500"
+              {/* Subtitulo */}
+              <motion.p
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 1, delay: 0.3 }}
+                className="text-sm sm:text-base text-[#a89f90] text-center max-w-md leading-relaxed mb-8 sm:mb-10"
+              >
+                {`Junta ${rewardStamps} sellos y tu siguiente bebida va por la casa.`}
+              </motion.p>
+
+              {/* Animacion — visible en mobile, oculta en desktop (se muestra a la derecha) */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+                className="mb-8 sm:mb-10 desktop-loyalty-anim-mobile"
+              >
+                <HowItWorksAnimation maxStamps={rewardStamps} illustrationId={rewardIllustration} />
+              </motion.div>
+
+              {/* 3 pasos */}
+              <div className="grid grid-cols-3 desktop-loyalty-steps gap-4 sm:gap-8 max-w-2xl w-full mb-8 sm:mb-10">
+                {[
+                  {
+                    step: "01",
+                    title: "Registrate",
+                    desc: "Solo necesitas tu WhatsApp. Tu tarjeta digital se crea al instante.",
+                  },
+                  {
+                    step: "02",
+                    title: "Acumula",
+                    desc: "Con cada compra, el barista agrega un sello a tu tarjeta.",
+                  },
+                  {
+                    step: "03",
+                    title: "Disfruta",
+                    desc: `Al juntar ${rewardStamps} sellos, tu siguiente bebida va por la casa.`,
+                  },
+                ].map((item, i) => (
+                  <motion.div
+                    key={item.step}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.7, delay: 0.3 + i * 0.12, ease: [0.16, 1, 0.3, 1] }}
+                    className="flex flex-col items-center text-center gap-2"
+                  >
+                    <span className="w-7 h-7 rounded-full border border-[#c8956c]/30 flex items-center justify-center text-xs font-mono tracking-wider text-[#c8956c]/70 shrink-0">
+                      {item.step}
+                    </span>
+                    <div>
+                      <h3 className="font-display text-base sm:text-lg font-light text-[#e8e0d2] tracking-wide">
+                        {item.title}
+                      </h3>
+                      <p className="text-xs text-[#a89f90] leading-relaxed max-w-[180px] mt-0.5">
+                        {item.desc}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* CTAs */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: 0.6 }}
+                className="flex flex-col items-center gap-3"
+              >
+                <Link
+                  href="/onboarding"
+                  className="inline-flex items-center gap-3 px-8 py-3.5 rounded-full border border-[#c8956c]/30 text-xs uppercase tracking-[0.3em] text-[#c8956c] hover:bg-[#c8956c]/10 hover:border-[#c8956c]/50 transition-all duration-500"
+                >
+                  Registrar mi tarjeta
+                  <span aria-hidden="true" className="w-4 h-px bg-[#c8956c]" />
+                </Link>
+                <Link
+                  href="/recover"
+                  className="text-xs uppercase tracking-[0.3em] text-[#6b6458] hover:text-[#a89f90] transition-colors duration-300"
+                >
+                  Ya tengo cuenta
+                </Link>
+              </motion.div>
+            </div>
+
+            {/* Columna derecha: animacion grande — solo desktop */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.85 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+              className="hidden desktop-loyalty-anim"
             >
-              Registrar mi tarjeta
-              <span aria-hidden="true" className="w-4 h-px bg-[#c8956c]" />
-            </Link>
-            <Link
-              href="/recover"
-              className="text-[10px] uppercase tracking-[0.3em] text-[#3a3630] hover:text-[#6b6458] transition-colors duration-300"
-            >
-              Ya tengo cuenta
-            </Link>
-          </motion.div>
+              <div>
+                <HowItWorksAnimation maxStamps={rewardStamps} illustrationId={rewardIllustration} />
+              </div>
+            </motion.div>
+          </div>
         </section>
       )}
 
       {/* Footer — limpio, editorial */}
       <footer className="snap-start min-h-[100dvh] flex flex-col items-center justify-center bg-[#0c0b09] px-8 relative">
-        {/* Grano decorativo de fondo sutil */}
+        {/* Grano decorativo */}
         <div
           className="absolute inset-0 pointer-events-none opacity-[0.03]"
           style={{
@@ -617,77 +639,83 @@ export default function Home() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 1 }}
-          className="flex flex-col items-center text-center relative z-10"
+          className="relative z-10 w-full max-w-5xl"
         >
-          {/* Wordmark */}
-          <p className="font-display text-3xl sm:text-4xl font-light tracking-[0.25em] text-[#e8e0d2]">
-            La Commune
-          </p>
-          <p className="text-[10px] uppercase tracking-[0.4em] text-[#3a3630] mt-2">
-            Café · Comunidad · Hidalgo
-          </p>
-          <div aria-hidden="true" className="w-8 h-px bg-[#c8956c] mt-6 mb-8" />
+          {/* Mobile: columna centrada / Desktop: 3 columnas */}
+          <div className="flex flex-col items-center text-center desktop-footer">
 
-          {/* Horario + estado */}
-          <p className="text-sm text-[#a89f90] tracking-wide">
-            Todos los días · 10:00 – 20:00
-          </p>
-          {openStatus && (
-            <div className="flex items-center gap-2 mt-3">
-              <span
-                className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                  openStatus.open ? "bg-emerald-400" : "bg-red-500"
-                }`}
-              />
-              <p className="text-xs tracking-wide text-[#6b6458]">
-                {openStatus.label}
+            {/* Columna 1: Marca */}
+            <div className="desktop-footer-col">
+              <p className="font-display text-3xl sm:text-4xl font-light tracking-[0.25em] text-[#e8e0d2]">
+                La Commune
               </p>
+              <p className="text-xs uppercase tracking-[0.4em] text-[#6b6458] mt-2">
+                Cafe · Comunidad · Hidalgo
+              </p>
+              <div aria-hidden="true" className="w-8 h-px bg-[#c8956c] mt-6 mb-8 mx-auto" />
             </div>
-          )}
 
-          {/* Ubicación */}
-          <a
-            href="https://maps.google.com/?q=Santa+Natividad+135,+La+Providencia,+Mineral+de+la+Reforma,+Hidalgo"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-8 group"
-          >
-            <p className="text-sm text-[#6b6458] group-hover:text-[#a89f90] transition-colors duration-300">
-              Santa Natividad 135, Mineral de la Reforma
-            </p>
-            <p className="text-[10px] uppercase tracking-[0.25em] text-[#3a3630] group-hover:text-[#6b6458] transition-colors duration-300 mt-2">
-              Cómo llegar →
-            </p>
-          </a>
+            {/* Columna 2: Horario + ubicacion */}
+            <div className="desktop-footer-col">
+              <p className="text-sm text-[#a89f90] tracking-wide">
+                Todos los dias · 10:00 - 20:00
+              </p>
+              {openStatus && (
+                <div className="flex items-center gap-2 mt-3">
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                      openStatus.open ? "bg-emerald-400" : "bg-red-500"
+                    }`}
+                  />
+                  <p className="text-xs tracking-wide text-[#a89f90]">
+                    {openStatus.label}
+                  </p>
+                </div>
+              )}
 
-          {/* Quick links — menú + fidelidad */}
-          <div className="flex items-center gap-6 mt-10">
-            <Link
-              href="/menu"
-              className="text-[11px] uppercase tracking-[0.25em] text-[#6b6458] hover:text-[#c8956c] transition-colors duration-300"
-            >
-              Menú
-            </Link>
-            <span aria-hidden="true" className="w-1 h-1 rounded-full bg-[#2a2722]" />
-            <Link
-              href={loyaltyCta.link}
-              className="text-[11px] uppercase tracking-[0.25em] text-[#6b6458] hover:text-[#c8956c] transition-colors duration-300"
-            >
-              Fidelidad
-            </Link>
+              <a
+                href="https://maps.google.com/?q=Santa+Natividad+135,+La+Providencia,+Mineral+de+la+Reforma,+Hidalgo"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-6 group block"
+              >
+                <p className="text-sm text-[#a89f90] group-hover:text-[#e8e0d2] transition-colors duration-300">
+                  Santa Natividad 135, Mineral de la Reforma
+                </p>
+                <p className="text-xs uppercase tracking-[0.25em] text-[#6b6458] group-hover:text-[#a89f90] transition-colors duration-300 mt-2">
+                  Como llegar &rarr;
+                </p>
+              </a>
+            </div>
+
+            {/* Columna 3: Links */}
+            <div className="mt-10 flex flex-col items-center gap-4 desktop-footer-links">
+              <Link
+                href="/menu"
+                className="text-xs uppercase tracking-[0.25em] text-[#a89f90] hover:text-[#c8956c] transition-colors duration-300"
+              >
+                Menu
+              </Link>
+              <Link
+                href={loyaltyCta.link}
+                className="text-xs uppercase tracking-[0.25em] text-[#a89f90] hover:text-[#c8956c] transition-colors duration-300"
+              >
+                Fidelidad
+              </Link>
+              <Link
+                href="/admin"
+                className="text-xs uppercase tracking-[0.25em] text-[#6b6458] hover:text-[#a89f90] transition-colors duration-300"
+              >
+                Personal
+              </Link>
+            </div>
           </div>
 
-          {/* Copyright + admin */}
-          <div className="mt-16 flex flex-col items-center gap-4">
-            <p className="text-[10px] tracking-[0.3em] uppercase text-[#2a2722]" suppressHydrationWarning>
-              © {new Date().getFullYear()} La Commune
+          {/* Copyright */}
+          <div className="mt-16 flex justify-center desktop-footer-copy">
+            <p className="text-xs tracking-[0.3em] uppercase text-[#6b6458]" suppressHydrationWarning>
+              &copy; {new Date().getFullYear()} La Commune
             </p>
-            <Link
-              href="/admin"
-              className="text-[10px] tracking-[0.3em] uppercase text-[#1a1917] hover:text-[#3a3630] transition-colors duration-300"
-            >
-              Personal
-            </Link>
           </div>
         </motion.div>
       </footer>

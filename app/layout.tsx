@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Roboto_Mono, Instrument_Serif } from "next/font/google";
 import "@/app/globals.css";
+import "@/app/desktop.css";
+import "@/app/desktop-card.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
 import { PwaRegister } from "@/components/ui/PwaRegister";

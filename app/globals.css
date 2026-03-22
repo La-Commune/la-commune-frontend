@@ -1,3 +1,4 @@
+/* v2 — desktop layouts */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -147,3 +148,4 @@
 .rotate-y-180 {
   transform: rotateY(180deg);
 }
+

@@ -67,10 +67,11 @@ function GoneScreen() {
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900 dark:bg-neutral-950 dark:text-white flex flex-col">
-      <nav className="flex items-center justify-center px-6 py-5">
-        <span className="text-[10px] uppercase tracking-[0.45em] text-stone-400 dark:text-stone-500">
+      <nav className="flex items-center justify-between px-6 sm:px-10 py-5">
+        <Link href="/" className="font-mono text-xs font-medium tracking-[0.25em] uppercase text-stone-900 dark:text-stone-200 hover:text-amber-700 dark:hover:text-amber-500 transition-colors duration-300">
           La Commune
-        </span>
+        </Link>
+        <ThemeToggle />
       </nav>
       <div className="flex-1 flex items-center justify-center px-6">
         <motion.div
@@ -633,19 +634,24 @@ function Card({
       <nav className="flex items-center justify-between px-6 sm:px-10 py-5">
         <Link
           href="/"
-          className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors duration-300 group"
+          className="font-mono text-xs font-medium tracking-[0.25em] uppercase text-stone-900 dark:text-stone-200 hover:text-amber-700 dark:hover:text-amber-500 transition-colors duration-300"
         >
-          <span aria-hidden="true" className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
-          Inicio
-        </Link>
-        <span className="text-[10px] uppercase tracking-[0.45em] text-stone-400 dark:text-stone-500">
           La Commune
-        </span>
-        <div className="flex items-center gap-2">
+        </Link>
+        <div className="flex items-center gap-6">
+          <div className="hidden sm:flex gap-8">
+            <Link
+              href="/menu"
+              className="font-mono text-xs tracking-[0.12em] uppercase text-stone-400 dark:text-stone-500 hover:text-amber-700 dark:hover:text-amber-500 transition-colors duration-300 relative group"
+            >
+              Menu
+              <span className="absolute bottom-[-2px] left-0 w-0 h-px bg-amber-700 dark:bg-amber-500 group-hover:w-full transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]" />
+            </Link>
+          </div>
           <ThemeToggle />
           <Link
             href="/menu"
-            className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors duration-300 group"
+            className="sm:hidden inline-flex items-center gap-2.5 text-xs uppercase tracking-[0.3em] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors duration-300 group"
           >
             Menu
             <span aria-hidden="true" className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
@@ -686,7 +692,7 @@ function Card({
       {/* Contenido */}
       <div className="flex-1 flex flex-col items-center justify-center gap-5 px-4 pb-10">
 
-        {/* Saludo — compacto */}
+        {/* Saludo */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -698,7 +704,7 @@ function Card({
           </h1>
         </motion.div>
 
-        {/* Promo inline — solo si hay promos activas */}
+        {/* Promo inline */}
         {hasPromos && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -710,7 +716,7 @@ function Card({
           </motion.div>
         )}
 
-        {/* Tarjeta */}
+        {/* Tarjeta — en desktop: layout expandido sin flip, en mobile: flip card */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -731,9 +737,9 @@ function Card({
             >
               <Link
                 href={`/card/${cardId}/redeem`}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-amber-100/50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700/50 text-amber-700 dark:text-amber-300 text-[11px] uppercase tracking-[0.3em] hover:bg-amber-100 dark:hover:bg-amber-900/50 hover:border-amber-400 dark:hover:border-amber-600 transition-colors duration-300"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-amber-100/50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700/50 text-amber-700 dark:text-amber-300 text-xs uppercase tracking-[0.3em] hover:bg-amber-100 dark:hover:bg-amber-900/50 hover:border-amber-400 dark:hover:border-amber-600 transition-colors duration-300"
               >
-                Canjear {rewardName.toLowerCase()} →
+                Canjear {rewardName.toLowerCase()} &rarr;
               </Link>
             </motion.div>
           )}
@@ -744,18 +750,18 @@ function Card({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="flex items-center justify-center gap-5"
+          className="flex items-center justify-center gap-6"
         >
           <Link
             href={`/card/${cardId}/history`}
-            className="flex flex-col items-center gap-1 group"
+            className="flex flex-col items-center gap-1.5 group"
           >
-            <span className="w-9 h-9 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center group-hover:border-stone-500 dark:group-hover:border-stone-500 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-stone-400 dark:text-stone-500 group-hover:text-stone-700 dark:group-hover:text-stone-300 transition-colors">
+            <span className="w-10 h-10 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center group-hover:border-stone-500 dark:group-hover:border-stone-500 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-stone-400 dark:text-stone-500 group-hover:text-stone-700 dark:group-hover:text-stone-300 transition-colors">
                 <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
               </svg>
             </span>
-            <span className="text-[8px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-600 group-hover:text-stone-600 dark:group-hover:text-stone-400 transition-colors">
+            <span className="text-[9px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-600 group-hover:text-stone-600 dark:group-hover:text-stone-400 transition-colors">
               Historial
             </span>
           </Link>
@@ -764,14 +770,14 @@ function Card({
 
           <button
             onClick={handleShare}
-            className="flex flex-col items-center gap-1 group sm:hidden"
+            className="flex flex-col items-center gap-1.5 group sm:hidden"
           >
-            <span className="w-9 h-9 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center group-hover:border-stone-500 dark:group-hover:border-stone-500 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-stone-400 dark:text-stone-500 group-hover:text-stone-700 dark:group-hover:text-stone-300 transition-colors">
+            <span className="w-10 h-10 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center group-hover:border-stone-500 dark:group-hover:border-stone-500 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-stone-400 dark:text-stone-500 group-hover:text-stone-700 dark:group-hover:text-stone-300 transition-colors">
                 <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
               </svg>
             </span>
-            <span className="text-[8px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-600 group-hover:text-stone-600 dark:group-hover:text-stone-400 transition-colors">
+            <span className="text-[9px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-600 group-hover:text-stone-600 dark:group-hover:text-stone-400 transition-colors">
               {copied ? "Copiado!" : "Invitar"}
             </span>
           </button>
