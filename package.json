@@ -2,7 +2,7 @@
   "name": "La Commune",
   "description": "La commune - Create and share custom QR codes easily.",
   "author": "David San Luis Aguirre",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": false,
   "scripts": {
     "dev": "dotenv -e .env.development -- next dev -p 3004",
