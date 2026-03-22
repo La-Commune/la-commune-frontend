@@ -2,7 +2,7 @@ name: Deploy to Production
 
 # ═══════════════════════════════════════════════════════════════
 # Se activa SOLO manualmente desde GitHub → Actions → Run workflow.
-# Corre todos los tests y si pasan, despliega a Netlify producción.
+# Flujo: Tests → main → development → production → Build → Deploy Netlify
 # ═══════════════════════════════════════════════════════════════
 
 on:
@@ -123,9 +123,9 @@ jobs:
           path: playwright-report/
           retention-days: 14
 
-  # ── 4. Merge main → production ───────────────────────────
-  merge-to-production:
-    name: Merge main → production
+  # ── 4. Merge main → development ─────────────────────────
+  merge-to-development:
+    name: Merge main → development
     runs-on: ubuntu-latest
     needs: [typecheck, unit-tests, e2e-tests]
     if: ${{ always() && (inputs.skip_tests == 'true' || (needs.typecheck.result == 'success' && needs.unit-tests.result == 'success' && needs.e2e-tests.result == 'success')) }}
@@ -134,15 +134,35 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Merge main into production
+      - name: Merge main into development
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout production || git checkout -b production
-          git merge origin/main --no-edit -m "ci: merge main → production (deploy #${{ github.run_number }})"
+          git fetch origin
+          git checkout development
+          git merge origin/main --no-edit -m "ci: merge main → development (deploy #${{ github.run_number }})"
+          git push origin development
+
+  # ── 5. Merge development → production ───────────────────
+  merge-to-production:
+    name: Merge development → production
+    runs-on: ubuntu-latest
+    needs: [merge-to-development]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Merge development into production
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin
+          git checkout production
+          git merge origin/development --no-edit -m "ci: merge development → production (deploy #${{ github.run_number }})"
           git push origin production
 
-  # ── 5. Deploy a Netlify (producción) ─────────────────────
+  # ── 6. Deploy a Netlify (producción) ─────────────────────
   deploy:
     name: Deploy to Netlify
     runs-on: ubuntu-latest
