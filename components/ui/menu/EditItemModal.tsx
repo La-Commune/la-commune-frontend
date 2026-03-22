@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { useFirestore } from "reactfire";
 import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
 import { MenuItem } from "@/models/menu.model";
 import { updateMenuItem } from "@/services/menu.service";
@@ -21,7 +20,6 @@ export function EditItemModal({
   onSaved: () => void;
   onClose: () => void;
 }) {
-  const firestore = useFirestore();
   const keyboardOffset = useKeyboardOffset();
   const [name, setName] = useState(item.name);
   const [note, setNote] = useState(item.note ?? "");
@@ -85,13 +83,19 @@ export function EditItemModal({
 
     if (pricingMode === "sizes" && validSizes.length > 0) {
       data.sizes = validSizes;
-      clearFields.push("price");
+      // precio_base = the lowest size price (full prices, not adicional)
+      data.price = Math.min(...validSizes.map((s) => s.price));
     } else if (pricingMode === "single") {
       data.price = price ? Number(price) : undefined;
       clearFields.push("sizes");
     }
 
-    await updateMenuItem(firestore, sectionId, item.id, data, clearFields);
+    // Si se borró la imagen, limpiar el campo en la BD
+    if (!imageUrl.trim() && item.imageUrl) {
+      clearFields.push("imageUrl");
+    }
+
+    await updateMenuItem(sectionId, item.id, data, clearFields);
     onSaved();
     setSaving(false);
     onClose();

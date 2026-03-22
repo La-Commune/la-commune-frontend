@@ -6,34 +6,92 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactCanvasConfetti from "react-canvas-confetti";
 import { QRCodeCanvas } from "qrcode.react";
-import { doc } from "firebase/firestore";
-import { useFirestore, useFirestoreDocData } from "reactfire";
+import { Card } from "@/models/card.model";
+import { Reward } from "@/models/reward.model";
 import { getCardByCustomer } from "@/services/card.service";
+import { getDefaultReward } from "@/services/reward.service";
 import { setCustomerSession } from "@/app/actions/customerSession";
+import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
+import { logger } from "@/lib/logger";
 
 type ConfettiInstance = (opts: any) => void;
 
 export default function RedeemPage() {
   const { cardId } = useParams<{ cardId: string }>();
   const router = useRouter();
-  const firestore = useFirestore();
 
   const confettiRef = useRef<ConfettiInstance | null>(null);
   const firedRef = useRef(false);
 
   const [toast, setToast] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [cardDoc, setCardDoc] = useState<Card | null>(null);
+  const [rewardDoc, setRewardDoc] = useState<Reward | null>(null);
 
-  // Firestore listeners
-  const cardRef = doc(firestore, "cards", cardId);
-  const rewardRef = doc(firestore, "rewards", "default");
+  // Load reward once
+  useEffect(() => {
+    getDefaultReward().then((reward) => {
+      if (reward) {
+        setRewardDoc(reward);
+      }
+    });
+  }, []);
 
-  const { data: cardDoc } = useFirestoreDocData(cardRef, { suspense: false });
-  const { data: rewardDoc } = useFirestoreDocData(rewardRef, { suspense: false });
+  // Fetch inicial + realtime subscription for card
+  useEffect(() => {
+    if (!cardId) return;
 
-  const cardStatus = (cardDoc as any)?.status as string | undefined;
+    const supabase = getSupabase();
+
+    // Fetch inicial — cubre refresh de página y cuando realtime aún no entrega
+    supabase
+      .from("tarjetas")
+      .select("*")
+      .eq("id", cardId)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setCardDoc({
+            id: data.id,
+            stamps: data.sellos,
+            maxStamps: data.sellos_maximos,
+            status: data.estado as Card["status"],
+            createdAt: new Date(data.creado_en),
+          });
+        }
+      });
+
+    const channel = supabase
+      .channel(`card-redeem-${cardId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "tarjetas",
+          filter: `id=eq.${cardId}`,
+        },
+        (payload) => {
+          const row = payload.new as Record<string, unknown>;
+          setCardDoc({
+            id: row.id as string,
+            stamps: row.sellos as number,
+            maxStamps: row.sellos_maximos as number,
+            status: row.estado as Card["status"],
+            createdAt: new Date(row.creado_en as string),
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [cardId]);
+
+  const cardStatus = cardDoc?.status as string | undefined;
   const rewardDescription: string =
-    (rewardDoc as any)?.description ?? "Una bebida de cortesia";
+    rewardDoc?.description ?? "Una bebida de cortesia";
 
   // Access control: verificar que esta tarjeta pertenece al cliente
   useEffect(() => {
@@ -47,30 +105,86 @@ export default function RedeemPage() {
   // Guard: si la tarjeta no esta completed ni redeemed, regresar con feedback
   useEffect(() => {
     if (!cardDoc) return;
-    if (cardStatus !== "completed" && cardStatus !== "redeemed") {
+    if (cardStatus !== "completada" && cardStatus !== "canjeada") {
       setToast("Tu tarjeta aun no esta completa");
       setTimeout(() => router.replace(`/card/${cardId}`), 1500);
     }
   }, [cardStatus, cardDoc, cardId, router]);
 
   // Si la tarjeta fue canjeada (barista confirmo), redirigir al nuevo card
+  const redirectingRef = useRef(false);
   useEffect(() => {
-    if (cardStatus !== "redeemed") return;
+    if (cardStatus !== "canjeada") return;
+    if (redirectingRef.current) return;
+    redirectingRef.current = true;
+
     const customerId =
       typeof window !== "undefined"
         ? localStorage.getItem("customerId")
         : null;
-    if (!customerId) return;
+    if (!customerId) {
+      logger.warn("redeem", "No customerId in localStorage, redirecting to home");
+      router.replace("/");
+      return;
+    }
 
-    const customerRef = doc(firestore, "customers", customerId);
-    getCardByCustomer(firestore, customerRef).then((newCard) => {
-      if (newCard) {
-        localStorage.setItem("cardId", newCard.id);
-        setCustomerSession(customerId!, newCard.id);
-        router.replace(`/card/${newCard.id}`);
+    // Retry logic: la nueva tarjeta puede tardar un instante en ser visible
+    // por replicación, así que reintentamos hasta 3 veces con delay
+    let attempts = 0;
+    const maxAttempts = 3;
+    const retryDelay = 800; // ms
+
+    const tryRedirect = async () => {
+      attempts++;
+      try {
+        const newCard = await getCardByCustomer(customerId);
+        if (newCard) {
+          localStorage.setItem("cardId", newCard.id);
+          await setCustomerSession(customerId, newCard.id);
+          router.replace(`/card/${newCard.id}`);
+          return;
+        }
+
+        // No new card found yet — retry or fallback
+        if (attempts < maxAttempts) {
+          setTimeout(tryRedirect, retryDelay);
+        } else {
+          // Fallback: buscar directamente cualquier tarjeta activa del cliente
+          const supabase = getSupabase();
+          const { data } = await supabase
+            .from("tarjetas")
+            .select("id")
+            .eq("negocio_id", NEGOCIO_ID)
+            .eq("cliente_id", customerId)
+            .eq("estado", "activa")
+            .order("creado_en", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (data) {
+            localStorage.setItem("cardId", data.id);
+            await setCustomerSession(customerId, data.id);
+            router.replace(`/card/${data.id}`);
+          } else {
+            // Último recurso: la RPC debió crear la tarjeta, algo salió mal
+            logger.error("redeem", "No active card found after redeem", { customerId, cardId });
+            setToast("Tu bebida fue canjeada. Abriendo nueva tarjeta...");
+            setTimeout(() => router.replace("/"), 2000);
+          }
+        }
+      } catch (err) {
+        logger.error("redeem", "Error finding new card", err);
+        if (attempts < maxAttempts) {
+          setTimeout(tryRedirect, retryDelay);
+        } else {
+          setToast("Hubo un error. Redirigiendo...");
+          setTimeout(() => router.replace("/"), 2000);
+        }
       }
-    });
-  }, [cardStatus, firestore, router]);
+    };
+
+    tryRedirect();
+  }, [cardStatus, cardId, router]);
 
   const fireConfetti = useCallback(() => {
     confettiRef.current?.({
@@ -159,7 +273,7 @@ export default function RedeemPage() {
           href={`/card/${cardId}`}
           className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-400 hover:text-white transition-colors duration-300 group"
         >
-          <span className="w-4 h-px bg-stone-500 group-hover:w-7 group-hover:bg-white transition-all duration-500" />
+          <span aria-hidden="true" className="w-4 h-px bg-stone-500 group-hover:w-7 group-hover:bg-white transition-all duration-500" />
           Mi tarjeta
         </Link>
         <span className="text-[10px] uppercase tracking-[0.45em] text-stone-500">
@@ -194,7 +308,7 @@ export default function RedeemPage() {
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{ opacity: 1, scaleX: 1 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="w-24 h-px bg-stone-700"
+          aria-hidden="true" className="w-24 h-px bg-stone-700"
         />
 
         {/* Instruccion + QR */}
@@ -224,7 +338,7 @@ export default function RedeemPage() {
           initial={{ opacity: 0, scaleX: 0 }}
           animate={{ opacity: 1, scaleX: 1 }}
           transition={{ duration: 0.6, delay: 0.6 }}
-          className="w-24 h-px bg-stone-700"
+          aria-hidden="true" className="w-24 h-px bg-stone-700"
         />
 
         {/* Boton compartir — siempre visible con fallback a clipboard */}

@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useFirestore } from "reactfire";
-import { Timestamp } from "firebase/firestore";
 import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
 import { addPromotion } from "@/services/promotion.service";
 
@@ -43,7 +41,6 @@ export function AddPromoSheet({
   onAdded: () => void;
   onCancel: () => void;
 }) {
-  const firestore = useFirestore();
   const keyboardOffset = useKeyboardOffset();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -63,12 +60,12 @@ export function AddPromoSheet({
   const handleSave = async () => {
     if (!title.trim()) return;
     setSaving(true);
-    await addPromotion(firestore, {
+    await addPromotion({
       title: title.trim(),
       description: description.trim(),
       type,
-      startsAt: Timestamp.fromDate(new Date(startsAt + "T00:00:00")),
-      endsAt: Timestamp.fromDate(new Date(endsAt + "T23:59:59")),
+      startsAt: new Date(startsAt + "T00:00:00"),
+      endsAt: new Date(endsAt + "T23:59:59"),
       daysOfWeek,
       active: true,
       appliesTo: appliesTo.trim() || undefined,

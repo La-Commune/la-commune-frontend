@@ -54,7 +54,7 @@ export default function Nosotros() {
           href="/"
           className="inline-flex items-center gap-3 text-[10px] uppercase tracking-[0.35em] text-stone-400 dark:text-stone-600 hover:text-stone-700 dark:hover:text-stone-300 transition-colors duration-300 group"
         >
-          <span className="w-6 h-px bg-stone-300 dark:bg-stone-700 group-hover:w-10 group-hover:bg-stone-500 dark:group-hover:bg-stone-400 transition-all duration-500" />
+          <span aria-hidden="true" className="w-6 h-px bg-stone-300 dark:bg-stone-700 group-hover:w-10 group-hover:bg-stone-500 dark:group-hover:bg-stone-400 transition-all duration-500" />
           Inicio
         </Link>
         <ThemeToggle />
@@ -101,6 +101,7 @@ export default function Nosotros() {
           viewport={{ once: true }}
           transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
           style={{ originX: 0 }}
+          aria-hidden="true"
           className="h-px bg-stone-200 dark:bg-stone-800 max-w-6xl mx-auto"
         />
       </div>
@@ -122,7 +123,7 @@ export default function Nosotros() {
 
       {/* Linea divisora */}
       <div className="px-8 sm:px-16">
-        <div className="h-px bg-stone-100 dark:bg-stone-900 max-w-6xl mx-auto" />
+        <div aria-hidden="true" className="h-px bg-stone-100 dark:bg-stone-900 max-w-6xl mx-auto" />
       </div>
 
       {/* PILARES */}
@@ -139,7 +140,7 @@ export default function Nosotros() {
               <p className="text-[10px] uppercase tracking-[0.4em] text-stone-500 mb-4">
                 {pillar.label}
               </p>
-              <div className="w-5 h-px bg-stone-200 dark:bg-stone-800 mb-6" />
+              <div aria-hidden="true" className="w-5 h-px bg-stone-200 dark:bg-stone-800 mb-6" />
               <p className="text-sm text-stone-500 leading-relaxed font-light">
                 {pillar.text}
               </p>

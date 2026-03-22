@@ -2,8 +2,6 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useFirestore } from "reactfire";
-import { Timestamp } from "firebase/firestore";
 import { Promotion } from "@/models/promotion.model";
 import {
   getPromotions,
@@ -18,22 +16,21 @@ import { EditPromoSheet } from "./EditPromoSheet";
 
 const DAY_LABELS = ["Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"];
 
-function formatPromoDate(d: Timestamp | string): string {
-  const date = d instanceof Timestamp ? d.toDate() : new Date(d);
+function formatPromoDate(d: string | Date): string {
+  const date = d instanceof Date ? d : new Date(d);
   return date.toLocaleDateString("es-MX", { day: "numeric", month: "short" });
 }
 
 function isPromoLive(p: Promotion): boolean {
   if (!p.active) return false;
   const now = new Date();
-  const start = p.startsAt instanceof Timestamp ? p.startsAt.toDate() : new Date(p.startsAt);
-  const end = p.endsAt instanceof Timestamp ? p.endsAt.toDate() : new Date(p.endsAt);
+  const start = p.startsAt instanceof Date ? p.startsAt : new Date(p.startsAt);
+  const end = p.endsAt instanceof Date ? p.endsAt : new Date(p.endsAt);
   end.setHours(23, 59, 59, 999);
   return now >= start && now <= end;
 }
 
 export function PromosAdmin() {
-  const firestore = useFirestore();
   const [promos, setPromos] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
@@ -41,23 +38,23 @@ export function PromosAdmin() {
 
   const reload = useCallback(() => {
     setLoading(true);
-    getPromotions(firestore)
+    getPromotions()
       .then(setPromos)
       .catch(() => toast({ variant: "destructive", title: "Error al cargar promos" }))
       .finally(() => setLoading(false));
-  }, [firestore]);
+  }, []);
 
   useEffect(() => { reload(); }, [reload]);
 
   const handleToggleActive = async (promo: Promotion) => {
-    await updatePromotion(firestore, promo.id!, { active: !promo.active });
+    await updatePromotion(promo.id!, { active: !promo.active });
     setPromos((prev) =>
       prev.map((p) => (p.id === promo.id ? { ...p, active: !p.active } : p))
     );
   };
 
   const handleDelete = async (promo: Promotion) => {
-    await deletePromotion(firestore, promo.id!);
+    await deletePromotion(promo.id!);
     setPromos((prev) => prev.filter((p) => p.id !== promo.id));
     toast({ title: `"${promo.title}" eliminada` });
   };

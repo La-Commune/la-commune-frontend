@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback, useMemo, memo } from "react";
 import Image from "next/image";
 import { AnimatePresence } from "framer-motion";
-import { useFirestore } from "reactfire";
 import { MenuSection, MenuItem } from "@/models/menu.model";
 import {
   getFullMenu,
@@ -17,6 +16,7 @@ import { ItemDrawer } from "./ItemDrawer";
 import { EditItemModal } from "./EditItemModal";
 import { AddItemSheet } from "./AddItemSheet";
 import { AddSectionSheet } from "./AddSectionSheet";
+import { EditSectionSheet } from "./EditSectionSheet";
 import { ConfirmSheet } from "./ConfirmSheet";
 import { DeleteTarget } from "./menu-admin.constants";
 
@@ -25,6 +25,7 @@ type SectionCardProps = {
   onItemClick: (item: MenuItem, sectionId: string) => void;
   onToggleActive: (section: MenuSection) => void;
   onDeleteSection: (section: MenuSection) => void;
+  onEditSection: (section: MenuSection) => void;
   onAddItem: (sectionId: string) => void;
 };
 
@@ -33,6 +34,7 @@ const SectionCard = memo(function SectionCard({
   onItemClick,
   onToggleActive,
   onDeleteSection,
+  onEditSection,
   onAddItem,
 }: SectionCardProps) {
   return (
@@ -43,14 +45,15 @@ const SectionCard = memo(function SectionCard({
     >
       {/* Header sección */}
       <div className="flex items-center justify-between px-5 py-5 bg-white dark:bg-neutral-900">
-        <div className="min-w-0">
+        <button className="min-w-0 text-left" onClick={() => onEditSection(section)}>
           <p className={`text-[11px] uppercase tracking-[0.4em] font-medium ${
             section.type === "food" ? "text-amber-500" : "text-stone-600 dark:text-stone-300"
           }`}>
             {section.title}
+            <span className="ml-2 text-stone-300 dark:text-stone-700 text-[9px] tracking-wider normal-case">editar</span>
           </p>
-          <p className="text-[11px] text-stone-400 dark:text-stone-600 mt-1 truncate">{section.description}</p>
-        </div>
+          <p className="text-[11px] text-stone-400 dark:text-stone-600 mt-1 truncate">{section.description || "Sin descripción"}</p>
+        </button>
         <div className="flex items-center gap-3 shrink-0 ml-4">
           <Toggle
             checked={section.active}
@@ -85,13 +88,15 @@ const SectionCard = memo(function SectionCard({
                   width={32}
                   height={32}
                   unoptimized
-                  className="w-8 h-8 rounded-lg object-cover shrink-0 opacity-80"
+                  className={`w-8 h-8 rounded-lg object-cover shrink-0 ${
+                    !item.visible ? "opacity-30 grayscale" : !item.available ? "opacity-50" : "opacity-80"
+                  }`}
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
                 />
               ) : (
                 <span
                   className={`w-2 h-2 rounded-full shrink-0 transition-colors mt-0.5 ${
-                    item.available ? "bg-stone-500" : "bg-stone-200 dark:bg-stone-800"
+                    !item.visible ? "bg-red-300 dark:bg-red-900" : !item.available ? "bg-orange-300 dark:bg-orange-800" : "bg-stone-500"
                   }`}
                 />
               )}
@@ -99,10 +104,16 @@ const SectionCard = memo(function SectionCard({
               <span className="flex-1 min-w-0 space-y-0.5">
                 <span
                   className={`block text-[15px] leading-snug transition-colors ${
-                    item.available ? "text-stone-700 dark:text-stone-200" : "text-stone-300 dark:text-stone-700"
+                    !item.visible ? "text-stone-300 dark:text-stone-700 line-through" : !item.available ? "text-stone-400 dark:text-stone-500" : "text-stone-700 dark:text-stone-200"
                   }`}
                 >
                   {item.name}
+                  {!item.visible && (
+                    <span className="ml-2 text-[10px] uppercase tracking-widest text-red-400/80 no-underline">Oculto</span>
+                  )}
+                  {item.visible && !item.available && (
+                    <span className="ml-2 text-[10px] uppercase tracking-widest text-orange-400/80">Agotado</span>
+                  )}
                   {item.seasonal && (
                     <span className="ml-2 text-[10px] uppercase tracking-widest text-emerald-700/80">Temp</span>
                   )}
@@ -112,7 +123,7 @@ const SectionCard = memo(function SectionCard({
                 </span>
                 {item.ingredients.length > 0 && (
                   <span className={`block text-[11px] truncate transition-colors ${
-                    item.available ? "text-stone-400 dark:text-stone-600" : "text-stone-200 dark:text-stone-800"
+                    item.visible && item.available ? "text-stone-400 dark:text-stone-600" : "text-stone-200 dark:text-stone-800"
                   }`}>
                     {item.ingredients.slice(0, 3).join(" · ")}
                     {item.ingredients.length > 3 ? " · …" : ""}
@@ -123,13 +134,13 @@ const SectionCard = memo(function SectionCard({
               <span className="shrink-0 text-right space-y-0.5">
                 {item.sizes ? (
                   <span className={`block text-[12px] tabular-nums transition-colors ${
-                    item.available ? "text-stone-400 dark:text-stone-600" : "text-stone-200 dark:text-stone-800"
+                    item.visible && item.available ? "text-stone-400 dark:text-stone-600" : "text-stone-200 dark:text-stone-800"
                   }`}>
                     ${item.sizes[0].price}+
                   </span>
                 ) : item.price ? (
                   <span className={`block text-[13px] tabular-nums transition-colors ${
-                    item.available ? "text-stone-500" : "text-stone-200 dark:text-stone-800"
+                    item.visible && item.available ? "text-stone-500" : "text-stone-200 dark:text-stone-800"
                   }`}>
                     ${item.price}
                   </span>
@@ -158,7 +169,6 @@ const SectionCard = memo(function SectionCard({
 });
 
 export function MenuAdmin() {
-  const firestore = useFirestore();
   const [sections, setSections] = useState<MenuSection[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -185,17 +195,18 @@ export function MenuAdmin() {
   const [editItem, setEditItem] = useState<{ item: MenuItem; sectionId: string } | null>(null);
   const [addingItemTo, setAddingItemTo] = useState<string | null>(null);
   const [addingSection, setAddingSection] = useState(false);
+  const [editingSection, setEditingSection] = useState<MenuSection | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
 
   const reload = useCallback(() => {
     setLoading(true);
-    getFullMenu(firestore)
+    getFullMenu({ forAdmin: true })
       .then((data) => { setSections(data); setLoading(false); })
       .catch(() => {
         setLoading(false);
         toast({ variant: "destructive", title: "Error al cargar el menú", description: "Verifica tu conexión e intenta de nuevo." });
       });
-  }, [firestore]);
+  }, []);
 
   useEffect(() => { reload(); }, [reload]);
 
@@ -223,26 +234,26 @@ export function MenuAdmin() {
     const allUnavailable = updatedItems.length > 0 && updatedItems.every((it) => !it.available);
 
     if (allUnavailable && section.active) {
-      await updateMenuSection(firestore, sectionId, { active: false });
+      await updateMenuSection(sectionId, { active: false });
       setSections((prev) =>
         prev.map((s) => s.id === sectionId ? { ...s, active: false } : s)
       );
       toast({ title: `"${section.title}" deshabilitada`, description: "Todos los items están no disponibles." });
     } else if (newAvailable && !section.active) {
-      await updateMenuSection(firestore, sectionId, { active: true });
+      await updateMenuSection(sectionId, { active: true });
       setSections((prev) =>
         prev.map((s) => s.id === sectionId ? { ...s, active: true } : s)
       );
       toast({ title: `"${section.title}" habilitada`, description: "Un item volvió a estar disponible." });
     }
-  }, [sections, firestore]);
+  }, [sections]);
 
   const handleToggleSectionActive = useCallback(async (section: MenuSection) => {
-    await updateMenuSection(firestore, section.id!, { active: !section.active });
+    await updateMenuSection(section.id!, { active: !section.active });
     setSections((prev) =>
       prev.map((s) => s.id === section.id ? { ...s, active: !s.active } : s)
     );
-  }, [firestore]);
+  }, []);
 
   const handleItemClick = useCallback((item: MenuItem, sectionId: string) => {
     setDrawerItem({ item, sectionId });
@@ -255,9 +266,9 @@ export function MenuAdmin() {
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return;
     if (deleteTarget.type === "item") {
-      await deleteMenuItem(firestore, deleteTarget.sectionId, deleteTarget.itemId!);
+      await deleteMenuItem(deleteTarget.sectionId, deleteTarget.itemId!);
     } else {
-      await deleteMenuSection(firestore, deleteTarget.sectionId);
+      await deleteMenuSection(deleteTarget.sectionId);
     }
     setDeleteTarget(null);
     reload();
@@ -311,6 +322,7 @@ export function MenuAdmin() {
             onItemClick={handleItemClick}
             onToggleActive={handleToggleSectionActive}
             onDeleteSection={handleDeleteSectionRequest}
+            onEditSection={setEditingSection}
             onAddItem={setAddingItemTo}
           />
         ))}
@@ -387,6 +399,16 @@ export function MenuAdmin() {
             }
             onAdded={() => { setAddingItemTo(null); reload(); }}
             onCancel={() => setAddingItemTo(null)}
+          />
+        )}
+
+        {/* Sheet editar sección */}
+        {editingSection && (
+          <EditSectionSheet
+            key="edit-section"
+            section={editingSection}
+            onSaved={() => { setEditingSection(null); reload(); }}
+            onCancel={() => setEditingSection(null)}
           />
         )}
 

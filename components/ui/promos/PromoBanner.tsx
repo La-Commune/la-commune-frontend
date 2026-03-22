@@ -2,29 +2,26 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useFirestore } from "reactfire";
-import { Timestamp } from "firebase/firestore";
 import { Promotion } from "@/models/promotion.model";
 import { getActivePromotions } from "@/services/promotion.service";
 
-function formatRange(start: Timestamp | string, end: Timestamp | string): string {
-  const s = start instanceof Timestamp ? start.toDate() : new Date(start);
-  const e = end instanceof Timestamp ? end.toDate() : new Date(end);
+function formatRange(start: string | Date, end: string | Date): string {
+  const s = start instanceof Date ? start : new Date(start);
+  const e = end instanceof Date ? end : new Date(end);
   const opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
   return `${s.toLocaleDateString("es-MX", opts)} — ${e.toLocaleDateString("es-MX", opts)}`;
 }
 
-function useActivePromos() {
-  const firestore = useFirestore();
+export function useActivePromos() {
   const [promos, setPromos] = useState<Promotion[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    getActivePromotions(firestore)
+    getActivePromotions()
       .then(setPromos)
       .catch(() => {})
       .finally(() => setLoaded(true));
-  }, [firestore]);
+  }, []);
 
   return { promos, loaded };
 }

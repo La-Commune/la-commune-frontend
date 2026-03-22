@@ -55,8 +55,8 @@ self.addEventListener("fetch", (event) => {
   // Solo GET y mismo origen
   if (request.method !== "GET" || url.origin !== location.origin) return;
 
-  // Ignorar peticiones de Firebase / APIs externas
-  if (url.hostname.includes("firestore") || url.hostname.includes("googleapis")) return;
+  // Ignorar peticiones a APIs externas (Supabase, Google, etc.)
+  if (url.hostname.includes("supabase") || url.hostname.includes("googleapis")) return;
 
   // Ignorar videos — siempre devuelven 206 (range request) y no se pueden cachear
   if (UNCACHEABLE_EXTENSIONS.test(url.pathname)) return;
@@ -85,46 +85,33 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Cachear dinámicamente rutas /card/[cardId] en la primera visita online.
-  // Stale-while-revalidate: sirve del caché inmediatamente si existe, y en
-  // paralelo lanza el fetch para actualizar. Si no hay caché, espera la red.
+  // Network-first para rutas /card/[cardId].
+  // Siempre intenta la red para obtener datos frescos; caché solo como fallback offline.
   if (isCardRoute(url.pathname)) {
     event.respondWith(
       caches.open(CACHE).then((cache) =>
-        cache.match(request).then((cached) => {
-          const networkFetch = fetch(request).then((res) => {
+        fetch(request)
+          .then((res) => {
             if (isCacheable(res)) cache.put(request, res.clone());
             return res;
-          });
-          // Si hay caché lo servimos de inmediato; la red actualiza en background
-          return cached || networkFetch.catch(() => cache.match("/offline.html"));
-        })
+          })
+          .catch(() => cache.match(request).then((cached) => cached || cache.match("/offline.html")))
       )
     );
     return;
   }
 
-  // Stale-while-revalidate para el resto de navegación HTML.
-  // Sirve del caché al instante si existe; actualiza en background.
-  // Si no hay caché, espera la red; si falla, muestra offline.html.
+  // Network-first para navegación HTML.
+  // Siempre intenta la red primero para obtener el HTML más reciente (con BUILD_ID actualizado).
+  // Solo usa caché como fallback si la red falla (offline).
   event.respondWith(
     caches.open(CACHE).then((cache) =>
-      cache.match(request).then((cached) => {
-        const networkFetch = fetch(request).then((res) => {
+      fetch(request)
+        .then((res) => {
           if (isCacheable(res)) cache.put(request, res.clone());
           return res;
-        });
-
-        if (cached) {
-          // Revalidar en background sin bloquear la respuesta
-          networkFetch.catch(() => {});
-          return cached;
-        }
-
-        return networkFetch.catch(
-          () => cache.match("/offline.html")
-        );
-      })
+        })
+        .catch(() => cache.match(request).then((cached) => cached || cache.match("/offline.html")))
     )
   );
 });
@@ -145,7 +132,7 @@ self.addEventListener("periodicsync", (event) => {
 
 async function flushOfflineStamps() {
   // Pedir a TODOS los clientes activos que procesen la cola.
-  // El primero que tenga Firestore inicializado procesará los sellos.
+  // El primero que tenga Supabase inicializado procesará los sellos.
   const clients = await self.clients.matchAll({ type: "window" });
   if (clients.length === 0) return;
 
@@ -154,6 +141,69 @@ async function flushOfflineStamps() {
     client.postMessage({ type: "FLUSH_OFFLINE_STAMPS" });
   }
 }
+
+// =============================================================
+// Push Notifications — recibir y mostrar notificaciones del servidor
+// =============================================================
+
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+
+  let data;
+  try {
+    data = event.data.json();
+  } catch {
+    // Fallback si el payload no es JSON
+    data = {
+      title: "La Commune",
+      body: event.data.text(),
+    };
+  }
+
+  const title = data.title || "La Commune";
+  const options = {
+    body: data.body || "",
+    icon: data.icon || "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
+    tag: data.tag || "la-commune-push",
+    // Datos para el click handler
+    data: {
+      url: data.url || "/card/preview",
+      tipo: data.tipo || "general",
+    },
+    // Vibración suave (móvil)
+    vibrate: [100, 50, 100],
+    // Mantener la notificación hasta que el usuario interactúe
+    requireInteraction: false,
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// Click en la notificación — abrir la URL correspondiente
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  const url = event.notification.data?.url || "/card/preview";
+
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clients) => {
+        // Si ya hay una pestaña abierta, enfocarla y navegar
+        const existingClient = clients.find(
+          (c) => new URL(c.url).origin === location.origin
+        );
+        if (existingClient) {
+          existingClient.focus();
+          existingClient.navigate(url);
+          return;
+        }
+        // Si no, abrir nueva pestaña
+        return self.clients.openWindow(url);
+      })
+  );
+});
 
 // Escuchar mensaje del cliente confirmando que el sync terminó
 self.addEventListener("message", (event) => {

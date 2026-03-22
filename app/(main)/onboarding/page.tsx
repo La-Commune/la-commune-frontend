@@ -6,12 +6,11 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useFirestore } from "reactfire";
 import { createCustomer, getCustomerByPhone } from "@/services/customer.service";
-import { doc, getDoc, DocumentReference } from "firebase/firestore";
 import { createCard, getCardByCustomer } from "@/services/card.service";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { hashCustomerPin, setCustomerSession } from "@/app/actions/customerSession";
+import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
 
 export default function OnboardingPage() {
   return (
@@ -25,20 +24,26 @@ function OnboardingForm() {
   const params = useSearchParams();
   const router = useRouter();
   const cardId = params!.get("cardId");
-  const firestore = useFirestore();
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [pin, setPin] = useState("");
   const [consentWhatsApp, setConsentWhatsApp] = useState(false);
+  const [consentEmail, setConsentEmail] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [phoneTouched, setPhoneTouched] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
 
   const isValidPhone = phone.length === 10;
   const isValidPin = pin.length === 4;
+  const isValidEmail = email === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const phoneError = phoneTouched && phone.length > 0 && phone.length < 10
     ? "Ingresa los 10 digitos"
+    : null;
+  const emailError = emailTouched && email.length > 0 && !isValidEmail
+    ? "Ingresa un email valido"
     : null;
 
   const handleSubmit = async () => {
@@ -47,23 +52,42 @@ function OnboardingForm() {
     setError(null);
 
     try {
-      // Check if phone already registered — don't auto-login, require recovery with PIN
-      const existing = await getCustomerByPhone(firestore, phone);
+      const supabase = getSupabase();
+
+      // Check if phone already registered
+      const existing = await getCustomerByPhone(phone);
 
       if (existing) {
-        setError("Ya existe una cuenta con este numero. Usa \"Recuperar mi tarjeta\" para acceder.");
-        setLoading(false);
+        // Check if they already have a card → send to recover
+        const existingCard = await getCardByCustomer(existing.id);
+        if (existingCard) {
+          setError(null);
+          router.replace("/recover");
+          return;
+        }
+
+        // Client exists but no card (previous partial signup) → create card and continue
+        const card = await createCard({
+          customerRef: existing.id,
+        });
+
+        localStorage.setItem("customerId", existing.id);
+        localStorage.setItem("cardId", card.id);
+        await setCustomerSession(existing.id, card.id);
+        router.replace("/card/" + card.id);
         return;
       }
 
       let referrerCustomerId: string | undefined;
       if (cardId) {
         try {
-          const referrerCardSnap = await getDoc(doc(firestore, "cards", cardId));
-          if (referrerCardSnap.exists()) {
-            const ref = referrerCardSnap.data().customerId as DocumentReference | undefined;
-            referrerCustomerId = ref?.id;
-          }
+          const { data: referrerCard } = await supabase
+            .from("tarjetas")
+            .select("cliente_id")
+            .eq("negocio_id", NEGOCIO_ID)
+            .eq("id", cardId)
+            .single();
+          referrerCustomerId = referrerCard?.cliente_id;
         } catch {
           // No bloquear el registro si el lookup falla
         }
@@ -72,32 +96,35 @@ function OnboardingForm() {
       // Hash PIN server-side before storing
       const pinHmac = await hashCustomerPin(pin);
 
-      const customerRef = await createCustomer(firestore, {
+      const customer = await createCustomer({
         name,
         phone,
+        ...(email ? { email } : {}),
         consentWhatsApp,
+        ...(email ? { consentEmail } : {}),
         pinHmac,
         ...(referrerCustomerId ? { referrerCustomerId } : {}),
       });
 
-      const rewardRef = doc(firestore, "rewards", "default");
-
-      const cardRef = await createCard(firestore, {
-        customerRef,
-        rewardRef,
+      const card = await createCard({
+        customerRef: customer.id,
       });
 
       // Set both localStorage and httpOnly cookie
-      localStorage.setItem("customerId", customerRef.id);
-      localStorage.setItem("cardId", cardRef.id);
-      await setCustomerSession(customerRef.id, cardRef.id);
+      localStorage.setItem("customerId", customer.id);
+      localStorage.setItem("cardId", card.id);
+      await setCustomerSession(customer.id, card.id);
 
-      router.replace("/card/" + cardRef.id);
-    } catch (e: any) {
+      router.replace("/card/" + card.id);
+    } catch (e: unknown) {
+      if (process.env.NODE_ENV === "development") {
+        console.error("Onboarding error:", e);
+      }
       const offline = typeof navigator !== "undefined" && !navigator.onLine;
+      const code = e instanceof Object && "code" in e ? (e as { code: string }).code : undefined;
       if (offline) {
         setError("Sin conexion a internet. Verifica tu red e intenta de nuevo.");
-      } else if (e?.code === "permission-denied") {
+      } else if (code === "permission-denied") {
         setError("No se pudo acceder al servicio. Intenta mas tarde.");
       } else {
         setError("Algo salio mal. Intenta de nuevo o visitanos en barra.");
@@ -120,7 +147,7 @@ function OnboardingForm() {
           href="/"
           className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors duration-300 group"
         >
-          <span className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
+          <span aria-hidden="true" className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
           Inicio
         </Link>
         <span className="text-[10px] uppercase tracking-[0.45em] text-stone-400 dark:text-stone-500">
@@ -197,6 +224,28 @@ function OnboardingForm() {
               </div>
             </div>
 
+            {/* Email */}
+            <div className="space-y-1.5">
+              <label htmlFor="email" className="block text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 text-left">
+                Email <span className="text-stone-300 dark:text-stone-700">(opcional)</span>
+              </label>
+              <Input
+                id="email"
+                type="email"
+                inputMode="email"
+                placeholder="tu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value.trim())}
+                onBlur={() => setEmailTouched(true)}
+                className={`text-base text-center bg-white dark:bg-neutral-900 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600 focus:border-stone-500 ${
+                  emailError ? "border-red-400 dark:border-red-500" : "border-stone-300 dark:border-stone-700"
+                }`}
+              />
+              {emailError && (
+                <p className="text-[11px] text-red-500 dark:text-red-400">{emailError}</p>
+              )}
+            </div>
+
             {/* PIN */}
             <div className="space-y-1.5">
               <label htmlFor="pin" className="block text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 text-left">
@@ -245,6 +294,20 @@ function OnboardingForm() {
                 promociones del cafe.
               </span>
             </label>
+
+            {email && (
+              <label className="flex items-start gap-3 text-xs text-stone-500 leading-snug text-left">
+                <input
+                  type="checkbox"
+                  checked={consentEmail}
+                  onChange={(e) => setConsentEmail(e.target.checked)}
+                  className="mt-0.5 accent-stone-400"
+                />
+                <span>
+                  Acepto recibir correos con promociones y novedades del cafe.
+                </span>
+              </label>
+            )}
           </div>
 
           {/* Error */}
@@ -257,7 +320,7 @@ function OnboardingForm() {
             <Button
               className="w-full rounded-full bg-stone-800 text-white dark:bg-white dark:text-neutral-900 py-6 text-sm tracking-wide transition hover:bg-stone-900 dark:hover:bg-stone-100 disabled:opacity-30"
               onClick={handleSubmit}
-              disabled={!isValidPhone || !isValidPin || loading}
+              disabled={!isValidPhone || !isValidPin || !isValidEmail || loading}
             >
               {loading ? (
                 <span className="inline-flex items-center gap-2">

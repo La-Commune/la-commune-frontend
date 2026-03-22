@@ -11,7 +11,10 @@ import {
 } from "framer-motion";
 import React, { useRef, useState, useEffect } from "react";
 import { SplashScreen } from "@/components/ui/SplashScreen";
+import { HowItWorksAnimation } from "@/components/ui/HowItWorksAnimation";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { getDefaultReward } from "@/services/reward.service";
+import type { IllustrationId } from "@/components/ui/stamp-illustrations";
 
 /* ===============================
    Animated Text (línea por línea)
@@ -39,7 +42,7 @@ const AnimatedLines = ({
             ease: [0.16, 1, 0.3, 1],
           }}
         >
-          <h2 className="font-display text-4xl sm:text-5xl md:text-6xl font-light leading-[1.1] tracking-wide">
+          <h2 className="font-display text-5xl sm:text-7xl md:text-8xl font-light leading-[1.05] tracking-wide">
             {line}
           </h2>
         </motion.div>
@@ -93,6 +96,7 @@ const PremiumSection: React.FC<SectionProps> = ({
   const loopFadingOut = useRef(false);
   const rafRef = useRef<number | null>(null);
   const FADE_SECS = 1.8;
+  const prefersReduced = useReducedMotion();
 
   // rAF a 60 fps — lee currentTime cada frame para opacidad perfectamente continua
   useEffect(() => {
@@ -183,7 +187,7 @@ const PremiumSection: React.FC<SectionProps> = ({
       {!videoFailed ? (
         <motion.video
           ref={videoRef}
-          autoPlay={!lazy}
+          autoPlay={!lazy && !prefersReduced}
           muted
           playsInline
           preload={lazy ? "none" : "auto"}
@@ -197,13 +201,13 @@ const PremiumSection: React.FC<SectionProps> = ({
           }}
           onEnded={handleVideoEnded}
           className="absolute inset-0 w-full h-[116%] object-cover"
-          style={{ y: smoothY, filter: "saturate(0.6) hue-rotate(-15deg) contrast(1.15)" }}
+          style={{ y: prefersReduced ? 0 : smoothY, filter: "saturate(0.6) hue-rotate(-15deg) contrast(1.15)" }}
         >
           <source src={videoSrc} type="video/mp4" />
         </motion.video>
       ) : (
         <motion.div
-          style={{ y: smoothY }}
+          style={{ y: prefersReduced ? 0 : smoothY }}
           className="absolute inset-0 w-full h-[116%]"
         >
           {videoPoster && (
@@ -264,7 +268,7 @@ const PremiumSection: React.FC<SectionProps> = ({
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="mb-6 text-[10px] uppercase tracking-[0.35em] text-stone-300"
+            className="mb-6 text-[10px] uppercase tracking-[0.35em] text-[#a89f90]"
           >
             {eyebrow}
           </motion.p>
@@ -278,7 +282,7 @@ const PremiumSection: React.FC<SectionProps> = ({
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 1, delay: 0.45 }}
-            className="mt-6 text-base sm:text-lg text-stone-300 max-w-xl leading-relaxed font-light"
+            className="mt-8 text-lg sm:text-xl text-[#a89f90] max-w-xl leading-relaxed font-light"
           >
             {subtitle}
           </motion.p>
@@ -292,8 +296,8 @@ const PremiumSection: React.FC<SectionProps> = ({
             transition={{ duration: 1.2, delay: 0.75 }}
             className={`mt-10 ${align === "center" ? "mx-auto" : ""} max-w-sm`}
           >
-            <div className="w-6 h-px bg-stone-700 mb-4" />
-            <p className="text-[13px] italic font-light text-stone-500 leading-relaxed tracking-wide">
+            <div aria-hidden="true" className="w-6 h-px bg-[#2a2722] mb-4" />
+            <p className="text-[13px] italic font-light text-[#6b6458] leading-relaxed tracking-wide">
               &ldquo;{manifesto}&rdquo;
             </p>
           </motion.div>
@@ -310,9 +314,9 @@ const PremiumSection: React.FC<SectionProps> = ({
           >
             <button
               onClick={() => router.push(ctaLink)}
-              className="inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.35em] text-stone-200 hover:text-white transition-colors duration-300 group"
+              className="inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.35em] text-[#e8e0d2] hover:text-[#e8e0d2] transition-colors duration-300 group"
             >
-              <span className="w-6 h-px bg-stone-400 group-hover:w-10 group-hover:bg-white transition-all duration-500" />
+              <span aria-hidden="true" className="w-6 h-px bg-[#6b6458] group-hover:w-10 group-hover:bg-white transition-all duration-500" />
               {ctaText}
             </button>
 
@@ -320,14 +324,14 @@ const PremiumSection: React.FC<SectionProps> = ({
               onSecondaryCtaClick ? (
                 <button
                   onClick={onSecondaryCtaClick}
-                  className="text-[10px] uppercase tracking-[0.3em] text-stone-500 hover:text-stone-300 transition-colors duration-300"
+                  className="text-[10px] uppercase tracking-[0.3em] text-[#6b6458] hover:text-[#a89f90] transition-colors duration-300"
                 >
                   {secondaryCtaText}
                 </button>
               ) : secondaryCtaLink ? (
                 <Link
                   href={secondaryCtaLink}
-                  className="text-[10px] uppercase tracking-[0.3em] text-stone-500 hover:text-stone-300 transition-colors duration-300"
+                  className="text-[10px] uppercase tracking-[0.3em] text-[#6b6458] hover:text-[#a89f90] transition-colors duration-300"
                 >
                   {secondaryCtaText}
                 </Link>
@@ -337,22 +341,24 @@ const PremiumSection: React.FC<SectionProps> = ({
         )}
       </div>
 
-      {/* Scroll indicator */}
+      {/* Scroll indicator — Mouse Outline */}
       {scrollIndicator && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 2.5, duration: 1 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2"
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-3"
         >
-          <span className="text-[10px] uppercase tracking-[0.3em] text-stone-400">
+          <div className="w-[22px] h-[36px] rounded-[11px] border-[1.5px] border-[#3a3630] flex justify-center">
+            <motion.div
+              animate={prefersReduced ? {} : { y: [0, 8, 0], opacity: [1, 0.3, 1] }}
+              transition={prefersReduced ? {} : { duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              className="w-[2px] h-[6px] bg-[#c8956c] rounded-sm mt-2"
+            />
+          </div>
+          <span className="text-[9px] uppercase tracking-[0.35em] text-[#3a3630]">
             Scroll
           </span>
-          <motion.div
-            animate={{ y: [0, 6, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-            className="w-px h-6 bg-gradient-to-b from-stone-400 to-transparent"
-          />
         </motion.div>
       )}
     </section>
@@ -391,10 +397,22 @@ export default function Home() {
   const router = useRouter();
   const [cardId, setCardId] = useState<string | null>(null);
   const [openStatus, setOpenStatus] = useState<{ open: boolean; label: string } | null>(null);
+  const [rewardIllustration, setRewardIllustration] = useState<IllustrationId>("flat-white-cenital");
+  const [rewardStamps, setRewardStamps] = useState(5);
 
   useEffect(() => {
     setCardId(localStorage.getItem("cardId"));
     setOpenStatus(getOpenStatus());
+
+    // Traer ilustración y sellos de la recompensa activa
+    getDefaultReward()
+      .then((reward) => {
+        if (reward) {
+          setRewardIllustration(reward.illustration);
+          setRewardStamps(reward.requiredStamps);
+        }
+      })
+      .catch(() => {/* fallback a flat-white-cenital / 5 sellos */});
   }, []);
 
   const handleClearSession = () => {
@@ -408,12 +426,34 @@ export default function Home() {
     : { text: "Registrar mi tarjeta", link: "/onboarding" };
 
   return (
-    <main id="main-content" className="h-[100dvh] overflow-y-scroll snap-y snap-mandatory bg-neutral-950">
+    <main id="main-content" className="h-[100dvh] overflow-y-scroll snap-y snap-mandatory bg-[#0c0b09]">
       <SplashScreen />
+
+      {/* Nav editorial — fijo arriba */}
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 sm:px-10 py-5">
+        <span className="font-mono text-[0.65rem] font-medium tracking-[0.25em] uppercase text-[#e8e0d2]">
+          La Commune
+        </span>
+        <div className="hidden sm:flex gap-8">
+          {[
+            { label: "Menú", href: "/menu" },
+            { label: "Fidelidad", href: loyaltyCta.link },
+          ].map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="font-mono text-[0.6rem] tracking-[0.12em] uppercase text-[#6b6458] hover:text-[#c8956c] transition-colors duration-300 relative group"
+            >
+              {item.label}
+              <span className="absolute bottom-[-2px] left-0 w-0 h-px bg-[#c8956c] group-hover:w-full transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]" />
+            </Link>
+          ))}
+        </div>
+      </nav>
 
       {/* Hero — centrado, marca como eyebrow */}
       <PremiumSection
-        eyebrow="La Commune"
+        eyebrow="Hidalgo, MX"
         title={`Café\nen común`}
         subtitle="Un espacio que pertenece a los que están."
         videoSrc="/videos/coffee-free.mp4"
@@ -424,160 +464,227 @@ export default function Home() {
       />
     
 
-      {/* Segunda sección — fidelidad, alineada a la izquierda */}
-      <PremiumSection
-        eyebrow="Para los que construyen"
-        title={`Lo que se da\nvuelve`}
-        subtitle="Cada visita es un ladrillo. A la quinta, la casa te devuelve algo."
-        videoSrc="/videos/coffee-slow.mp4"
-        videoPoster="/images/poster-loyalty.jpg"
-        ctaText={loyaltyCta.text}
-        ctaLink={loyaltyCta.link}
-        secondaryCtaText={cardId ? "No es mi tarjeta" : "Ya tengo cuenta"}
-        secondaryCtaLink={cardId ? undefined : "/recover"}
-        onSecondaryCtaClick={cardId ? handleClearSession : undefined}
-        align="left"
-        lazy
-      />
+      {/* Sección fidelidad — condicional según estado del usuario */}
+      {cardId ? (
+        /* Usuario registrado → video cinematográfico + CTA directo */
+        <PremiumSection
+          eyebrow="Para los que construyen"
+          title={`Lo que se da\nvuelve`}
+          subtitle="Cada visita es un ladrillo. A la quinta, la casa te devuelve algo."
+          videoSrc="/videos/coffee-slow.mp4"
+          videoPoster="/images/poster-loyalty.jpg"
+          ctaText="Ver mi tarjeta"
+          ctaLink={`/card/${cardId}`}
+          secondaryCtaText="No es mi tarjeta"
+          onSecondaryCtaClick={handleClearSession}
+          align="left"
+          lazy
+        />
+      ) : (
+        /* Usuario nuevo → explicación completa con animación + 3 pasos */
+        <section className="snap-start min-h-[100dvh] flex flex-col items-center justify-center bg-[#0c0b09] px-6 sm:px-10 py-16 sm:py-20 relative overflow-hidden">
+          {/* Línea decorativa */}
+          <motion.div
+            initial={{ scaleX: 0 }}
+            whileInView={{ scaleX: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+            className="w-12 h-px bg-[#c8956c] mb-8 sm:mb-10 origin-center"
+          />
 
-      {/* Storytelling — identidad de marca. Opción 1: todo en sección */}
-      {/* TODO: Reactivar cuando se tenga el contenido en instagram y algo consolidado */}
-      {/* <PremiumSection
-        eyebrow="La Commune"
-        title={`Sin trucos.\nSolo oficio.`}
-        subtitle="La Commune es el nombre que le ponemos al esfuerzo compartido detrás de cada taza."
-        manifesto="El café es el pretexto. La comunidad, el punto."
-        videoSrc="/videos/coffee-black-white.mp4"
-        videoPoster="/images/poster-storytelling.jpg"
-        ctaText="Nuestra historia"
-        ctaLink="/nosotros"
-        align="center"
-        lazy
-      /> */}
+          {/* Eyebrow */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="text-[10px] uppercase tracking-[0.45em] text-[#6b6458] mb-4 sm:mb-5"
+          >
+            Para los que construyen
+          </motion.p>
 
-      {/* Footer con horarios y ubicación */}
-      <footer className="snap-start h-[100dvh] flex flex-col items-center justify-center bg-neutral-950 px-8">
+          {/* Título emotivo */}
+          <motion.h2
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+            className="font-display text-4xl sm:text-5xl md:text-6xl font-light text-[#e8e0d2] text-center tracking-wide mb-3 sm:mb-4"
+          >
+            Lo que se da, vuelve
+          </motion.h2>
+
+          {/* Subtítulo */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1, delay: 0.3 }}
+            className="text-sm sm:text-base text-[#6b6458] text-center max-w-md leading-relaxed mb-8 sm:mb-10"
+          >
+            Cada visita es un ladrillo. A la quinta, la casa te devuelve algo.
+          </motion.p>
+
+          {/* Animación de la taza */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+            className="mb-8 sm:mb-10"
+          >
+            <HowItWorksAnimation maxStamps={rewardStamps} illustrationId={rewardIllustration} />
+          </motion.div>
+
+          {/* 3 pasos */}
+          <div className="grid grid-cols-3 gap-4 sm:gap-8 max-w-2xl w-full mb-8 sm:mb-10">
+            {[
+              {
+                step: "01",
+                title: "Regístrate",
+                desc: "Abre la app y pon tu nombre. Tu tarjeta se crea al instante.",
+              },
+              {
+                step: "02",
+                title: "Acumula",
+                desc: "Cada café suma un sello automáticamente. Sin códigos, sin filas.",
+              },
+              {
+                step: "03",
+                title: "Disfruta",
+                desc: "Al completar la tarjeta, tu siguiente bebida va por la casa.",
+              },
+            ].map((item, i) => (
+              <motion.div
+                key={item.step}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, delay: 0.3 + i * 0.12, ease: [0.16, 1, 0.3, 1] }}
+                className="flex flex-col items-center text-center gap-2"
+              >
+                <span className="w-6 h-6 rounded-full border border-[#c8956c]/30 flex items-center justify-center text-[9px] font-mono tracking-wider text-[#c8956c]/70">
+                  {item.step}
+                </span>
+                <h3 className="font-display text-base sm:text-lg font-light text-[#e8e0d2] tracking-wide">
+                  {item.title}
+                </h3>
+                <p className="text-[10px] sm:text-[11px] text-[#6b6458] leading-relaxed max-w-[180px]">
+                  {item.desc}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* CTAs */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+            className="flex flex-col items-center gap-3"
+          >
+            <Link
+              href="/onboarding"
+              className="inline-flex items-center gap-3 px-8 py-3.5 rounded-full border border-[#c8956c]/30 text-[11px] uppercase tracking-[0.3em] text-[#c8956c] hover:bg-[#c8956c]/10 hover:border-[#c8956c]/50 transition-all duration-500"
+            >
+              Registrar mi tarjeta
+              <span aria-hidden="true" className="w-4 h-px bg-[#c8956c]" />
+            </Link>
+            <Link
+              href="/recover"
+              className="text-[10px] uppercase tracking-[0.3em] text-[#3a3630] hover:text-[#6b6458] transition-colors duration-300"
+            >
+              Ya tengo cuenta
+            </Link>
+          </motion.div>
+        </section>
+      )}
+
+      {/* Footer — limpio, editorial */}
+      <footer className="snap-start min-h-[100dvh] flex flex-col items-center justify-center bg-[#0c0b09] px-8 relative">
+        {/* Grano decorativo de fondo sutil */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-[0.03]"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+            backgroundSize: "128px 128px",
+          }}
+        />
+
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 1 }}
-          className="w-full max-w-md"
+          className="flex flex-col items-center text-center relative z-10"
         >
           {/* Wordmark */}
-          <div className="text-center mb-12">
-            <p className="font-display text-3xl font-light tracking-[0.45em] uppercase text-stone-200">
-              La Commune
-            </p>
-            <div className="w-6 h-px bg-stone-700 mx-auto mt-5" />
-          </div>
+          <p className="font-display text-3xl sm:text-4xl font-light tracking-[0.25em] text-[#e8e0d2]">
+            La Commune
+          </p>
+          <p className="text-[10px] uppercase tracking-[0.4em] text-[#3a3630] mt-2">
+            Café · Comunidad · Hidalgo
+          </p>
+          <div aria-hidden="true" className="w-8 h-px bg-[#c8956c] mt-6 mb-8" />
 
-          {/* Horarios + Ubicación */}
-          <div className="grid grid-cols-2 gap-10 mb-12">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.35em] text-stone-500 mb-5">
-                Horarios
+          {/* Horario + estado */}
+          <p className="text-sm text-[#a89f90] tracking-wide">
+            Todos los días · 10:00 – 20:00
+          </p>
+          {openStatus && (
+            <div className="flex items-center gap-2 mt-3">
+              <span
+                className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                  openStatus.open ? "bg-emerald-400" : "bg-red-500"
+                }`}
+              />
+              <p className="text-xs tracking-wide text-[#6b6458]">
+                {openStatus.label}
               </p>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-[11px] text-stone-500 uppercase tracking-wider">Lun – Vie</p>
-                  <p className="text-sm text-stone-200 mt-0.5">10:00 – 20:00</p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-stone-500 uppercase tracking-wider">Sáb – Dom</p>
-                  <p className="text-sm text-stone-200 mt-0.5">10:00 – 20:00</p>
-                </div>
-              </div>
-              {openStatus && (
-                <div className="flex items-center gap-2 mt-5">
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                      openStatus.open ? "bg-emerald-400" : "bg-red-500"
-                    }`}
-                  />
-                  <p className="text-[10px] tracking-wide text-stone-500">
-                    {openStatus.label}
-                  </p>
-                </div>
-              )}
             </div>
+          )}
 
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.35em] text-stone-500 mb-5">
-                Encuéntranos
-              </p>
-              <a
-                href="https://maps.google.com/?q=Santa+Natividad+135,+La+Providencia,+Mineral+de+la+Reforma,+Hidalgo"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group block space-y-1"
-              >
-                <p className="text-sm text-stone-200 group-hover:text-white transition-colors duration-300">
-                  Santa Natividad 135
-                </p>
-                <p className="text-[11px] text-stone-500">Col. La Providencia</p>
-                <p className="text-[11px] text-stone-500">Mineral de la Reforma, Hidalgo</p>
-                <p className="text-[10px] uppercase tracking-[0.25em] text-stone-600 group-hover:text-stone-400 transition-colors duration-300 mt-2">
-                  Cómo llegar →
-                </p>
-              </a>
-            </div>
+          {/* Ubicación */}
+          <a
+            href="https://maps.google.com/?q=Santa+Natividad+135,+La+Providencia,+Mineral+de+la+Reforma,+Hidalgo"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-8 group"
+          >
+            <p className="text-sm text-[#6b6458] group-hover:text-[#a89f90] transition-colors duration-300">
+              Santa Natividad 135, Mineral de la Reforma
+            </p>
+            <p className="text-[10px] uppercase tracking-[0.25em] text-[#3a3630] group-hover:text-[#6b6458] transition-colors duration-300 mt-2">
+              Cómo llegar →
+            </p>
+          </a>
+
+          {/* Quick links — menú + fidelidad */}
+          <div className="flex items-center gap-6 mt-10">
+            <Link
+              href="/menu"
+              className="text-[11px] uppercase tracking-[0.25em] text-[#6b6458] hover:text-[#c8956c] transition-colors duration-300"
+            >
+              Menú
+            </Link>
+            <span aria-hidden="true" className="w-1 h-1 rounded-full bg-[#2a2722]" />
+            <Link
+              href={loyaltyCta.link}
+              className="text-[11px] uppercase tracking-[0.25em] text-[#6b6458] hover:text-[#c8956c] transition-colors duration-300"
+            >
+              Fidelidad
+            </Link>
           </div>
 
-          {/* Métodos de pago */}
-          <div className="mb-10">
-            <p className="text-[10px] uppercase tracking-[0.35em] text-stone-500 mb-5">
-              Pagos
+          {/* Copyright + admin */}
+          <div className="mt-16 flex flex-col items-center gap-4">
+            <p className="text-[10px] tracking-[0.3em] uppercase text-[#2a2722]" suppressHydrationWarning>
+              © {new Date().getFullYear()} La Commune
             </p>
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-stone-500"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-                <span className="text-sm text-stone-200">Efectivo</span>
-              </div>
-              <span className="w-px h-3 bg-stone-800" />
-              <div className="flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-stone-500"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-                <span className="text-sm text-stone-200">Tarjeta</span>
-                <span className="text-[10px] uppercase tracking-wider text-stone-500">vía Mercado Pago</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Divisor + copyright + links */}
-          <div className="border-t border-stone-800 pt-6 flex flex-col items-center gap-3">
-            <p className="text-[10px] tracking-[0.3em] uppercase text-stone-600 text-center" suppressHydrationWarning>
-              © {new Date().getFullYear()} · La Commune · En construcción permanente
-            </p>
-            <nav className="flex items-center justify-center gap-0">
-              <Link href="/menu" className="text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300">
-                Menú
-              </Link>
-              <span className="w-px h-3 bg-stone-800 mx-5" />
-              <Link href="/card/preview" className="text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300">
-                Simulador de tarjeta
-              </Link>
-              <span className="hidden sm:block w-px h-3 bg-stone-800 mx-5" />
-              <Link href="/onboarding" className="hidden sm:block text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300">
-                Registrarse
-              </Link>
-              <span className="hidden sm:block w-px h-3 bg-stone-800 mx-5" />
-              <Link href="/recover" className="hidden sm:block text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300">
-                Recuperar tarjeta
-              </Link>
-              <span className="hidden sm:block w-px h-3 bg-stone-800 mx-5" />
-              <a
-                href="https://wa.me/527711006533"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hidden sm:block text-[10px] tracking-[0.25em] uppercase text-stone-700 hover:text-stone-400 transition-colors duration-300"
-              >
-                WhatsApp
-              </a>
-            </nav>
-            {/* Acceso discreto para personal */}
             <Link
               href="/admin"
-              className="mt-2 text-[10px] tracking-[0.3em] uppercase text-stone-800 hover:text-stone-600 transition-colors duration-300"
+              className="text-[10px] tracking-[0.3em] uppercase text-[#1a1917] hover:text-[#3a3630] transition-colors duration-300"
             >
               Personal
             </Link>

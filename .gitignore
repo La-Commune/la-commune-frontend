@@ -27,9 +27,18 @@ yarn-error.log*
 # local env files
 .env*.local
 
+# migration scripts (contain DB credentials)
+migrate-*.mjs
+
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

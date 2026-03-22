@@ -1,10 +1,8 @@
-import { Timestamp, DocumentReference } from "firebase/firestore";
-
 export interface StampEvent {
-  cardId: DocumentReference;
-  customerId?: DocumentReference;
+  cardId: string;
+  customerId?: string;
 
-  createdAt: Timestamp;
+  createdAt: string | Date;
 
   drinkType?: string;
   size?: "10oz" | "12oz";
