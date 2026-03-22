@@ -159,9 +159,15 @@ Al entrar a `/card/[cardId]`, si no hay sesión coincidente se pide el número d
 Ver `.env.example`. Variables requeridas:
 - `NEXT_PUBLIC_SUPABASE_URL` — URL del proyecto Supabase
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Anon key
-- `SUPABASE_SERVICE_ROLE_KEY` — Service role key (server actions)
+- `SUPABASE_SERVICE_ROLE_KEY` — Service role key (server actions, **crítica para admin PIN**)
 - `NEXT_PUBLIC_NEGOCIO_ID` — UUID del negocio
 - `ADMIN_HMAC_KEY` o `COOKIE_SECRET` — Secret para firmar cookies de sesión
+- `NEXT_PUBLIC_VAPID_PUBLIC_KEY` — VAPID public key para Web Push
+- `VAPID_PRIVATE_KEY` — VAPID private key para Web Push
+
+> **IMPORTANTE:** `SUPABASE_SERVICE_ROLE_KEY` es obligatoria en Netlify para que el admin PIN funcione.
+> Sin ella, `getSupabaseServer()` no puede ejecutar la RPC `login_por_pin()` y el login falla
+> silenciosamente con "PIN incorrecto" o "Error al verificar".
 
 ## Convenciones
 
