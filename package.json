@@ -6,7 +6,7 @@
   "private": false,
   "scripts": {
     "dev": "dotenv -e .env.development -- next dev -p 3004",
-    "dev:prod": "dotenv -e .env.production -- next dev -p 3004",
+    "dev:prod": "dotenv -e .env.production -- next dev -p 3005",
     "build": "next build",
     "build:dev": "dotenv -e .env.development -- next build",
     "build:prod": "dotenv -e .env.production -- next build",
