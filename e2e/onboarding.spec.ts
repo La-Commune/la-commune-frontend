@@ -8,8 +8,8 @@ test.describe("Frontend — Onboarding", () => {
 
   test("muestra la pantalla de registro", async ({ page }) => {
     await page.goto("/onboarding");
-    await expect(page.getByText("Tu tarjeta, siempre contigo")).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText("Programa de fidelidad")).toBeVisible();
+    await expect(page.getByText("Crea tu tarjeta")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Ingresa tu WhatsApp y un PIN de 4 digitos.")).toBeVisible();
   });
 
   test("muestra los campos del formulario", async ({ page }) => {
@@ -20,11 +20,15 @@ test.describe("Frontend — Onboarding", () => {
     await expect(page.locator("#email")).toBeVisible();
   });
 
-  test("el botón Continuar está deshabilitado sin datos requeridos", async ({ page }) => {
+  test("el botón Continuar muestra errores al click sin datos requeridos", async ({ page }) => {
     await page.goto("/onboarding");
     const btn = page.locator("button:has-text('Continuar')");
     await expect(btn).toBeVisible({ timeout: 10_000 });
-    await expect(btn).toBeDisabled();
+    await expect(btn).toBeEnabled();
+
+    await btn.click();
+    await expect(page.getByText("Tu WhatsApp es necesario para crear la tarjeta")).toBeVisible();
+    await expect(page.getByText("Crea un PIN para recuperar tu tarjeta")).toBeVisible();
   });
 
   test("valida teléfono: muestra error con menos de 10 dígitos", async ({ page }) => {
