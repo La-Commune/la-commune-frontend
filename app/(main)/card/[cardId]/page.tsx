@@ -669,7 +669,7 @@ function Card({
             transition={{ duration: 0.2 }}
             className="flex justify-center py-2"
           >
-            <span className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">
+            <span className="text-xs uppercase tracking-[0.4em] text-stone-400 dark:text-stone-500">
               Actualizando...
             </span>
           </motion.div>
@@ -682,26 +682,29 @@ function Card({
             transition={{ duration: 0.4 }}
             className="flex justify-center py-2"
           >
-            <span className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">
-              Desliza hacia abajo para actualizar
+            <span className="text-xs uppercase tracking-[0.4em] text-stone-400 dark:text-stone-500">
+              Desliza para actualizar
             </span>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Contenido */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-5 px-4 pb-10">
+      <div className="flex-1 flex flex-col items-center justify-center gap-7 px-5 pb-12">
 
-        {/* Saludo */}
+        {/* Saludo + subtitulo */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="text-center"
+          className="text-center space-y-1"
         >
           <h1 className="font-display text-3xl sm:text-4xl font-light tracking-wide">
             {name ? `Hola, ${name}` : "Hola"}
           </h1>
+          <p className="text-xs tracking-[0.3em] uppercase text-stone-400 dark:text-stone-500">
+            Tu tarjeta de fidelidad
+          </p>
         </motion.div>
 
         {/* Promo inline */}
@@ -716,7 +719,7 @@ function Card({
           </motion.div>
         )}
 
-        {/* Tarjeta — en desktop: layout expandido sin flip, en mobile: flip card */}
+        {/* Tarjeta — en desktop: layout expandido, en mobile: flip card */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -750,18 +753,18 @@ function Card({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="flex items-center justify-center gap-6"
+          className="flex items-center justify-center gap-8"
         >
           <Link
             href={`/card/${cardId}/history`}
-            className="flex flex-col items-center gap-1.5 group"
+            className="flex flex-col items-center gap-2 group"
           >
-            <span className="w-10 h-10 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center group-hover:border-stone-500 dark:group-hover:border-stone-500 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-stone-400 dark:text-stone-500 group-hover:text-stone-700 dark:group-hover:text-stone-300 transition-colors">
+            <span className="w-11 h-11 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center group-hover:border-stone-500 dark:group-hover:border-stone-500 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px] text-stone-400 dark:text-stone-500 group-hover:text-stone-700 dark:group-hover:text-stone-300 transition-colors">
                 <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
               </svg>
             </span>
-            <span className="text-[9px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-600 group-hover:text-stone-600 dark:group-hover:text-stone-400 transition-colors">
+            <span className="text-[10px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-500 group-hover:text-stone-600 dark:group-hover:text-stone-400 transition-colors">
               Historial
             </span>
           </Link>
@@ -770,14 +773,14 @@ function Card({
 
           <button
             onClick={handleShare}
-            className="flex flex-col items-center gap-1.5 group sm:hidden"
+            className="flex flex-col items-center gap-2 group sm:hidden"
           >
-            <span className="w-10 h-10 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center group-hover:border-stone-500 dark:group-hover:border-stone-500 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-stone-400 dark:text-stone-500 group-hover:text-stone-700 dark:group-hover:text-stone-300 transition-colors">
+            <span className="w-11 h-11 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center group-hover:border-stone-500 dark:group-hover:border-stone-500 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px] text-stone-400 dark:text-stone-500 group-hover:text-stone-700 dark:group-hover:text-stone-300 transition-colors">
                 <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
               </svg>
             </span>
-            <span className="text-[9px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-600 group-hover:text-stone-600 dark:group-hover:text-stone-400 transition-colors">
+            <span className="text-[10px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-500 group-hover:text-stone-600 dark:group-hover:text-stone-400 transition-colors">
               {copied ? "Copiado!" : "Invitar"}
             </span>
           </button>
@@ -793,20 +796,20 @@ function Card({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8, delay: 0.8 }}
-        className="w-full border-t border-stone-200/50 dark:border-stone-800/50 py-6 px-4"
+        className="w-full border-t border-stone-200/50 dark:border-stone-800/50 py-7 px-5"
       >
-        <div className="max-w-xs mx-auto space-y-3">
-          <div className="flex items-center justify-center gap-6">
+        <div className="max-w-xs mx-auto space-y-4">
+          <div className="flex items-center justify-center gap-8">
             <button
               onClick={() => setShowPhoneUpdate((v) => !v)}
-              className="text-[9px] uppercase tracking-[0.2em] text-stone-300 dark:text-stone-700 hover:text-stone-500 dark:hover:text-stone-500 transition-colors"
+              className="text-[10px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400 transition-colors"
             >
               Cambiar telefono
             </button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <button
-                  className="text-[9px] uppercase tracking-[0.2em] text-stone-300 dark:text-stone-700 hover:text-red-400 dark:hover:text-red-500 transition-colors"
+                  className="text-[10px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-600 hover:text-red-400 dark:hover:text-red-500 transition-colors"
                 >
                   Cerrar sesion
                 </button>
@@ -902,7 +905,7 @@ function Card({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 60, opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed bottom-0 left-0 right-0 bg-white dark:bg-neutral-900 border-t border-stone-200 dark:border-stone-800 px-6 py-3 text-center text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-500"
+            className="fixed bottom-0 left-0 right-0 bg-white dark:bg-neutral-900 border-t border-stone-200 dark:border-stone-800 px-6 py-4 text-center text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500"
           >
             Sin conexión — tu QR sigue disponible
           </motion.div>
