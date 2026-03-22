@@ -123,15 +123,34 @@ jobs:
           path: playwright-report/
           retention-days: 14
 
-  # ── 4. Deploy a Netlify (producción) ─────────────────────
-  deploy:
-    name: Deploy to Netlify
+  # ── 4. Merge main → production ───────────────────────────
+  merge-to-production:
+    name: Merge main → production
     runs-on: ubuntu-latest
     needs: [typecheck, unit-tests, e2e-tests]
-    # Se ejecuta si los tests pasaron O si se saltaron
     if: ${{ always() && (inputs.skip_tests == 'true' || (needs.typecheck.result == 'success' && needs.unit-tests.result == 'success' && needs.e2e-tests.result == 'success')) }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Merge main into production
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout production || git checkout -b production
+          git merge origin/main --no-edit -m "ci: merge main → production (deploy #${{ github.run_number }})"
+          git push origin production
+
+  # ── 5. Deploy a Netlify (producción) ─────────────────────
+  deploy:
+    name: Deploy to Netlify
+    runs-on: ubuntu-latest
+    needs: [merge-to-production]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: production
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
