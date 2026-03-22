@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "next dev -p 3004 --env-file .env.development",
     "dev:prod": "next dev -p 3004 --env-file .env.production",
-    "build": "next build --env-file .env.production",
+    "build": "next build",
+    "build:prod": "next build --env-file .env.production",
     "build:dev": "next build --env-file .env.development",
     "start": "next start",
     "lint": "next lint",
