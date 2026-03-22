@@ -73,6 +73,14 @@ export function PwaRegister() {
       "(display-mode: standalone)"
     ).matches;
 
+    // Solo mostrar prompts de instalación en dispositivos móviles
+    const isMobile = /iphone|ipad|ipod|android/i.test(navigator.userAgent) || window.innerWidth < 768;
+    if (!isMobile) {
+      return () => {
+        navigator.serviceWorker?.removeEventListener("message", handleFlushStamps);
+      };
+    }
+
     // iOS — detectar primero para evitar que el bloque de Android lo capture
     const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
 
