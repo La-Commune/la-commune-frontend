@@ -33,7 +33,7 @@ interface EmptyStateProps {
 
 function CoffeeIllustration() {
   return (
-    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Taza de café con vapor">
       {/* Steam lines */}
       <motion.path
         d="M30 28C30 28 32 22 30 16"
@@ -89,7 +89,7 @@ function CoffeeIllustration() {
 
 function HistoryIllustration() {
   return (
-    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Reloj de historial">
       {/* Clock circle */}
       <circle cx="40" cy="40" r="24" stroke="currentColor" strokeWidth="1.5" opacity={0.3} />
       <circle cx="40" cy="40" r="2" fill="currentColor" opacity={0.4} />
@@ -131,7 +131,7 @@ function HistoryIllustration() {
 
 function SearchIllustration() {
   return (
-    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Lupa de búsqueda">
       <circle cx="35" cy="35" r="16" stroke="currentColor" strokeWidth="1.5" opacity={0.4} />
       <line x1="47" y1="47" x2="62" y2="62" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity={0.3} />
       {/* Sparkles */}
@@ -151,7 +151,7 @@ function SearchIllustration() {
 
 function OfflineIllustration() {
   return (
-    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sin conexión a internet">
       {/* Cloud */}
       <path
         d="M24 50C18 50 14 46 14 40C14 34 18 30 24 30C24 24 28 18 36 18C44 18 48 24 48 28C54 28 60 32 60 38C60 44 56 50 48 50"
@@ -178,7 +178,7 @@ function OfflineIllustration() {
 
 function ErrorIllustration() {
   return (
-    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Error o advertencia">
       {/* Triangle */}
       <path d="M40 16L68 64H12L40 16Z" stroke="currentColor" strokeWidth="1.5" opacity={0.3} fill="none" />
       {/* Exclamation */}

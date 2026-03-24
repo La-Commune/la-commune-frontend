@@ -99,6 +99,32 @@
   }
 }
 
+/* ═══ Focus-visible — accesibilidad con teclado ═══ */
+/* Solo aparece al navegar con Tab, NO con mouse/touch */
+:focus-visible {
+  outline: 2px solid hsl(27, 45%, 60%); /* copper accent */
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Inputs ya tienen su propio focus (border-amber), sin doble outline */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+}
+
+/* Botones rounded-full — outline que siga la forma */
+[class*="rounded-full"]:focus-visible {
+  border-radius: 9999px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :focus-visible {
+    transition: none;
+  }
+}
+
 /* Custom scrollbar */
 * {
   scrollbar-width: thin;
