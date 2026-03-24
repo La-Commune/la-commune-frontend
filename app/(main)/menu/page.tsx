@@ -13,6 +13,8 @@ import { checkBaristaSession } from "@/app/actions/verifyAdminPin";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LoadingButton } from "@/components/ui/LoadingButton";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { PullToRefreshIndicator } from "@/components/ui/PullToRefreshIndicator";
 
 function MenuItemImage({ src, alt }: { src: string; alt: string }) {
   const [loaded, setLoaded] = useState(false);
@@ -149,8 +151,20 @@ export default function CafeMenu() {
     return t;
   }, [hasDrinks, hasFood]);
 
+  const { pullDistance, refreshing: pullRefreshing, handlers: pullHandlers } = usePullToRefresh({
+    onRefresh: async () => {
+      const [menuData, promos] = await Promise.all([getFullMenu(), getActivePromotions()]);
+      setSections(menuData.filter((s) => s.active));
+      setActivePromos(promos);
+    },
+  });
+
   return (
-    <div id="main-content" className="min-h-screen bg-stone-50 dark:bg-neutral-950 text-stone-900 dark:text-stone-200 transition-colors duration-300 print:min-h-0 print:bg-white print:text-neutral-900">
+    <div
+      id="main-content"
+      className="min-h-screen bg-stone-50 dark:bg-neutral-950 text-stone-900 dark:text-stone-200 transition-colors duration-300 print:min-h-0 print:bg-white print:text-neutral-900"
+      {...pullHandlers}
+    >
 
       {/* Nav editorial */}
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 sm:px-10 py-5 bg-stone-50/80 dark:bg-neutral-950/80 backdrop-blur-sm print:hidden transition-colors duration-300">
@@ -180,6 +194,8 @@ export default function CafeMenu() {
           <ThemeToggle />
         </div>
       </nav>
+
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={pullRefreshing} />
 
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-8 pt-28 pb-24 print:max-w-none print:px-10 print:pt-6 print:pb-6">
 
