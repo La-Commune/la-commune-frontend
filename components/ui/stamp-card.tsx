@@ -310,14 +310,14 @@ function DesktopCinematicView({
         style={{ position: "fixed", pointerEvents: "none", width: "100%", height: "100%", top: 0, left: 0, zIndex: 50 }}
       />
 
-      <div className="flex flex-row items-center gap-20">
+      <div className="flex flex-row items-center gap-12 lg:gap-16 xl:gap-20">
 
         {/* ── LEFT: Ilustracion hero ── */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-          className="relative flex items-center justify-center flex-shrink-0"
+          className="relative flex items-center justify-center flex-shrink-0 w-[380px] h-[380px]"
         >
           {/* Glow ambiental */}
           <div
@@ -379,7 +379,7 @@ function DesktopCinematicView({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="text-xs uppercase tracking-[0.4em] mb-6"
+            className="text-xs uppercase tracking-[0.4em] mb-4"
             style={{ color: isDark ? "#6b6458" : "#a89f90" }}
           >
             Programa de fidelidad
@@ -390,7 +390,7 @@ function DesktopCinematicView({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="flex items-baseline gap-4 mb-4"
+            className="flex items-baseline gap-3 mb-2"
           >
             <span
               className="font-display leading-none"
@@ -406,24 +406,51 @@ function DesktopCinematicView({
             </span>
           </motion.div>
 
-          {/* Progress message */}
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-            className="text-xl font-light tracking-wide mb-10"
-            style={{ fontFamily: "var(--font-display)", color: isDark ? "#a89f90" : "#6b6458" }}
-          >
-            {progressMessage}
-          </motion.p>
+          {/* Progress message / Sello añadido — mismo espacio, se intercalan */}
+          <div className="mb-8 min-h-[28px] flex items-center">
+            <AnimatePresence mode="wait">
+              {stampNotification ? (
+                <motion.div
+                  key="stamp-added"
+                  initial={{ opacity: 0, y: 6, filter: "blur(4px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  exit={{ opacity: 0, y: -6, filter: "blur(4px)" }}
+                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  className="flex items-center gap-2.5 text-emerald-600 dark:text-emerald-400"
+                >
+                  <motion.span
+                    className="w-2 h-2 rounded-full bg-emerald-500"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: [0, 1.4, 1] }}
+                    transition={{ duration: 0.4, delay: 0.1 }}
+                  />
+                  <span className="text-lg font-light tracking-wide" style={{ fontFamily: "var(--font-display)" }}>
+                    Sello añadido
+                  </span>
+                </motion.div>
+              ) : (
+                <motion.p
+                  key={`progress-${progressMessage}`}
+                  initial={{ opacity: 0, y: 6, filter: "blur(4px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  exit={{ opacity: 0, y: -6, filter: "blur(4px)" }}
+                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  className="text-lg font-light tracking-wide"
+                  style={{ fontFamily: "var(--font-display)", color: isDark ? "#a89f90" : "#6b6458" }}
+                >
+                  {progressMessage}
+                </motion.p>
+              )}
+            </AnimatePresence>
+          </div>
 
           {/* Separador */}
           <motion.div
             initial={{ scaleX: 0 }}
             animate={{ scaleX: 1 }}
             transition={{ duration: 0.8, delay: 0.7 }}
-            className="w-16 h-px mb-10 origin-left"
-            style={{ background: accentColor, opacity: 0.4 }}
+            className="w-12 h-px mb-6 origin-left"
+            style={{ background: accentColor, opacity: 0.3 }}
           />
 
           {/* Reward name */}
@@ -431,28 +458,11 @@ function DesktopCinematicView({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.8 }}
-            className="text-xs uppercase tracking-[0.3em] mb-10"
+            className="text-xs uppercase tracking-[0.3em] mb-8"
             style={{ color: isDark ? "#6b6458" : "#a89f90" }}
           >
             {isComplete ? "Lista para canjear" : `Recompensa: ${rewardName}`}
           </motion.p>
-
-          {/* Sello anadido notification */}
-          <AnimatePresence>
-            {stampNotification && (
-              <motion.div
-                key="stamp-added"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                transition={{ duration: 0.3 }}
-                className="flex items-center gap-2 mb-10 text-emerald-600 dark:text-emerald-400"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                <span className="text-xs uppercase tracking-[0.3em]">Sello anadido</span>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           {/* QR — expandible al click, se cierra al agregar sello */}
           <ExpandableQR
