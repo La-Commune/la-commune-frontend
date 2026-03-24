@@ -9,6 +9,8 @@ import { getStampEventsByCard, getCustomerStats, CustomerStats } from "@/service
 import { timeAgo } from "@/lib/utils";
 import { getCustomerSession } from "@/app/actions/customerSession";
 import { EmptyState, StatsSkeleton, ChartSkeleton, TimelineSkeleton } from "@/components/ui/EmptyState";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { PullToRefreshIndicator } from "@/components/ui/PullToRefreshIndicator";
 
 type EventRow = StampEvent & { id: string };
 
@@ -266,8 +268,20 @@ export default function HistoryPage() {
 
   const groups = useMemo(() => groupEventsByDate(events), [events]);
 
+  const { pullDistance, refreshing: pullRefreshing, handlers: pullHandlers } = usePullToRefresh({
+    onRefresh: async () => {
+      const eventsData = await getStampEventsByCard(cardId);
+      setEvents(eventsData);
+      const customerId = localStorage.getItem("customerId");
+      if (customerId) {
+        const statsData = await getCustomerStats(customerId);
+        setStats(statsData);
+      }
+    },
+  });
+
   return (
-    <div className="min-h-screen bg-neutral-950 text-white flex flex-col">
+    <div className="min-h-screen bg-neutral-950 text-white flex flex-col" {...pullHandlers}>
 
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 sm:px-10 py-5">
@@ -283,6 +297,8 @@ export default function HistoryPage() {
         </span>
         <div className="w-16" />
       </nav>
+
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={pullRefreshing} />
 
       <div className="flex-1 w-full max-w-lg mx-auto px-6 sm:px-10 pb-20 pt-4">
 
@@ -349,8 +365,13 @@ export default function HistoryPage() {
 
             {/* Timeline */}
             <div className="space-y-8">
-              {groups.map((group) => (
-                <div key={group.dateLabel}>
+              {groups.map((group, gIdx) => (
+                <motion.div
+                  key={group.dateLabel}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, delay: gIdx * 0.1, ease: [0.16, 1, 0.3, 1] }}
+                >
                   {/* Encabezado de grupo */}
                   <div className="flex items-center gap-3 mb-4 pl-6">
                     <span className="text-[10px] uppercase tracking-widest text-stone-500 shrink-0">
@@ -363,13 +384,19 @@ export default function HistoryPage() {
                   <div className="relative">
                     <div className="absolute left-[7px] top-2 bottom-2 w-px bg-stone-800" />
                     <ul className="space-y-4 pl-6">
-                      {group.events.map((event) => {
+                      {group.events.map((event, eIdx) => {
                         const date = event.createdAt instanceof Date ? event.createdAt : new Date(event.createdAt);
                         const isRedemption = event.source === "redemption" || event.source === "canje";
                         const isBonus = event.source === "referral_bonus";
 
                         return (
-                          <li key={event.id} className="relative">
+                          <motion.li
+                            key={event.id}
+                            className="relative"
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.3, delay: gIdx * 0.1 + eIdx * 0.05, ease: [0.16, 1, 0.3, 1] }}
+                          >
                             <span
                               className={`absolute -left-[22px] top-4 w-3 h-3 rounded-full border-2 ${
                                 isRedemption
@@ -415,12 +442,12 @@ export default function HistoryPage() {
                                 </p>
                               )}
                             </div>
-                          </li>
+                          </motion.li>
                         );
                       })}
                     </ul>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           </>

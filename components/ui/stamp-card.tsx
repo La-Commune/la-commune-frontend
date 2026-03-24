@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type PanInfo } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactCanvasConfetti from "react-canvas-confetti";
 import { QRCodeCanvas } from "qrcode.react";
@@ -109,6 +109,14 @@ export function StampCardView({ cardId }: { cardId: string }) {
     if (!isDesktop) setFlipped((f) => !f);
   };
 
+  // Swipe horizontal para voltear
+  const handleDragEnd = (_: unknown, info: PanInfo) => {
+    const swipeThreshold = 40;
+    if (Math.abs(info.offset.x) > swipeThreshold && Math.abs(info.velocity.x) > 100) {
+      handleFlip();
+    }
+  };
+
   if (isDesktop) {
     return (
       <DesktopCinematicView
@@ -131,11 +139,15 @@ export function StampCardView({ cardId }: { cardId: string }) {
         style={{ position: "fixed", pointerEvents: "none", width: "100%", height: "100%", top: 0, left: 0, zIndex: 50 }}
       />
       <motion.div
-        className="w-[300px] h-[380px] mx-auto perspective cursor-pointer"
+        className="w-[300px] h-[380px] mx-auto perspective cursor-pointer touch-pan-y"
         whileTap={{ scale: 0.97 }}
         animate={completed ? { scale: [1, 1.03, 1] } : {}}
         transition={{ duration: 0.4 }}
         onClick={handleFlip}
+        drag="x"
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.15}
+        onDragEnd={handleDragEnd}
       >
         <motion.div
           className="relative w-full h-full"
@@ -151,9 +163,9 @@ export function StampCardView({ cardId }: { cardId: string }) {
         {stampNotification ? (
           <motion.p key="stamp-notif" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.3 }} className="text-xs uppercase tracking-[0.3em] text-stone-600 dark:text-stone-300">Sello anadido</motion.p>
         ) : !flipped ? (
-          <motion.p key="hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4, delay: 0.6 }} className="text-xs uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600">Toca para ver tu QR</motion.p>
+          <motion.p key="hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4, delay: 0.6 }} className="text-xs uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600">Desliza o toca para ver tu QR</motion.p>
         ) : (
-          <motion.p key="hint-back" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="text-xs uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600">Toca para volver</motion.p>
+          <motion.p key="hint-back" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="text-xs uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600">Desliza o toca para volver</motion.p>
         )}
       </AnimatePresence>
     </div>

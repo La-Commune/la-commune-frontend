@@ -125,6 +125,37 @@ select:focus-visible {
   }
 }
 
+/* ═══ Tap feedback — mobile tactile feel ═══ */
+/* Scale sutil al tocar botones y links — se siente nativo */
+button:active,
+a:active,
+[role="button"]:active {
+  transform: scale(0.97);
+  transition: transform 0.1s ease;
+}
+
+/* Excluir elementos que ya manejan su propio scale (framer-motion whileTap) */
+button:not(:active),
+a:not(:active),
+[role="button"]:not(:active) {
+  transition: transform 0.15s ease;
+}
+
+/* No aplicar a inputs ni nav links en desktop */
+input:active,
+textarea:active,
+select:active {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button:active,
+  a:active,
+  [role="button"]:active {
+    transform: none;
+  }
+}
+
 /* Custom scrollbar */
 * {
   scrollbar-width: thin;
