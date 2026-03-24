@@ -711,7 +711,7 @@ function Card({
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="text-center space-y-1"
+          className="text-center space-y-2"
         >
           <h1 className="font-display text-3xl sm:text-4xl font-light tracking-wide">
             {name ? `Hola, ${name}` : "Hola"}
@@ -834,7 +834,7 @@ function Card({
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
                     <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
                   </svg>
-                  Compartir invitacion
+                  Compartir invitación
                 </>
               )}
             </button>
@@ -852,27 +852,33 @@ function Card({
       >
         <div className="max-w-xs mx-auto space-y-4">
           <div className="flex items-center justify-center gap-8">
+            <Link
+              href="/profile"
+              className="text-[10px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400 transition-colors"
+            >
+              Mi perfil
+            </Link>
             <button
               onClick={() => setShowPhoneUpdate((v) => !v)}
               className="text-[10px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400 transition-colors"
             >
-              Cambiar telefono
+              Cambiar teléfono
             </button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <button
                   className="text-[10px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-600 hover:text-red-400 dark:hover:text-red-500 transition-colors"
                 >
-                  Cerrar sesion
+                  Cerrar sesión
                 </button>
               </AlertDialogTrigger>
               <AlertDialogContent className="bg-white dark:bg-neutral-900 border-stone-200 dark:border-stone-800">
                 <AlertDialogHeader>
                   <AlertDialogTitle className="text-stone-900 dark:text-stone-100">
-                    Cerrar sesion
+                    Cerrar sesión
                   </AlertDialogTitle>
                   <AlertDialogDescription className="text-stone-500 dark:text-stone-400">
-                    Necesitaras tu PIN de 4 digitos para volver a entrar.
+                    Necesitarás tu PIN de 4 dígitos para volver a entrar.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -883,7 +889,7 @@ function Card({
                     onClick={handleLogout}
                     className="bg-red-600 text-white hover:bg-red-700"
                   >
-                    Cerrar sesion
+                    Cerrar sesión
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -901,7 +907,7 @@ function Card({
                 <Input
                   type="tel"
                   inputMode="numeric"
-                  placeholder="Nuevo telefono (10 digitos)"
+                  placeholder="Nuevo teléfono (10 dígitos)"
                   value={newPhone}
                   onChange={(e) =>
                     setNewPhone(e.target.value.replace(/\D/g, "").slice(0, 10))
@@ -911,7 +917,7 @@ function Card({
                 <Input
                   type="password"
                   inputMode="numeric"
-                  placeholder="Tu PIN de 4 digitos"
+                  placeholder="Tu PIN de 4 dígitos"
                   value={phonePin}
                   maxLength={4}
                   onChange={(e) =>
@@ -941,7 +947,7 @@ function Card({
                   }
                   className="w-full rounded-full bg-stone-800 text-white dark:bg-white dark:text-neutral-900 py-2 text-[11px] tracking-wide disabled:opacity-30"
                 >
-                  {phoneUpdateLoading ? "Actualizando..." : "Actualizar telefono"}
+                  {phoneUpdateLoading ? "Actualizando..." : "Actualizar teléfono"}
                 </Button>
               </motion.div>
             )}

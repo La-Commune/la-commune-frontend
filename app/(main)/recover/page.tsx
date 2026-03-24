@@ -22,7 +22,7 @@ export default function RecoverPage() {
   const isValidPin = pin.length === 4;
   const phoneError =
     phoneTouched && phone.length > 0 && phone.length < 10
-      ? "Ingresa los 10 digitos"
+      ? "Ingresa los 10 dígitos"
       : null;
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,7 +53,7 @@ export default function RecoverPage() {
 
       router.replace(`/card/${result.cardId}`);
     } catch {
-      setError("Algo salio mal. Intenta de nuevo.");
+      setError("Algo salió mal. Intenta de nuevo.");
       setLoading(false);
     }
   };
@@ -95,7 +95,7 @@ export default function RecoverPage() {
               Bienvenido de vuelta
             </h1>
             <p className="text-sm leading-relaxed text-stone-500 dark:text-stone-400">
-              Ingresa tu numero de WhatsApp y tu PIN de 4 digitos para acceder a
+              Ingresa tu número de WhatsApp y tu PIN de 4 dígitos para acceder a
               tu tarjeta.
             </p>
           </div>
@@ -116,7 +116,7 @@ export default function RecoverPage() {
                 type="tel"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                placeholder="10 digitos"
+                placeholder="10 dígitos"
                 maxLength={10}
                 value={phone}
                 onChange={handlePhoneChange}
@@ -158,7 +158,7 @@ export default function RecoverPage() {
                 inputMode="numeric"
                 pattern="[0-9]*"
                 maxLength={4}
-                placeholder="4 digitos"
+                placeholder="4 dígitos"
                 value={pin}
                 onChange={handlePinChange}
                 className="text-base text-center tracking-[0.5em] bg-white dark:bg-neutral-900 border-stone-300 dark:border-stone-700 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600 focus:border-stone-500"
