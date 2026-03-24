@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { logger } from "@/lib/logger";
 
 // Lazy init — evita que Next.js ejecute createClient en build time
 function getSupabase() {
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
       .select("id");
 
     if (error) {
-      console.error("[push/subscribe] Supabase error:", error.code, error.message, error.details, error.hint);
+      logger.error("push/subscribe", "Supabase error", error.code, error.message, error.details, error.hint);
       return NextResponse.json(
         { error: `Error al guardar suscripción: ${error.message}` },
         { status: 500 }
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, id: data?.[0]?.id });
   } catch (err: any) {
-    console.error("[push/subscribe] Error:", err?.message || err);
+    logger.error("push/subscribe", "Error interno", err?.message || err);
     return NextResponse.json(
       { error: `Error interno: ${err?.message || "desconocido"}` },
       { status: 500 }
@@ -84,7 +85,7 @@ export async function DELETE(req: NextRequest) {
       .eq("endpoint", endpoint);
 
     if (error) {
-      console.error("[push/unsubscribe] Error:", error.message);
+      logger.error("push/unsubscribe", "Error al desactivar", error.message);
       return NextResponse.json(
         { error: "Error al desactivar suscripción" },
         { status: 500 }
@@ -93,7 +94,7 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("[push/unsubscribe] Error:", err);
+    logger.error("push/unsubscribe", "Error interno", err);
     return NextResponse.json(
       { error: "Error interno" },
       { status: 500 }
