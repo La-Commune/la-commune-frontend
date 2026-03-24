@@ -22,6 +22,42 @@ import { Achievements } from "@/components/ui/Achievements";
 
 type CustomerStats = Awaited<ReturnType<typeof getCustomerStats>>;
 
+// ——— Inline Toast ———
+function ProfileToast({
+  message,
+  type,
+  onDismiss,
+}: {
+  message: string;
+  type: "error" | "success";
+  onDismiss: () => void;
+}) {
+  useEffect(() => {
+    const t = setTimeout(onDismiss, 4000);
+    return () => clearTimeout(t);
+  }, [onDismiss]);
+
+  const colors =
+    type === "error"
+      ? "border-red-200/50 dark:border-red-800/30 bg-white/90 dark:bg-neutral-900/90 text-red-600 dark:text-red-400"
+      : "border-emerald-200/50 dark:border-emerald-800/30 bg-white/90 dark:bg-neutral-900/90 text-emerald-600 dark:text-emerald-400";
+
+  const dot = type === "error" ? "bg-red-500" : "bg-emerald-500";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -12, filter: "blur(4px)" }}
+      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      exit={{ opacity: 0, y: -12, filter: "blur(4px)" }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      className={`fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-2.5 rounded-full border backdrop-blur-sm shadow-lg ${colors}`}
+    >
+      <span className={`w-1.5 h-1.5 rounded-full ${dot} animate-pulse`} />
+      <span className="text-xs tracking-wide whitespace-nowrap">{message}</span>
+    </motion.div>
+  );
+}
+
 function maskPhone(phone: string): string {
   if (phone.length < 4) return phone;
   return `****${phone.slice(-4)}`;
@@ -300,6 +336,13 @@ export default function ProfilePage() {
   const [editingName, setEditingName] = useState(false);
   const [updating, setUpdating] = useState(false);
 
+  // Toast state
+  const [toast, setToast] = useState<{ message: string; type: "error" | "success" } | null>(null);
+  const showToast = (message: string, type: "error" | "success" = "error") => setToast({ message, type });
+
+  // Logout confirmation
+  const [confirmingLogout, setConfirmingLogout] = useState(false);
+
   // Preferences states
   const [consentWhatsApp, setConsentWhatsApp] = useState(false);
   const [consentEmail, setConsentEmail] = useState(false);
@@ -438,15 +481,15 @@ export default function ProfilePage() {
     try {
       const result = await updatePhoneSession(customerId, pin, newPhone);
       if (!result.ok) {
-        // Show error — in a real app this would use a toast
-        alert(`Error: ${result.error}`);
+        showToast(result.error);
         return;
       }
       setCustomer((prev) => (prev ? { ...prev, phone: newPhone } : null));
       setEditingPhone(false);
+      showToast("Teléfono actualizado", "success");
     } catch (error) {
       logger.error("profile", "Error al actualizar teléfono", error);
-      alert("Error al actualizar el teléfono");
+      showToast("Error al actualizar el teléfono");
     } finally {
       setUpdating(false);
     }
@@ -460,9 +503,10 @@ export default function ProfilePage() {
       await updateCustomerEmail(customerId, newEmail, consentEmail);
       setCustomer((prev) => (prev ? { ...prev, email: newEmail } : null));
       setEditingEmail(false);
+      showToast("Correo actualizado", "success");
     } catch (error) {
       logger.error("profile", "Error al actualizar correo", error);
-      alert("Error al actualizar el correo");
+      showToast("Error al actualizar el correo");
     } finally {
       setUpdating(false);
     }
@@ -482,16 +526,21 @@ export default function ProfilePage() {
 
       setCustomer((prev) => (prev ? { ...prev, name: newName } : null));
       setEditingName(false);
+      showToast("Nombre actualizado", "success");
     } catch (error) {
       logger.error("profile", "Error al actualizar nombre", error);
-      alert("Error al actualizar el nombre");
+      showToast("Error al actualizar el nombre");
     } finally {
       setUpdating(false);
     }
   };
 
-  // Handle logout
+  // Handle logout (with confirmation)
   const handleLogout = async () => {
+    if (!confirmingLogout) {
+      setConfirmingLogout(true);
+      return;
+    }
     try {
       localStorage.removeItem("customerId");
       localStorage.removeItem("cardId");
@@ -536,6 +585,17 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900 dark:bg-neutral-950 dark:text-white">
+      {/* Toast */}
+      <AnimatePresence>
+        {toast && (
+          <ProfileToast
+            message={toast.message}
+            type={toast.type}
+            onDismiss={() => setToast(null)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 sm:px-10 py-5 border-b border-stone-200 dark:border-stone-800">
         <Link
@@ -885,12 +945,47 @@ export default function ProfilePage() {
           transition={{ duration: 0.6, delay: 0.4 }}
           className="pt-6 border-t border-stone-200 dark:border-stone-800"
         >
-          <button
-            onClick={handleLogout}
-            className="w-full px-6 py-3 rounded-full text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
-          >
-            Cerrar sesión
-          </button>
+          <AnimatePresence mode="wait">
+            {!confirmingLogout ? (
+              <motion.button
+                key="logout-trigger"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={handleLogout}
+                className="w-full px-6 py-3 rounded-full text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
+              >
+                Cerrar sesión
+              </motion.button>
+            ) : (
+              <motion.div
+                key="logout-confirm"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.25 }}
+                className="space-y-3 text-center"
+              >
+                <p className="text-sm text-stone-600 dark:text-stone-400">
+                  ¿Seguro que quieres cerrar sesión?
+                </p>
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={handleLogout}
+                    className="px-6 py-2.5 rounded-full text-xs font-medium uppercase tracking-[0.2em] text-white bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-500 transition-colors"
+                  >
+                    Sí, cerrar
+                  </button>
+                  <button
+                    onClick={() => setConfirmingLogout(false)}
+                    className="px-6 py-2.5 rounded-full text-xs font-medium uppercase tracking-[0.2em] text-stone-600 dark:text-stone-400 border border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-neutral-800 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
 
         {/* Back to Card Link */}
