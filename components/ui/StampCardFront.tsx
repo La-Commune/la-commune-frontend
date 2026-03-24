@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "next-themes";
 import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
 import { StampIllustration, type IllustrationId } from "./stamp-illustrations";
+import { hapticSuccess, hapticMedium } from "@/lib/haptics";
+import { fireAchievement } from "@/lib/confetti";
 
 function useCountUp(target: number, duration = 500) {
   const [count, setCount] = useState(target);
@@ -30,12 +32,17 @@ function useCountUp(target: number, duration = 500) {
 }
 
 /** Milestone types for progress psychology */
-type MilestoneType = "welcome" | "first" | "halfway" | "almost" | "complete" | null;
+type MilestoneType = "welcome" | "first" | "quarter" | "halfway" | "three_quarter" | "almost" | "complete" | null;
 
 function getMilestoneType(stamps: number, maxStamps: number): MilestoneType {
   if (stamps >= maxStamps) return "complete";
   if (stamps === maxStamps - 1) return "almost";
-  if (stamps === Math.floor(maxStamps / 2)) return "halfway";
+  const quarter = Math.round(maxStamps * 0.75);
+  const half = Math.round(maxStamps * 0.5);
+  const firstQ = Math.round(maxStamps * 0.25);
+  if (stamps === quarter && quarter !== maxStamps - 1) return "three_quarter";
+  if (stamps === half) return "halfway";
+  if (stamps === firstQ && firstQ !== 1) return "quarter";
   if (stamps === 1) return "first";
   if (stamps === 0) return "welcome";
   return null;
@@ -217,25 +224,29 @@ export function StampCardFront({
   const drinkLabel = lastDrink ? `¡Tu ${lastDrink} sumó!` : null;
 
   const progressMessage = card
-    ? stamps >= maxStamps
+    ? milestone === "complete"
       ? `¡${rewardName} lista!`
-      : stamps === maxStamps - 1
+      : milestone === "almost"
         ? drinkLabel
           ? `${drinkLabel} ¡Solo falta uno!`
           : "¡Solo falta uno!"
-        : stamps === Math.floor(maxStamps / 2)
-          ? drinkLabel
-            ? `${drinkLabel} ¡Ya vas a la mitad!`
-            : "¡Ya vas a la mitad!"
-          : stamps === 1
+        : milestone === "three_quarter"
+          ? "¡Ya casi! Solo te falta un cuarto"
+          : milestone === "halfway"
             ? drinkLabel
-              ? `${drinkLabel} ¡Primer sello!`
-              : "¡Primer sello!"
-            : stamps > 1
-              ? drinkLabel
-                ? `${drinkLabel} Te faltan ${remaining}`
-                : "¡Vas avanzando!"
-              : "Pide tu primer café"
+              ? `${drinkLabel} ¡Ya vas a la mitad!`
+              : "¡Ya vas a la mitad!"
+            : milestone === "quarter"
+              ? "¡Buen ritmo! Llevas un cuarto"
+              : milestone === "first"
+                ? drinkLabel
+                  ? `${drinkLabel} ¡Primer sello!`
+                  : "¡Primer sello!"
+                : stamps > 1
+                  ? drinkLabel
+                    ? `${drinkLabel} Te faltan ${remaining}`
+                    : "¡Vas avanzando!"
+                  : "Pide tu primer café"
     : null;
 
   // Emoji for milestone celebration
@@ -243,11 +254,15 @@ export function StampCardFront({
     ? "🎉"
     : milestone === "almost"
       ? "🔥"
-      : milestone === "halfway"
-        ? "⚡"
-        : milestone === "first"
-          ? "☕"
-          : null;
+      : milestone === "three_quarter"
+        ? "💪"
+        : milestone === "halfway"
+          ? "⚡"
+          : milestone === "quarter"
+            ? "✨"
+            : milestone === "first"
+              ? "☕"
+              : null;
 
   // Detectar sello nuevo y trigger celebración
   useEffect(() => {
@@ -263,6 +278,14 @@ export function StampCardFront({
       const newMilestone = getMilestoneType(card.stamps, card.maxStamps);
       if (newMilestone && newMilestone !== "welcome") {
         setShowMilestoneCelebration(newMilestone);
+        // Haptic + mini confetti on milestone (not on every stamp)
+        if (newMilestone === "quarter" || newMilestone === "halfway" || newMilestone === "three_quarter") {
+          hapticMedium();
+          setTimeout(() => fireAchievement(), 400);
+        } else if (newMilestone === "almost") {
+          hapticSuccess();
+          setTimeout(() => fireAchievement(), 400);
+        }
         const celebTimer = setTimeout(() => setShowMilestoneCelebration(null), 2800);
         const stampTimer = setTimeout(() => setIsNewStamp(false), 1200);
         return () => {
@@ -327,6 +350,22 @@ export function StampCardFront({
       className="absolute inset-0 backface-hidden rounded-[24px] overflow-hidden shadow-[0_12px_40px_rgba(0,0,0,0.14)] flex flex-col"
       style={{ background: cardBg, color: textColor }}
     >
+      {/* Glow pulse on milestone */}
+      <AnimatePresence>
+        {showMilestoneCelebration && showMilestoneCelebration !== "complete" && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 0.4, 0] }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.2, ease: "easeInOut" }}
+            className="absolute inset-0 z-10 pointer-events-none rounded-[24px]"
+            style={{
+              boxShadow: `inset 0 0 40px ${accentColor}30, 0 0 30px ${accentColor}20`,
+              background: `radial-gradient(ellipse at center, ${accentColor}10 0%, transparent 70%)`,
+            }}
+          />
+        )}
+      </AnimatePresence>
       {/* Header con marca */}
       <div
         className="flex items-center justify-between px-5 pt-4 pb-3"

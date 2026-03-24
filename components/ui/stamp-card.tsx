@@ -454,12 +454,13 @@ function DesktopCinematicView({
             )}
           </AnimatePresence>
 
-          {/* QR — expandible al click */}
+          {/* QR — expandible al click, se cierra al agregar sello */}
           <ExpandableQR
             origin={origin}
             cardId={cardId}
             isDark={isDark}
             isOffline={isOffline}
+            stampAdded={stampNotification}
           />
         </div>
       </div>
@@ -475,13 +476,22 @@ function ExpandableQR({
   cardId,
   isDark,
   isOffline,
+  stampAdded,
 }: {
   origin: string | null;
   cardId: string;
   isDark: boolean;
   isOffline: boolean;
+  stampAdded?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
+
+  // Cerrar el modal automáticamente cuando se agrega un sello
+  useEffect(() => {
+    if (stampAdded && expanded) {
+      setExpanded(false);
+    }
+  }, [stampAdded, expanded]);
 
   if (!origin) return null;
 

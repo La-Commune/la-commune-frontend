@@ -646,23 +646,39 @@ export default function ProfilePage() {
           transition={{ duration: 0.6 }}
           className="space-y-4"
         >
-          <div className="flex items-start justify-between">
-            <div className="space-y-2">
-              <h1 className="font-display text-3xl sm:text-4xl font-light tracking-wide">
-                {customer.name || "Mi perfil"}
-              </h1>
-              <p className="text-sm text-stone-500 dark:text-stone-400">
-                Cliente desde {formatDate(customer.createdAt)}
-              </p>
-            </div>
+          <div className="flex items-start gap-4">
+            {/* Avatar con iniciales */}
             <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 0.4, delay: 0.2 }}
-              className={`px-3 py-1 rounded-full border text-xs font-medium uppercase tracking-[0.2em] ${tierColors[tier.color]}`}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+              className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-amber-500 to-amber-700 dark:from-amber-600 dark:to-amber-900 flex items-center justify-center shrink-0 shadow-lg shadow-amber-500/20"
             >
-              {tier.name}
+              <span className="text-white text-lg sm:text-xl font-light uppercase tracking-wider">
+                {(customer.name || "?").split(" ").map(w => w[0]).slice(0, 2).join("")}
+              </span>
             </motion.div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1.5 min-w-0">
+                  <h1 className="font-display text-3xl sm:text-4xl font-light tracking-wide truncate">
+                    {customer.name || "Mi perfil"}
+                  </h1>
+                  <p className="text-sm text-stone-500 dark:text-stone-400">
+                    Cliente desde {formatDate(customer.createdAt)}
+                  </p>
+                </div>
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.4, delay: 0.2 }}
+                  className={`px-3 py-1 rounded-full border text-xs font-medium uppercase tracking-[0.2em] shrink-0 ${tierColors[tier.color]}`}
+                >
+                  {tier.name}
+                </motion.div>
+              </div>
+            </div>
           </div>
         </motion.div>
 

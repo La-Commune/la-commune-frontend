@@ -25,12 +25,12 @@ export default function MainLayout({ children }: { children: ReactNode }) {
         aria-hidden="true"
       />
 
-      {/* Contenido con fade-in al navegar entre rutas */}
+      {/* Contenido con fade suave al navegar entre rutas */}
       <motion.div
         key={pathname}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3, ease: "easeOut" }}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
         className="flex flex-col grow h-full"
       >
         {children}
