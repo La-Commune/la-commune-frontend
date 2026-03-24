@@ -160,6 +160,21 @@ export async function getAnyCardByCustomer(customerRef: string) {
   return data[0];
 }
 
+/** Cuenta cuántos clientes tienen a este customer como referidor */
+export async function getReferralCount(customerId: string): Promise<number> {
+  const supabase = getSupabase();
+
+  const { count, error } = await supabase
+    .from("clientes")
+    .select("id", { count: "exact", head: true })
+    .eq("negocio_id", NEGOCIO_ID)
+    .eq("id_referidor", customerId)
+    .eq("activo", true);
+
+  if (error) throw error;
+  return count || 0;
+}
+
 export async function updateCustomerPhone(
   customerId: string,
   phone: string,
