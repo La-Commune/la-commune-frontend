@@ -15,17 +15,34 @@ import { LoadingButton } from "@/components/ui/LoadingButton";
 
 function MenuItemImage({ src, alt }: { src: string; alt: string }) {
   const [loaded, setLoaded] = useState(false);
+  const [errored, setErrored] = useState(false);
+
   return (
-    <div className="relative w-full h-36 sm:h-44 rounded-xl overflow-hidden mb-3 print:hidden bg-stone-100 dark:bg-stone-800">
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        unoptimized
-        className={`object-cover transition-opacity duration-700 ${loaded ? "opacity-100" : "opacity-0"}`}
-        onLoad={() => setLoaded(true)}
-        onError={(e) => { (e.currentTarget as HTMLImageElement).parentElement!.style.display = "none"; }}
-      />
+    <div
+      className="rounded-xl overflow-hidden print:hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+      style={{
+        maxHeight: errored ? 0 : "12rem",
+        opacity: errored ? 0 : 1,
+        marginBottom: errored ? 0 : "0.75rem",
+      }}
+    >
+      <div className="relative w-full h-36 sm:h-44 bg-stone-100 dark:bg-stone-800">
+        {/* Shimmer skeleton mientras carga */}
+        {!loaded && !errored && (
+          <div className="absolute inset-0 skeleton-shimmer" />
+        )}
+        {!errored && (
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            unoptimized
+            className={`object-cover transition-opacity duration-700 ${loaded ? "opacity-100" : "opacity-0"}`}
+            onLoad={() => setLoaded(true)}
+            onError={() => setErrored(true)}
+          />
+        )}
+      </div>
     </div>
   );
 }

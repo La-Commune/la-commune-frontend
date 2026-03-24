@@ -284,23 +284,48 @@ export function StampCardFront({
     }
   }, [isComplete, onComplete]);
 
-  if (!card) return null;
-
   // Colors
   const labelColor = isDark ? "#7A706A" : "#A89E97";
   const textColor = isDark ? "#E8DDD5" : "#2B2B2B";
   const brandColor = isDark ? "#D4C8BE" : "#2B2B2B";
   const accentColor = isDark ? "#C4954A" : "#8b6b3d";
 
+  const cardBg = isDark
+    ? "linear-gradient(145deg, #1A1412 0%, #2A2220 100%)"
+    : "linear-gradient(145deg, #FAF7F4 0%, #F0E9E0 100%)";
+
+  // Skeleton mientras carga — misma forma que la tarjeta real, sin flash
+  if (!card) {
+    return (
+      <div
+        className="absolute inset-0 backface-hidden rounded-[24px] overflow-hidden shadow-[0_12px_40px_rgba(0,0,0,0.14)] flex flex-col"
+        style={{ background: cardBg, color: textColor }}
+      >
+        <div
+          className="flex items-center justify-between px-5 pt-4 pb-3"
+          style={{ borderBottom: `1px solid ${isDark ? "#2a2722" : "#E8E0D8"}` }}
+        >
+          <div className="h-3 w-24 rounded-full skeleton-shimmer" />
+          <div className="h-2.5 w-14 rounded-full skeleton-shimmer" />
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-28 h-28 rounded-full skeleton-shimmer" />
+        </div>
+        <div className="px-5 pb-4 space-y-2">
+          <div className="h-2.5 w-32 rounded-full skeleton-shimmer" />
+          <div className="flex justify-between">
+            <div className="h-2 w-20 rounded-full skeleton-shimmer" />
+            <div className="h-2 w-10 rounded-full skeleton-shimmer" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="absolute inset-0 backface-hidden rounded-[24px] overflow-hidden shadow-[0_12px_40px_rgba(0,0,0,0.14)] flex flex-col"
-      style={{
-        background: isDark
-          ? "linear-gradient(145deg, #1A1412 0%, #2A2220 100%)"
-          : "linear-gradient(145deg, #FAF7F4 0%, #F0E9E0 100%)",
-        color: textColor,
-      }}
+      style={{ background: cardBg, color: textColor }}
     >
       {/* Header con marca */}
       <div

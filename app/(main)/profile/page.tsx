@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -105,6 +105,12 @@ function PhoneEditForm({
   const [phone, setPhone] = useState(currentPhone);
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => inputRef.current?.focus(), 100);
+    return () => clearTimeout(t);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,6 +139,7 @@ function PhoneEditForm({
           Nuevo teléfono
         </label>
         <input
+          ref={inputRef}
           type="tel"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
@@ -192,6 +199,12 @@ function EmailEditForm({
 }) {
   const [email, setEmail] = useState(currentEmail);
   const [error, setError] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => inputRef.current?.focus(), 100);
+    return () => clearTimeout(t);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -220,6 +233,7 @@ function EmailEditForm({
           Correo electrónico
         </label>
         <input
+          ref={inputRef}
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -266,6 +280,12 @@ function NameEditForm({
 }) {
   const [name, setName] = useState(currentName);
   const [error, setError] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => inputRef.current?.focus(), 100);
+    return () => clearTimeout(t);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -290,6 +310,7 @@ function NameEditForm({
           Nombre
         </label>
         <input
+          ref={inputRef}
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
