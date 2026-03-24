@@ -263,7 +263,7 @@ interface StampEntry {
 }
 
 /* -- Vista de anadir sello ----------------------------------- */
-function StampView({ onLogout }: { onLogout: () => void }) {
+function StampView() {
   const [cardInput, setCardInput] = useState("");
   const [card, setCard] = useState<LoadedCard | null>(null);
   const [loading, setLoading] = useState(false);
@@ -988,14 +988,6 @@ function StampView({ onLogout }: { onLogout: () => void }) {
         )}
       </AnimatePresence>
 
-      {/* Cerrar sesión */}
-      <button
-        onClick={onLogout}
-        className="text-[10px] uppercase tracking-[0.3em] text-stone-300 dark:text-stone-700 hover:text-stone-600 dark:hover:text-stone-400 transition-colors duration-200 mx-auto"
-      >
-        Cerrar sesión
-      </button>
-
       {/* Historial de sellos de sesión */}
       {stampHistory.length > 0 && (
         <div className="w-full space-y-2">
@@ -1472,7 +1464,7 @@ export default function AdminPage() {
                     transition={{ duration: 0.2 }}
                     className="w-full"
                   >
-                    <StampView onLogout={() => { logoutBarista(); setAuthed(false); setPin(""); setUserName(null); setUserRole(null); }} />
+                    <StampView />
                   </motion.div>
                 )}
                 {adminTab === "menu" && allowedTabs.includes("menu") && (
@@ -1536,6 +1528,14 @@ export default function AdminPage() {
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              {/* Cerrar sesión — siempre visible */}
+              <button
+                onClick={() => { logoutBarista(); setAuthed(false); setPin(""); setUserName(null); setUserRole(null); }}
+                className="text-[10px] uppercase tracking-[0.3em] text-stone-300 dark:text-stone-700 hover:text-stone-600 dark:hover:text-stone-400 transition-colors duration-200 mx-auto mt-4"
+              >
+                Cerrar sesión
+              </button>
             </motion.div>
           )}
         </AnimatePresence>
