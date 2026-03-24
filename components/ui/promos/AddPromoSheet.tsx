@@ -3,7 +3,14 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { addPromotion } from "@/services/promotion.service";
+
+function scrollIntoCenter(e: React.FocusEvent<HTMLElement>) {
+  setTimeout(() => {
+    e.target.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 150);
+}
 
 const PROMO_TYPES = [
   { value: "2x1" as const, label: "2x1" },
@@ -41,6 +48,7 @@ export function AddPromoSheet({
   onAdded: () => void;
   onCancel: () => void;
 }) {
+  useBodyScrollLock();
   const keyboardOffset = useKeyboardOffset();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -83,8 +91,7 @@ export function AddPromoSheet({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:px-4 overflow-y-auto"
-      style={{ paddingBottom: keyboardOffset, transition: "padding-bottom 0.15s ease" }}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:px-4"
       onClick={onCancel}
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
@@ -93,71 +100,80 @@ export function AddPromoSheet({
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", stiffness: 350, damping: 35 }}
-        className="relative w-full max-w-sm bg-white dark:bg-neutral-900 border-t sm:border border-stone-200 dark:border-stone-800 rounded-t-3xl sm:rounded-3xl px-6 pb-10 sm:pb-6 pt-5 space-y-4"
+        className="relative w-full max-w-sm bg-white dark:bg-neutral-900 border-t sm:border border-stone-200 dark:border-stone-800 rounded-t-3xl sm:rounded-3xl flex flex-col max-h-[85vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="w-10 h-1 bg-stone-300 dark:bg-stone-700 rounded-full mx-auto mb-2 sm:hidden" />
-        <p className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">Nueva promo</p>
-
-        <input className={inputCls} placeholder="Titulo *" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
-        <textarea className={`${inputCls} resize-none`} rows={2} placeholder="Descripcion (ej: 2x1 en lattes)" value={description} onChange={(e) => setDescription(e.target.value)} />
-
-        {/* Tipo */}
-        <div className="flex gap-2 flex-wrap">
-          {PROMO_TYPES.map((t) => (
-            <button
-              key={t.value}
-              onClick={() => setType(t.value)}
-              className={`px-3 py-2 rounded-xl border text-[10px] uppercase tracking-widest transition-all duration-150 ${
-                type === t.value
-                  ? "border-stone-400 text-stone-700 dark:text-stone-200 bg-stone-200 dark:bg-stone-800"
-                  : "border-stone-200 dark:border-stone-800 text-stone-400 dark:text-stone-600 hover:border-stone-300 dark:hover:border-stone-700"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+        {/* Handle + header — fixed */}
+        <div className="px-6 pt-5 pb-2 shrink-0">
+          <div className="w-10 h-1 bg-stone-300 dark:bg-stone-700 rounded-full mx-auto mb-3 sm:hidden" />
+          <p className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">Nueva promo</p>
         </div>
 
-        {/* Fechas */}
-        <div className="flex gap-2">
-          <div className="flex-1 space-y-1">
-            <label className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-600">Inicio</label>
-            <input type="date" className={inputCls} value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
-          </div>
-          <div className="flex-1 space-y-1">
-            <label className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-600">Fin</label>
-            <input type="date" className={inputCls} value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
-          </div>
-        </div>
+        {/* Scrollable content */}
+        <div
+          className="flex-1 overflow-y-auto overscroll-contain px-6 space-y-4"
+          style={{ paddingBottom: Math.max(keyboardOffset, 16), transition: "padding-bottom 0.15s ease" }}
+        >
+          <input className={inputCls} placeholder="Título *" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus onFocus={scrollIntoCenter} />
+          <textarea className={`${inputCls} resize-none`} rows={2} placeholder="Descripción (ej: 2x1 en lattes)" value={description} onChange={(e) => setDescription(e.target.value)} onFocus={scrollIntoCenter} />
 
-        {/* Dias de la semana */}
-        <div className="space-y-1">
-          <label className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-600">
-            Dias (vacio = todos)
-          </label>
-          <div className="flex gap-1.5">
-            {DAY_OPTIONS.map((d) => (
+          {/* Tipo */}
+          <div className="flex gap-2 flex-wrap">
+            {PROMO_TYPES.map((t) => (
               <button
-                key={d.value}
-                onClick={() => toggleDay(d.value)}
-                className={`w-9 h-9 rounded-lg border text-[11px] transition-all duration-150 ${
-                  daysOfWeek.includes(d.value)
+                key={t.value}
+                onClick={() => setType(t.value)}
+                className={`px-3 py-2 rounded-xl border text-[10px] uppercase tracking-widest transition-all duration-150 ${
+                  type === t.value
                     ? "border-stone-400 text-stone-700 dark:text-stone-200 bg-stone-200 dark:bg-stone-800"
-                    : "border-stone-200 dark:border-stone-800 text-stone-400 dark:text-stone-600"
+                    : "border-stone-200 dark:border-stone-800 text-stone-400 dark:text-stone-600 hover:border-stone-300 dark:hover:border-stone-700"
                 }`}
               >
-                {d.label}
+                {t.label}
               </button>
             ))}
           </div>
+
+          {/* Fechas */}
+          <div className="flex gap-2">
+            <div className="flex-1 space-y-1">
+              <label className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-600">Inicio</label>
+              <input type="date" className={inputCls} value={startsAt} onChange={(e) => setStartsAt(e.target.value)} onFocus={scrollIntoCenter} />
+            </div>
+            <div className="flex-1 space-y-1">
+              <label className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-600">Fin</label>
+              <input type="date" className={inputCls} value={endsAt} onChange={(e) => setEndsAt(e.target.value)} onFocus={scrollIntoCenter} />
+            </div>
+          </div>
+
+          {/* Dias de la semana */}
+          <div className="space-y-1">
+            <label className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-600">
+              Días (vacío = todos)
+            </label>
+            <div className="flex gap-1.5">
+              {DAY_OPTIONS.map((d) => (
+                <button
+                  key={d.value}
+                  onClick={() => toggleDay(d.value)}
+                  className={`w-9 h-9 rounded-lg border text-[11px] transition-all duration-150 ${
+                    daysOfWeek.includes(d.value)
+                      ? "border-stone-400 text-stone-700 dark:text-stone-200 bg-stone-200 dark:bg-stone-800"
+                      : "border-stone-200 dark:border-stone-800 text-stone-400 dark:text-stone-600"
+                  }`}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Aplica a */}
+          <input className={inputCls} placeholder="Aplica a (ej: Lattes, Espresso)" value={appliesTo} onChange={(e) => setAppliesTo(e.target.value)} onFocus={scrollIntoCenter} />
         </div>
 
-        {/* Aplica a */}
-        <input className={inputCls} placeholder="Aplica a (ej: Lattes, Espresso)" value={appliesTo} onChange={(e) => setAppliesTo(e.target.value)} />
-
-        {/* Botones */}
-        <div className="flex gap-2 pt-1">
+        {/* Buttons — fixed at bottom */}
+        <div className="px-6 pt-3 pb-10 sm:pb-6 shrink-0 flex gap-2">
           <button
             onClick={handleSave}
             disabled={!title.trim() || saving}
