@@ -61,16 +61,16 @@ function OnboardingForm() {
   const phoneErrorMsg = showPhoneRequired
     ? "Tu WhatsApp es necesario para crear la tarjeta"
     : showPhoneError
-      ? "Ingresa los 10 digitos"
+      ? "Ingresa los 10 dígitos"
       : null;
 
   const pinErrorMsg = showPinRequired
     ? "Crea un PIN para recuperar tu tarjeta"
     : showPinIncomplete
-      ? "El PIN debe tener 4 digitos"
+      ? "El PIN debe tener 4 dígitos"
       : null;
 
-  const emailErrorMsg = showEmailError ? "Ingresa un email valido" : null;
+  const emailErrorMsg = showEmailError ? "Ingresa un email válido" : null;
 
   const canSubmit = isValidPhone && isValidPin && isValidEmail;
 
@@ -175,7 +175,7 @@ function OnboardingForm() {
       const offline = typeof navigator !== "undefined" && !navigator.onLine;
       const code = e instanceof Object && "code" in e ? (e as { code: string }).code : undefined;
       if (offline) {
-        setError("Sin conexion a internet. Verifica tu red e intenta de nuevo.");
+        setError("Sin conexión a internet. Verifica tu red e intenta de nuevo.");
       } else if (code === "permission-denied") {
         setError("No se pudo acceder al servicio. Intenta mas tarde.");
       } else {
@@ -241,7 +241,7 @@ function OnboardingForm() {
                   Programa de fidelidad
                 </p>
                 <h2 className="font-display text-5xl xl:text-6xl font-light leading-[1.1]">
-                  Tu cafe te recompensa
+                  Tu café te recompensa
                 </h2>
                 <p className="text-base text-stone-500 dark:text-stone-400 leading-relaxed max-w-md">
                   Junta 5 sellos con cada visita y disfruta tu siguiente bebida por la casa.
@@ -292,7 +292,7 @@ function OnboardingForm() {
                 Crea tu tarjeta
               </h1>
               <p className="text-sm text-stone-500 dark:text-stone-400">
-                Ingresa tu WhatsApp y un PIN de 4 digitos.
+                Ingresa tu WhatsApp y un PIN de 4 dígitos.
               </p>
             </div>
 
@@ -334,7 +334,7 @@ function OnboardingForm() {
                   type="tel"
                   inputMode="numeric"
                   pattern="[0-9]*"
-                  placeholder="10 digitos"
+                  placeholder="10 dígitos"
                   maxLength={10}
                   value={phone}
                   onChange={handlePhoneChange}
@@ -361,7 +361,7 @@ function OnboardingForm() {
                 animate={shakePin ? shakeAnimation : {}}
               >
                 <label htmlFor="pin" className="block text-xs uppercase tracking-[0.3em] text-left font-medium text-stone-600 dark:text-stone-400">
-                  PIN de recuperacion
+                  PIN de recuperación
                 </label>
                 <Input
                   ref={pinRef}
@@ -371,7 +371,7 @@ function OnboardingForm() {
                   inputMode="numeric"
                   pattern="[0-9]*"
                   maxLength={4}
-                  placeholder="4 digitos"
+                  placeholder="4 dígitos"
                   value={pin}
                   onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
                   className={`text-base text-center tracking-[0.5em] bg-white dark:bg-neutral-900 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600 focus:border-stone-500 ${
@@ -457,7 +457,7 @@ function OnboardingForm() {
                   />
                   <span>
                     Acepto recibir mensajes por WhatsApp relacionados con mi tarjeta y
-                    promociones del cafe.
+                    promociones del café.
                   </span>
                 </label>
 
@@ -470,7 +470,7 @@ function OnboardingForm() {
                       className="mt-0.5 accent-stone-400 w-4 h-4 min-w-[16px]"
                     />
                     <span>
-                      Acepto recibir correos con promociones y novedades del cafe.
+                      Acepto recibir correos con promociones y novedades del café.
                     </span>
                   </label>
                 )}

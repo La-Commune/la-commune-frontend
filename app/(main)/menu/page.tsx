@@ -5,6 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { MenuSection } from "@/models/menu.model";
 import { getFullMenu } from "@/services/menu.service";
+import { getActivePromotions } from "@/services/promotion.service";
+import { Promotion } from "@/models/promotion.model";
 import { PromoBannerSticky } from "@/components/ui/promos/PromoBanner";
 import { checkBaristaSession } from "@/app/actions/verifyAdminPin";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -37,6 +39,7 @@ export default function CafeMenu() {
   const [activeFilter, setActiveFilterState] = useState<string | null>(null);
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [activePromos, setActivePromos] = useState<Promotion[]>([]);
 
   useEffect(() => {
     checkBaristaSession().then((session) => {
@@ -81,8 +84,14 @@ export default function CafeMenu() {
   }, [error]);
 
   useEffect(() => {
-    getFullMenu()
-      .then((data) => setSections(data.filter((s) => s.active)))
+    Promise.all([
+      getFullMenu(),
+      getActivePromotions(),
+    ])
+      .then(([menuData, promos]) => {
+        setSections(menuData.filter((s) => s.active));
+        setActivePromos(promos);
+      })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
@@ -366,6 +375,41 @@ export default function CafeMenu() {
                                     Temporada
                                   </span>
                                 )}
+                                {isAvailable && activePromos.map((promo) => {
+                                  const appliesToLower = (promo.appliesTo || "").toLowerCase();
+                                  const itemNameLower = item.name.toLowerCase();
+                                  const sectionTitleLower = section.title.toLowerCase();
+                                  const matches = !promo.appliesTo || appliesToLower.includes(itemNameLower) || appliesToLower.includes(sectionTitleLower);
+                                  if (!matches) return null;
+
+                                  if (promo.type === "2x1") {
+                                    return (
+                                      <span key={promo.id} className="text-[11px] uppercase tracking-widest bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 border border-violet-300 dark:border-violet-700/50 rounded-full px-2 py-0.5 print:hidden print:bg-transparent print:text-violet-600 print:border-violet-600">
+                                        2×1
+                                      </span>
+                                    );
+                                  }
+                                  if (promo.type === "descuento") {
+                                    return (
+                                      <span key={promo.id} className="text-[11px] uppercase tracking-widest bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border border-rose-300 dark:border-rose-700/50 rounded-full px-2 py-0.5 print:hidden print:bg-transparent print:text-rose-600 print:border-rose-600">
+                                        -{promo.discountPercent}%
+                                      </span>
+                                    );
+                                  }
+                                  if (promo.type === "gratis") {
+                                    return (
+                                      <span key={promo.id} className="text-[11px] uppercase tracking-widest bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-700/50 rounded-full px-2 py-0.5 print:hidden print:bg-transparent print:text-emerald-700 print:border-emerald-600">
+                                        Gratis
+                                      </span>
+                                    );
+                                  }
+                                  // type "otro"
+                                  return (
+                                    <span key={promo.id} className="text-[11px] uppercase tracking-widest bg-stone-100 dark:bg-stone-900/30 text-stone-600 dark:text-stone-400 border border-stone-300 dark:border-stone-700/50 rounded-full px-2 py-0.5 print:hidden print:bg-transparent print:text-stone-600 print:border-stone-600">
+                                      {promo.title}
+                                    </span>
+                                  );
+                                })}
                               </div>
 
                               {item.tags?.length > 0 && (
