@@ -18,21 +18,7 @@ import {
   getCustomerSession,
   setCustomerSession,
   clearCustomerSession,
-  updateCustomerPhone,
 } from "@/app/actions/customerSession";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
 import { PushPrompt } from "@/components/ui/PushPrompt";
 import { getReferralCount } from "@/services/customer.service";
@@ -593,53 +579,6 @@ function Card({
     }
   };
 
-  const handleLogout = async () => {
-    localStorage.removeItem("cardId");
-    localStorage.removeItem("customerId");
-    await clearCustomerSession();
-    router.replace("/");
-  };
-
-  // --- Update phone state ---
-  const [showPhoneUpdate, setShowPhoneUpdate] = useState(false);
-  const [newPhone, setNewPhone] = useState("");
-  const [phonePin, setPhonePin] = useState("");
-  const [phoneUpdateLoading, setPhoneUpdateLoading] = useState(false);
-  const [phoneUpdateMsg, setPhoneUpdateMsg] = useState<{
-    type: "ok" | "err";
-    text: string;
-  } | null>(null);
-
-  const handlePhoneUpdate = async () => {
-    if (newPhone.length !== 10 || phonePin.length !== 4) return;
-    const cid =
-      typeof window !== "undefined"
-        ? localStorage.getItem("customerId")
-        : null;
-    if (!cid) return;
-
-    setPhoneUpdateLoading(true);
-    setPhoneUpdateMsg(null);
-
-    try {
-      const res = await updateCustomerPhone(cid, phonePin, newPhone);
-      if (res.ok) {
-        setPhoneUpdateMsg({ type: "ok", text: "Telefono actualizado." });
-        setNewPhone("");
-        setPhonePin("");
-        setTimeout(() => {
-          setShowPhoneUpdate(false);
-          setPhoneUpdateMsg(null);
-        }, 2000);
-      } else {
-        setPhoneUpdateMsg({ type: "err", text: res.error });
-      }
-    } catch {
-      setPhoneUpdateMsg({ type: "err", text: "Error inesperado." });
-    } finally {
-      setPhoneUpdateLoading(false);
-    }
-  };
 
   return (
     <div id="main-content" className="min-h-screen bg-stone-50 text-stone-900 dark:bg-neutral-950 dark:text-white flex flex-col">
@@ -858,100 +797,7 @@ function Card({
             >
               Mi perfil
             </Link>
-            <button
-              onClick={() => setShowPhoneUpdate((v) => !v)}
-              className="text-[10px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400 transition-colors"
-            >
-              Cambiar teléfono
-            </button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <button
-                  className="text-[10px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-600 hover:text-red-400 dark:hover:text-red-500 transition-colors"
-                >
-                  Cerrar sesión
-                </button>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="bg-white dark:bg-neutral-900 border-stone-200 dark:border-stone-800">
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="text-stone-900 dark:text-stone-100">
-                    Cerrar sesión
-                  </AlertDialogTitle>
-                  <AlertDialogDescription className="text-stone-500 dark:text-stone-400">
-                    Necesitarás tu PIN de 4 dígitos para volver a entrar.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel className="text-stone-600 dark:text-stone-400 border-stone-300 dark:border-stone-700">
-                    Cancelar
-                  </AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleLogout}
-                    className="bg-red-600 text-white hover:bg-red-700"
-                  >
-                    Cerrar sesión
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
           </div>
-
-          <AnimatePresence>
-            {showPhoneUpdate && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden space-y-3 pt-2"
-              >
-                <Input
-                  type="tel"
-                  inputMode="numeric"
-                  placeholder="Nuevo teléfono (10 dígitos)"
-                  value={newPhone}
-                  onChange={(e) =>
-                    setNewPhone(e.target.value.replace(/\D/g, "").slice(0, 10))
-                  }
-                  className="text-sm text-center tracking-widest bg-white dark:bg-neutral-900 border-stone-300 dark:border-stone-700 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600"
-                />
-                <Input
-                  type="password"
-                  inputMode="numeric"
-                  placeholder="Tu PIN de 4 dígitos"
-                  value={phonePin}
-                  maxLength={4}
-                  onChange={(e) =>
-                    setPhonePin(
-                      e.target.value.replace(/\D/g, "").slice(0, 4),
-                    )
-                  }
-                  className="text-sm text-center tracking-[0.5em] bg-white dark:bg-neutral-900 border-stone-300 dark:border-stone-700 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600"
-                />
-                {phoneUpdateMsg && (
-                  <p
-                    className={`text-[11px] text-center ${
-                      phoneUpdateMsg.type === "ok"
-                        ? "text-emerald-500"
-                        : "text-red-500 dark:text-red-400"
-                    }`}
-                  >
-                    {phoneUpdateMsg.text}
-                  </p>
-                )}
-                <Button
-                  onClick={handlePhoneUpdate}
-                  disabled={
-                    newPhone.length !== 10 ||
-                    phonePin.length !== 4 ||
-                    phoneUpdateLoading
-                  }
-                  className="w-full rounded-full bg-stone-800 text-white dark:bg-white dark:text-neutral-900 py-2 text-[11px] tracking-wide disabled:opacity-30"
-                >
-                  {phoneUpdateLoading ? "Actualizando..." : "Actualizar teléfono"}
-                </Button>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </motion.footer>
 
