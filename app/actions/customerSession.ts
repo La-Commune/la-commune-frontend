@@ -104,14 +104,14 @@ export async function verifyCustomerPin(
     .single();
 
   if (clienteError || !cliente) {
-    return { ok: false, error: "No encontramos una cuenta con ese numero." };
+    return { ok: false, error: "No encontramos una cuenta con ese número." };
   }
 
   if (!cliente.pin_hmac) {
     return {
       ok: false,
       error:
-        "Esta cuenta no tiene PIN de recuperacion. Visitanos en barra para que te ayudemos.",
+        "Esta cuenta no tiene PIN de recuperación. Visítanos en barra para que te ayudemos.",
     };
   }
 
@@ -151,7 +151,7 @@ export async function verifyCustomerPin(
     return {
       ok: false,
       error:
-        "Encontramos tu cuenta pero no tu tarjeta. Visitanos en barra para que te ayudemos.",
+        "Encontramos tu cuenta pero no tu tarjeta. Visítanos en barra para que te ayudemos.",
     };
   }
 
@@ -213,7 +213,7 @@ export async function updateCustomerPhone(
     .eq("negocio_id", NEGOCIO_ID);
 
   if (error) {
-    return { ok: false, error: "No se pudo actualizar el telefono." };
+    return { ok: false, error: "No se pudo actualizar el teléfono." };
   }
 
   return { ok: true };

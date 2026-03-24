@@ -38,10 +38,10 @@ function MockCardFront({ stamps }: { stamps: number }) {
             className="text-[17px] font-light leading-tight"
             style={{ fontFamily: "var(--font-display)" }}
           >
-            {isComplete ? "¡Bebida de cortesia!" : "Cafe de la casa"}
+            {isComplete ? "¡Bebida de cortesía!" : "Café de la casa"}
           </h2>
           <p className="text-[10px] tracking-wide text-[#8A817A] mt-0.5">
-            {isComplete ? "Presentala en barra" : "Cliente frecuente"}
+            {isComplete ? "Preséntala en barra" : "Cliente frecuente"}
           </p>
         </div>
 
@@ -253,7 +253,7 @@ export default function CardPreviewPage() {
             Tu tarjeta digital
           </h1>
           <p className="text-sm text-stone-500 dark:text-stone-400 max-w-xs mx-auto leading-relaxed">
-            Acumula visitas y desbloquea tu bebida de cortesia.
+            Acumula visitas y desbloquea tu bebida de cortesía.
           </p>
         </motion.div>
 

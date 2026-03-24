@@ -243,7 +243,7 @@ function DesktopCinematicView({
     return () => { sb.removeChannel(channel); };
   }, [cardId]);
 
-  const rewardName = reward?.name ?? "Bebida de cortesia";
+  const rewardName = reward?.name ?? "Bebida de cortesía";
   const illustrationId: IllustrationId = reward?.illustration ?? "flat-white-cenital";
   const stamps = card?.stamps ?? 0;
   const maxStamps = card?.maxStamps ?? 5;

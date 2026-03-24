@@ -98,7 +98,7 @@ export default function RedeemPage() {
 
   const cardStatus = cardDoc?.status as string | undefined;
   const rewardDescription: string =
-    rewardDoc?.description ?? "Una bebida de cortesia";
+    rewardDoc?.description ?? "Una bebida de cortesía";
 
   // Access control: verificar que esta tarjeta pertenece al cliente
   useEffect(() => {
@@ -220,8 +220,8 @@ export default function RedeemPage() {
       if (typeof navigator !== "undefined" && navigator.share) {
         try {
           await navigator.share({
-            title: "La Commune · Tarjeta completada!",
-            text: "Complete mi tarjeta de fidelidad en La Commune! Cada visita suma — y ya gane mi bebida de cortesia.",
+            title: "La Commune · ¡Tarjeta completada!",
+            text: "¡Completé mi tarjeta de fidelidad en La Commune! Cada visita suma — y ya gané mi bebida de cortesía.",
             url: shareUrl,
           });
           return;

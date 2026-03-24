@@ -149,7 +149,7 @@ export default function RecoverPage() {
                 htmlFor="pin"
                 className="block text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 text-left"
               >
-                PIN de recuperacion <span className="text-red-500/70">*</span>
+                PIN de recuperación <span className="text-red-500/70">*</span>
               </label>
               <Input
                 id="pin"

@@ -33,11 +33,11 @@ const Reveal = ({
 const pillars = [
   {
     label: "El proceso",
-    text: "Cada variable importa. La temperatura, la molienda, el tiempo de extraccion. No hay atajos porque el cafe lo detecta. La tecnica no es un fin; es respeto hacia la materia.",
+    text: "Cada variable importa. La temperatura, la molienda, el tiempo de extracción. No hay atajos porque el café lo detecta. La técnica no es un fin; es respeto hacia la materia.",
   },
   {
     label: "La comunidad",
-    text: "El nombre lo dice todo. Este espacio existe porque hay personas que eligen lo hecho con intencion — y ese acto, repetido, construye algo mas grande que una taza.",
+    text: "El nombre lo dice todo. Este espacio existe porque hay personas que eligen lo hecho con intención — y ese acto, repetido, construye algo más grande que una taza.",
   },
 ];
 
@@ -89,7 +89,7 @@ export default function Nosotros() {
           transition={{ duration: 1, delay: 0.9 }}
           className="mt-10 text-sm text-stone-400 dark:text-stone-600 font-light tracking-wide max-w-xs leading-relaxed"
         >
-          Una cafeteria de especialidad en Mineral de la Reforma construida sobre trabajo colectivo, tecnica y respeto al origen.
+          Una cafetería de especialidad en Mineral de la Reforma construida sobre trabajo colectivo, técnica y respeto al origen.
         </motion.p>
       </section>
 
@@ -110,13 +110,13 @@ export default function Nosotros() {
       <section className="px-8 sm:px-16 py-28 max-w-3xl mx-auto">
         <Reveal delay={0.15} className="mt-8">
           <p className="text-xl sm:text-2xl text-stone-500 dark:text-stone-400 font-light leading-relaxed">
-            La Commune es el nombre que le ponemos a ese esfuerzo compartido. El cafe es el resultado visible de todo lo invisible.
+            La Commune es el nombre que le ponemos a ese esfuerzo compartido. El café es el resultado visible de todo lo invisible.
           </p>
         </Reveal>
 
         <Reveal delay={0.3} className="mt-8">
           <p className="text-base text-stone-400 dark:text-stone-600 font-light leading-relaxed">
-            El nombre no es casualidad. <em>Commune</em> — comunidad, lo que se tiene en comun, lo que se construye entre varios. Aqui, eso se traduce en cadenas cortas de suministro, relacion directa con tostadores mexicanos y un espacio donde cada visita alimenta algo mas grande que la cafeina.
+            El nombre no es casualidad. <em>Commune</em> — comunidad, lo que se tiene en común, lo que se construye entre varios. Aquí, eso se traduce en cadenas cortas de suministro, relación directa con tostadores mexicanos y un espacio donde cada visita alimenta algo más grande que la cafeína.
           </p>
         </Reveal>
       </section>
@@ -154,7 +154,7 @@ export default function Nosotros() {
         <Reveal>
           <blockquote className="border-l border-stone-300 dark:border-stone-700 pl-8 sm:pl-12">
             <p className="font-display text-[clamp(1.8rem,5vw,3.5rem)] font-light italic text-stone-400 dark:text-stone-600 leading-[1.2] tracking-wide">
-              &ldquo;El cafe es el pretexto.<br />La comunidad, el punto.&rdquo;
+              &ldquo;El café es el pretexto.<br />La comunidad, el punto.&rdquo;
             </p>
             <footer className="mt-6 text-[10px] uppercase tracking-[0.4em] text-stone-300 dark:text-stone-700">
               — La Commune, Mineral de la Reforma
@@ -173,7 +173,7 @@ export default function Nosotros() {
             href="/menu"
             className="text-[10px] tracking-[0.3em] uppercase text-stone-400 dark:text-stone-600 hover:text-stone-700 dark:hover:text-stone-300 transition-colors duration-300"
           >
-            Menu
+            Menú
           </Link>
           <span className="w-px h-3 bg-stone-200 dark:bg-stone-800" />
           <Link
