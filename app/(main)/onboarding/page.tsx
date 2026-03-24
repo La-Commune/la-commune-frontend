@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { createCustomer, getCustomerByPhone } from "@/services/customer.service";
 import { createCard, getCardByCustomer } from "@/services/card.service";
+import { hapticCelebration, hapticError } from "@/lib/haptics";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { hashCustomerPin, setCustomerSession } from "@/app/actions/customerSession";
 import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
@@ -113,6 +114,7 @@ function OnboardingForm() {
         localStorage.setItem("customerId", existing.id);
         localStorage.setItem("cardId", card.id);
         await setCustomerSession(existing.id, card.id);
+        hapticCelebration();
         router.replace("/card/" + card.id);
         return;
       }
@@ -167,11 +169,13 @@ function OnboardingForm() {
       localStorage.setItem("cardId", card.id);
       await setCustomerSession(customer.id, card.id);
 
+      hapticCelebration();
       router.replace("/card/" + card.id);
     } catch (e: unknown) {
       if (process.env.NODE_ENV === "development") {
         console.error("Onboarding error:", e);
       }
+      hapticError();
       const offline = typeof navigator !== "undefined" && !navigator.onLine;
       const code = e instanceof Object && "code" in e ? (e as { code: string }).code : undefined;
       if (offline) {

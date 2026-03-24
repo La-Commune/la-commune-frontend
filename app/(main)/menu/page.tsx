@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
 import { MenuSection } from "@/models/menu.model";
 import { getFullMenu } from "@/services/menu.service";
 import { getActivePromotions } from "@/services/promotion.service";
@@ -200,53 +201,69 @@ export default function CafeMenu() {
         </header>
 
         {/* Segmented control */}
-        {!loading && tabs.length > 1 && (
-          <div className="flex justify-center mb-12 print:hidden">
-            <div className="inline-flex border border-stone-200 dark:border-stone-700 rounded-full p-1 gap-0.5">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.label}
-                  onClick={() => setActiveFilter(tab.value)}
-                  className={`text-xs uppercase tracking-[0.3em] px-5 py-2 rounded-full transition-all duration-200 ${
-                    activeFilter === tab.value
-                      ? "bg-amber-700 dark:bg-amber-600 text-white"
-                      : "text-stone-400 dark:text-stone-500 hover:text-amber-700 dark:hover:text-amber-500"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {!loading && tabs.length > 1 && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              className="flex justify-center mb-12 print:hidden"
+            >
+              <div className="inline-flex border border-stone-200 dark:border-stone-700 rounded-full p-1 gap-0.5">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.label}
+                    onClick={() => setActiveFilter(tab.value)}
+                    className={`text-xs uppercase tracking-[0.3em] px-5 py-2 rounded-full transition-all duration-200 ${
+                      activeFilter === tab.value
+                        ? "bg-amber-700 dark:bg-amber-600 text-white"
+                        : "text-stone-400 dark:text-stone-500 hover:text-amber-700 dark:hover:text-amber-500"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Tag filter */}
-        {!loading && allTags.length > 0 && (
-          <div className="flex items-center justify-center gap-2 mb-10 print:hidden">
-            <select
-              value={activeTag ?? ""}
-              onChange={(e) => setActiveTag(e.target.value || null)}
-              className="appearance-none text-xs uppercase tracking-[0.3em] pl-4 pr-8 py-2 rounded-full border border-stone-200 dark:border-stone-700 bg-transparent text-stone-500 dark:text-stone-400 cursor-pointer focus:outline-none focus:border-stone-400 dark:focus:border-stone-500 transition-colors"
-              style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
+        <AnimatePresence>
+          {!loading && allTags.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.35, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+              className="flex items-center justify-center gap-2 mb-10 print:hidden"
             >
-              <option value="">Filtrar por tipo</option>
-              {allTags.map((tag) => (
-                <option key={tag} value={tag}>{tag}</option>
-              ))}
-            </select>
-            {activeTag && (
-              <button
-                onClick={() => setActiveTag(null)}
-                className="w-7 h-7 rounded-full border border-stone-200 dark:border-stone-700 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 hover:border-stone-400 dark:hover:border-stone-500 transition-colors"
-                aria-label="Limpiar filtro"
+              <select
+                value={activeTag ?? ""}
+                onChange={(e) => setActiveTag(e.target.value || null)}
+                className="appearance-none text-xs uppercase tracking-[0.3em] pl-4 pr-8 py-2 rounded-full border border-stone-200 dark:border-stone-700 bg-transparent text-stone-500 dark:text-stone-400 cursor-pointer focus:outline-none focus:border-stone-400 dark:focus:border-stone-500 transition-colors"
+                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            )}
-          </div>
-        )}
+                <option value="">Filtrar por tipo</option>
+                {allTags.map((tag) => (
+                  <option key={tag} value={tag}>{tag}</option>
+                ))}
+              </select>
+              {activeTag && (
+                <button
+                  onClick={() => setActiveTag(null)}
+                  className="w-7 h-7 rounded-full border border-stone-200 dark:border-stone-700 flex items-center justify-center text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 hover:border-stone-400 dark:hover:border-stone-500 transition-colors"
+                  aria-label="Limpiar filtro"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Sin conexión / Error — premium con ilustración */}
         {!loading && error && (
@@ -285,24 +302,54 @@ export default function CafeMenu() {
           </div>
         )}
 
-        {/* Skeleton */}
+        {/* Skeleton premium con shimmer */}
         {loading && (
-          <div className="space-y-8">
+          <div className="space-y-2">
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
                 className="px-6 py-8 sm:px-8 sm:py-10 space-y-4 border-b border-stone-200/50 dark:border-stone-800/30"
               >
-                <div className="h-3 w-24 bg-stone-200 dark:bg-stone-800 rounded-full animate-pulse" />
-                <div className="h-2.5 w-40 bg-stone-200 dark:bg-stone-800 rounded-full animate-pulse" />
-                <div className="mt-6 space-y-5">
+                {/* Category name */}
+                <div className="relative overflow-hidden h-4 w-28 bg-stone-200 dark:bg-stone-800 rounded-full">
+                  <div className="absolute inset-0 skeleton-shimmer" />
+                </div>
+                {/* Category description */}
+                <div className="relative overflow-hidden h-2.5 w-48 bg-stone-200/70 dark:bg-stone-800/70 rounded-full">
+                  <div className="absolute inset-0 skeleton-shimmer" />
+                </div>
+                <div className="mt-6 space-y-0">
                   {[1, 2, 3].map((j) => (
-                    <div key={j} className="space-y-2 py-4 border-t border-stone-200/50 dark:border-stone-800/40">
-                      <div className="flex justify-between">
-                        <div className="h-4 w-28 bg-stone-200 dark:bg-stone-800 rounded animate-pulse" />
-                        <div className="h-4 w-8 bg-stone-200 dark:bg-stone-800 rounded animate-pulse" />
+                    <div key={j} className="flex items-start gap-4 py-5 border-t border-stone-200/50 dark:border-stone-800/40">
+                      {/* Image placeholder */}
+                      {j <= 2 && (
+                        <div className="relative overflow-hidden w-16 h-16 rounded-lg bg-stone-200 dark:bg-stone-800 shrink-0">
+                          <div className="absolute inset-0 skeleton-shimmer" />
+                        </div>
+                      )}
+                      <div className="flex-1 space-y-2.5">
+                        <div className="flex justify-between items-start">
+                          <div className="relative overflow-hidden h-4 bg-stone-200 dark:bg-stone-800 rounded" style={{ width: `${60 + j * 20}px` }}>
+                            <div className="absolute inset-0 skeleton-shimmer" />
+                          </div>
+                          <div className="relative overflow-hidden h-4 w-12 bg-stone-200 dark:bg-stone-800 rounded">
+                            <div className="absolute inset-0 skeleton-shimmer" />
+                          </div>
+                        </div>
+                        <div className="relative overflow-hidden h-2.5 bg-stone-200/70 dark:bg-stone-800/70 rounded-full" style={{ width: `${100 + j * 25}px` }}>
+                          <div className="absolute inset-0 skeleton-shimmer" />
+                        </div>
+                        {/* Size pills */}
+                        {j === 1 && (
+                          <div className="flex gap-2 mt-1">
+                            {[1, 2, 3].map((k) => (
+                              <div key={k} className="relative overflow-hidden h-5 w-14 bg-stone-200/60 dark:bg-stone-800/60 rounded-full">
+                                <div className="absolute inset-0 skeleton-shimmer" />
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <div className="h-2.5 w-36 bg-stone-200 dark:bg-stone-800 rounded-full animate-pulse" />
                     </div>
                   ))}
                 </div>
@@ -328,13 +375,21 @@ export default function CafeMenu() {
 
         {/* Secciones */}
         {!loading && !error && visibleSections.length > 0 && (
-          <div className={`desktop-menu-sections ${visibleSections.length >= 2 ? "desktop-menu-grid" : ""} print:grid print:grid-cols-3 print:gap-6 print:bg-white print:items-start`}>
-            {visibleSections.map((section) => {
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+            className={`desktop-menu-sections ${visibleSections.length >= 2 ? "desktop-menu-grid" : ""} print:grid print:grid-cols-3 print:gap-6 print:bg-white print:items-start`}
+          >
+            {visibleSections.map((section, sIdx) => {
               const isFood = section.type === "food";
 
               return (
-                <div
+                <motion.div
                   key={section.id ?? section.title}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.15 + sIdx * 0.06, ease: [0.16, 1, 0.3, 1] }}
                   className="px-6 py-8 sm:px-8 sm:py-10 border-b border-stone-200/50 dark:border-stone-800/30 last:border-b-0 print:bg-white print:p-0 print:border-0 flex flex-col print:self-start print:break-inside-avoid"
                 >
                   {/* Encabezado de seccion */}
@@ -488,10 +543,10 @@ export default function CafeMenu() {
                       );
                     })}
                   </ul>
-                </div>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         )}
 
         {!loading && !error && isAdmin && (

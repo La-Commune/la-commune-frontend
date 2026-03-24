@@ -22,6 +22,8 @@ import {
 import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
 import { PushPrompt } from "@/components/ui/PushPrompt";
 import { getReferralCount } from "@/services/customer.service";
+import { fireCelebration } from "@/lib/confetti";
+import { hapticCelebration } from "@/lib/haptics";
 
 
 // Pantalla cuando el cliente o tarjeta ya no existe
@@ -504,6 +506,23 @@ function Card({
       window.removeEventListener("offline", setOffline);
     };
   }, []);
+
+  // Confetti + haptic cuando la tarjeta está completa
+  const celebratedRef = useRef(false);
+  useEffect(() => {
+    if (isCompleted && !celebratedRef.current) {
+      celebratedRef.current = true;
+      // Solo celebrar si no se ha celebrado esta tarjeta antes
+      const key = `celebrated-${cardId}`;
+      if (!localStorage.getItem(key)) {
+        localStorage.setItem(key, "1");
+        setTimeout(() => {
+          fireCelebration();
+          hapticCelebration();
+        }, 600);
+      }
+    }
+  }, [isCompleted, cardId]);
 
   // Pull-to-refresh hint (show once)
   useEffect(() => {

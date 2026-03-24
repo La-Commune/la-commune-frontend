@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
 import { PwaRegister } from "@/components/ui/PwaRegister";
 import { ThemeProvider } from "@/components/ui/ThemeProvider";
+import { OfflineBanner } from "@/components/ui/OfflineBanner";
 import { ReactNode } from "react";
 
 const mono = Roboto_Mono({
@@ -50,6 +51,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-3 focus:py-1.5 focus:rounded-md focus:bg-commune-carbon focus:text-commune-cream focus:text-xs focus:uppercase focus:tracking-widest">
             Saltar al contenido
           </a>
+          <OfflineBanner />
           {children}
           <Toaster />
           <PwaRegister />
