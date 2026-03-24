@@ -671,7 +671,7 @@ function Card({
       </AnimatePresence>
 
       {/* Contenido */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-7 px-5 pb-12">
+      <div className="flex-1 flex flex-col items-center justify-center gap-6 lg:gap-10 px-5 pb-12">
 
         {/* Saludo + subtitulo */}
         <motion.div
@@ -683,7 +683,8 @@ function Card({
           <h1 className="font-display text-3xl sm:text-4xl font-light tracking-wide">
             {name ? `Hola, ${name}` : "Hola"}
           </h1>
-          <p className="text-xs tracking-[0.3em] uppercase text-stone-400 dark:text-stone-500">
+          {/* En desktop el eyebrow "Programa de fidelidad" ya cumple esta función */}
+          <p className="text-xs tracking-[0.3em] uppercase text-stone-400 dark:text-stone-500 lg:hidden">
             Tu tarjeta de fidelidad
           </p>
         </motion.div>
@@ -694,7 +695,7 @@ function Card({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="w-full max-w-xs"
+            className="w-full max-w-xs lg:max-w-md"
           >
             <PromoBannerInline />
           </motion.div>
@@ -729,12 +730,12 @@ function Card({
           )}
         </AnimatePresence>
 
-        {/* Actions: Historial + Descargar + Invitar */}
+        {/* Actions: Historial + Descargar */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="flex items-center justify-center gap-8"
+          className="flex items-center justify-center gap-10 lg:gap-12"
         >
           <Link
             href={`/card/${cardId}/history`}
@@ -756,12 +757,12 @@ function Card({
         {/* Push notification prompt */}
         <PushPrompt clienteId={customerId} />
 
-        {/* Sección referidos */}
+        {/* Sección referidos — más ancha en desktop */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.5 }}
-          className="w-full max-w-xs space-y-4"
+          className="w-full max-w-xs lg:max-w-sm"
         >
           <div className="rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-neutral-900 px-5 py-5 space-y-4">
             <div className="flex items-center justify-between">
@@ -810,22 +811,20 @@ function Card({
 
       </div>
 
-      {/* Footer discreto: ajustes de cuenta */}
+      {/* Footer discreto */}
       <motion.footer
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8, delay: 0.8 }}
-        className="w-full border-t border-stone-200/50 dark:border-stone-800/50 py-7 px-5"
+        className="w-full border-t border-stone-200/50 dark:border-stone-800/50 py-6 px-5"
       >
-        <div className="max-w-xs mx-auto space-y-4">
-          <div className="flex items-center justify-center gap-8">
-            <Link
-              href="/profile"
-              className="text-[10px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400 transition-colors"
-            >
-              Mi perfil
-            </Link>
-          </div>
+        <div className="flex items-center justify-center">
+          <Link
+            href="/profile"
+            className="text-[10px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400 transition-colors"
+          >
+            Mi perfil
+          </Link>
         </div>
       </motion.footer>
 
