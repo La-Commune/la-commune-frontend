@@ -177,9 +177,9 @@ function OnboardingForm() {
       if (offline) {
         setError("Sin conexión a internet. Verifica tu red e intenta de nuevo.");
       } else if (code === "permission-denied") {
-        setError("No se pudo acceder al servicio. Intenta mas tarde.");
+        setError("No se pudo acceder al servicio. Intenta más tarde.");
       } else {
-        setError("Algo salio mal. Intenta de nuevo o visitanos en barra.");
+        setError("Algo salió mal. Intenta de nuevo o visítanos en barra.");
       }
       setLoading(false);
     }
@@ -260,7 +260,7 @@ function OnboardingForm() {
                 </div>
                 <div className="flex items-center gap-4">
                   <span className="w-8 h-8 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center text-xs font-medium text-stone-500 dark:text-stone-400">3</span>
-                  <span className="text-sm text-stone-600 dark:text-stone-300">Tu bebida de cortesia te espera</span>
+                  <span className="text-sm text-stone-600 dark:text-stone-300">Tu bebida de cortesía te espera</span>
                 </div>
               </div>
             </motion.div>
@@ -281,7 +281,7 @@ function OnboardingForm() {
                 className="rounded-xl border border-emerald-800/30 bg-emerald-900/10 px-4 py-3 text-center"
               >
                 <p className="text-xs text-emerald-400 tracking-wide">
-                  Un amigo te invito — ambos reciben un sello extra
+                  Un amigo te invitó — ambos reciben un sello extra
                 </p>
               </motion.div>
             )}

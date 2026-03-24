@@ -57,11 +57,11 @@ const TAB_LABELS: Record<AdminTabId, string> = {
 
 const TAB_TITLES: Record<AdminTabId, string> = {
   stamps: "Añadir sello",
-  menu: "Gestionar menu",
+  menu: "Gestionar menú",
   promos: "Promociones",
   customers: "Clientes",
   analytics: "Analytics",
-  config: "Configuracion",
+  config: "Configuración",
 };
 
 function getTabsForRole(rol: string): AdminTabId[] {
@@ -443,7 +443,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
     } catch {
       setError(
         !navigator.onLine
-          ? "Sin conexion. Si ya cargaste esta tarjeta antes, intentalo de nuevo."
+          ? "Sin conexión. Si ya cargaste esta tarjeta antes, inténtalo de nuevo."
           : "Error al cargar la tarjeta",
       );
     }
@@ -777,7 +777,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
               </div>
               {isComplete && (
                 <p className="text-[10px] uppercase tracking-widest text-amber-500">
-                  ✓ Tarjeta completada — cortesia lista
+                  ✓ Tarjeta completada — cortesía lista
                 </p>
               )}
             </div>
@@ -855,12 +855,12 @@ function StampView({ onLogout }: { onLogout: () => void }) {
               </div>
             )}
 
-            {/* Banner umbral: a 1 sello de la cortesia */}
+            {/* Banner umbral: a 1 sello de la cortesía */}
             {!isComplete && card.stamps === card.maxStamps - 1 && (
               <div className="px-4 py-3 rounded-xl border border-amber-300/40 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10 flex items-center gap-2">
                 <span className="text-base leading-none">⚡</span>
                 <span className="text-[11px] uppercase tracking-[0.2em] text-amber-600 dark:text-amber-400">
-                  ¡Este cliente esta a 1 sello de su bebida gratis!
+                  ¡Este cliente está a 1 sello de su bebida gratis!
                 </span>
               </div>
             )}
@@ -872,7 +872,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
                 disabled={loading}
                 className="w-full py-4 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/40 text-amber-700 dark:text-amber-400 text-[11px] uppercase tracking-[0.35em] hover:bg-amber-100 dark:hover:bg-amber-500/20 hover:border-amber-400 dark:hover:border-amber-400 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed font-medium"
               >
-                {loading ? "Canjeando…" : "Canjear cortesia · Nueva tarjeta"}
+                {loading ? "Canjeando…" : "Canjear cortesía · Nueva tarjeta"}
               </button>
             ) : (
               <button
@@ -934,7 +934,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
               className="text-xl font-light text-emerald-700 dark:text-emerald-300"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              Sello anadido
+              Sello añadido
             </p>
             <p className="text-[10px] uppercase tracking-widest text-emerald-500 dark:text-emerald-600">
               {card?.customerName || "Cliente"} · {card?.stamps} / {card?.maxStamps} visitas
@@ -988,15 +988,15 @@ function StampView({ onLogout }: { onLogout: () => void }) {
         )}
       </AnimatePresence>
 
-      {/* Cerrar sesion */}
+      {/* Cerrar sesión */}
       <button
         onClick={onLogout}
         className="text-[10px] uppercase tracking-[0.3em] text-stone-300 dark:text-stone-700 hover:text-stone-600 dark:hover:text-stone-400 transition-colors duration-200 mx-auto"
       >
-        Cerrar sesion
+        Cerrar sesión
       </button>
 
-      {/* Historial de sellos de sesion */}
+      {/* Historial de sellos de sesión */}
       {stampHistory.length > 0 && (
         <div className="w-full space-y-2">
           <p className="text-[10px] uppercase tracking-widest text-stone-300 dark:text-stone-700 text-center">
@@ -1156,7 +1156,7 @@ function RewardConfig() {
             </button>
           </div>
           <p className="text-[11px] text-stone-400 dark:text-stone-600">
-            Las tarjetas nuevas usaran este numero. Las existentes no se afectan.
+            Las tarjetas nuevas usarán este número. Las existentes no se afectan.
           </p>
         </div>
       </div>
