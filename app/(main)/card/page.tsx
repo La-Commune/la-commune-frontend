@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { getCustomerSession } from "@/app/actions/customerSession";
+import { PageLoading } from "@/components/ui/EmptyState";
 
 export default function CardPage() {
   const router = useRouter();
@@ -36,9 +37,5 @@ export default function CardPage() {
     resolve();
   }, [router]);
 
-  return (
-    <div className="flex flex-1 items-center justify-center">
-      <p className="text-sm text-stone-500">Cargando tu tarjeta...</p>
-    </div>
-  );
+  return <PageLoading message="Cargando tu tarjeta" />;
 }
