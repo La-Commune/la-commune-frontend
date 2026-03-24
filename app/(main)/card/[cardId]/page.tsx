@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
 import { PushPrompt } from "@/components/ui/PushPrompt";
+import { getReferralCount } from "@/services/customer.service";
 
 
 // Pantalla cuando el cliente o tarjeta ya no existe
@@ -553,6 +554,19 @@ function Card({
   }, [router]);
 
   const [copied, setCopied] = useState(false);
+  const [referralCount, setReferralCount] = useState(0);
+
+  // Cargar conteo de referidos
+  useEffect(() => {
+    getReferralCount(customerId)
+      .then(setReferralCount)
+      .catch(() => {}); // silencioso
+  }, [customerId]);
+
+  // Link de referido: usa el customerId como param estable
+  const referralUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/onboarding?ref=${customerId}`
+    : "";
 
   const handleShare = async () => {
     if (typeof navigator !== "undefined" && navigator.share) {
@@ -560,9 +574,9 @@ function Card({
         await navigator.share({
           title: "La Commune · Tarjeta de fidelidad",
           text: name
-            ? `${name} ya tiene su tarjeta de fidelidad en La Commune. Cada visita suma — a las 5 te invitan una bebida.`
-            : "Ya tengo mi tarjeta de fidelidad en La Commune. Cada visita suma — a las 5 te invitan una bebida.",
-          url: window.location.href,
+            ? `${name} te invita a La Commune. Registrate y ambos reciben un sello extra en su tarjeta de fidelidad.`
+            : "Te invito a La Commune. Registrate y ambos recibimos un sello extra en nuestra tarjeta de fidelidad.",
+          url: referralUrl,
         });
         return;
       } catch {
@@ -571,7 +585,7 @@ function Card({
     }
     // Fallback: copy link to clipboard
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      await navigator.clipboard.writeText(referralUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -770,24 +784,62 @@ function Card({
           </Link>
 
           <DownloadCardButton cardId={cardId} customerName={name} />
-
-          <button
-            onClick={handleShare}
-            className="flex flex-col items-center gap-2 group sm:hidden"
-          >
-            <span className="w-11 h-11 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center group-hover:border-stone-500 dark:group-hover:border-stone-500 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px] text-stone-400 dark:text-stone-500 group-hover:text-stone-700 dark:group-hover:text-stone-300 transition-colors">
-                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
-              </svg>
-            </span>
-            <span className="text-[10px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-500 group-hover:text-stone-600 dark:group-hover:text-stone-400 transition-colors">
-              {copied ? "Copiado!" : "Invitar"}
-            </span>
-          </button>
         </motion.div>
 
         {/* Push notification prompt */}
         <PushPrompt clienteId={customerId} />
+
+        {/* Sección referidos */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="w-full max-w-xs space-y-4"
+        >
+          <div className="rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-neutral-900 px-5 py-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <p className="text-sm font-medium text-stone-800 dark:text-stone-200">
+                  Invita a un amigo
+                </p>
+                <p className="text-[11px] text-stone-400 dark:text-stone-500 leading-snug">
+                  Ambos reciben un sello extra
+                </p>
+              </div>
+              {referralCount > 0 && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40">
+                  <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                    {referralCount}
+                  </span>
+                  <span className="text-[10px] text-emerald-500 dark:text-emerald-500">
+                    {referralCount === 1 ? "invitado" : "invitados"}
+                  </span>
+                </span>
+              )}
+            </div>
+
+            <button
+              onClick={handleShare}
+              className="w-full flex items-center justify-center gap-2.5 rounded-xl bg-stone-800 dark:bg-white text-white dark:text-neutral-900 py-3 text-xs uppercase tracking-[0.2em] hover:bg-stone-900 dark:hover:bg-stone-100 transition-colors"
+            >
+              {copied ? (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  Link copiado
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+                  </svg>
+                  Compartir invitacion
+                </>
+              )}
+            </button>
+          </div>
+        </motion.div>
 
       </div>
 

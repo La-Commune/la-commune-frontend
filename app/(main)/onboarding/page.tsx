@@ -29,6 +29,7 @@ function OnboardingForm() {
   const params = useSearchParams();
   const router = useRouter();
   const cardId = params!.get("cardId");
+  const refCustomerId = params!.get("ref"); // referido directo por customer ID
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -117,7 +118,22 @@ function OnboardingForm() {
       }
 
       let referrerCustomerId: string | undefined;
-      if (cardId) {
+      // Prioridad: ref (customer ID directo) > cardId (buscar cliente de la tarjeta)
+      if (refCustomerId) {
+        // Verificar que el customer existe y es activo
+        try {
+          const { data: refCustomer } = await supabase
+            .from("clientes")
+            .select("id")
+            .eq("negocio_id", NEGOCIO_ID)
+            .eq("id", refCustomerId)
+            .eq("activo", true)
+            .single();
+          referrerCustomerId = refCustomer?.id;
+        } catch {
+          // No bloquear el registro si el lookup falla
+        }
+      } else if (cardId) {
         try {
           const { data: referrerCard } = await supabase
             .from("tarjetas")
@@ -257,6 +273,19 @@ function OnboardingForm() {
             transition={{ duration: 0.8 }}
             className="w-full max-w-sm mx-auto space-y-8 text-center desktop-form-card"
           >
+            {/* Referral banner */}
+            {(refCustomerId || cardId) && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="rounded-xl border border-emerald-800/30 bg-emerald-900/10 px-4 py-3 text-center"
+              >
+                <p className="text-xs text-emerald-400 tracking-wide">
+                  Un amigo te invito — ambos reciben un sello extra
+                </p>
+              </motion.div>
+            )}
+
             {/* Header */}
             <div className="space-y-2">
               <h1 className="font-display text-3xl font-light tracking-wide">
