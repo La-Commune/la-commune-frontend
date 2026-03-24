@@ -8,6 +8,8 @@ import { getFullMenu } from "@/services/menu.service";
 import { PromoBannerSticky } from "@/components/ui/promos/PromoBanner";
 import { checkBaristaSession } from "@/app/actions/verifyAdminPin";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { LoadingButton } from "@/components/ui/LoadingButton";
 
 function MenuItemImage({ src, alt }: { src: string; alt: string }) {
   const [loaded, setLoaded] = useState(false);
@@ -31,6 +33,7 @@ export default function CafeMenu() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
+  const [retrying, setRetrying] = useState(false);
   const [activeFilter, setActiveFilterState] = useState<string | null>(null);
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -219,43 +222,39 @@ export default function CafeMenu() {
           </div>
         )}
 
-        {/* Sin conexion */}
+        {/* Sin conexión / Error — premium con ilustración */}
         {!loading && error && (
-          <div className="flex flex-col items-center justify-center py-32 gap-6 text-center print:hidden">
-            <p className="text-xs uppercase tracking-[0.4em] text-stone-400 dark:text-stone-500">
-              {isOnline ? "Error al cargar" : "Sin conexion"}
-            </p>
-            <p className="font-display text-4xl font-light tracking-[0.1em] text-stone-500 dark:text-stone-400">
-              {isOnline ? "Algo salio mal" : "Sin internet"}
-            </p>
-            <div className="flex items-center gap-4">
-              <span aria-hidden="true" className="w-8 h-px bg-stone-200 dark:bg-stone-700" />
-              <p className="text-sm text-stone-400 dark:text-stone-500 max-w-[22ch] leading-relaxed">
-                {isOnline
-                  ? "No pudimos cargar el menu. Intenta de nuevo."
-                  : "Conectate a internet para ver el menu."}
-              </p>
-              <span aria-hidden="true" className="w-8 h-px bg-stone-200 dark:bg-stone-700" />
-            </div>
+          <div className="flex flex-col items-center justify-center py-20 print:hidden">
+            <EmptyState
+              illustration={isOnline ? "error" : "offline"}
+              title={isOnline ? "Algo salió mal" : "Sin internet"}
+              description={
+                isOnline
+                  ? "No pudimos cargar el menú. Intenta de nuevo."
+                  : "Conéctate a internet para ver el menú. Se actualizará automáticamente."
+              }
+              variant="light"
+            />
             {isOnline && (
-              <button
-                onClick={() => {
-                  setError(false);
-                  setLoading(true);
-                  getFullMenu()
-                    .then((data) => setSections(data.filter((s) => s.active)))
-                    .catch(() => setError(true))
-                    .finally(() => setLoading(false));
-                }}
-                className="text-xs uppercase tracking-[0.35em] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors duration-300"
-              >
-                Reintentar
-              </button>
-            )}
-            {!isOnline && (
-              <p className="text-xs uppercase tracking-[0.3em] text-stone-400 dark:text-stone-500">
-                Se actualizara automaticamente al reconectarte
-              </p>
+              <div className="mt-2">
+                <LoadingButton
+                  loading={retrying}
+                  loadingText="Cargando"
+                  variant="outline"
+                  size="md"
+                  onClick={() => {
+                    setRetrying(true);
+                    setError(false);
+                    setLoading(true);
+                    getFullMenu()
+                      .then((data) => setSections(data.filter((s) => s.active)))
+                      .catch(() => setError(true))
+                      .finally(() => { setLoading(false); setRetrying(false); });
+                  }}
+                >
+                  Reintentar
+                </LoadingButton>
+              </div>
             )}
           </div>
         )}
@@ -286,16 +285,18 @@ export default function CafeMenu() {
           </div>
         )}
 
-        {/* Sin resultados */}
+        {/* Sin resultados — empty state premium */}
         {!loading && !error && visibleSections.length === 0 && (
-          <div className="text-center py-20 space-y-2 print:hidden">
-            <p className="text-stone-500 dark:text-stone-400 text-sm">Sin items con ese filtro</p>
-            <button
-              onClick={() => { setActiveFilter(null); setActiveTag(null); }}
-              className="text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500 hover:text-amber-700 dark:hover:text-amber-500 transition-colors duration-200 underline underline-offset-4"
-            >
-              Ver todo
-            </button>
+          <div className="print:hidden">
+            <EmptyState
+              illustration="search"
+              title="Sin resultados"
+              description="No encontramos items con ese filtro. Prueba con otra categoría."
+              actionLabel="Ver todo el menú"
+              onAction={() => { setActiveFilter(null); setActiveTag(null); }}
+              variant="light"
+              compact
+            />
           </div>
         )}
 

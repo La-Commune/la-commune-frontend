@@ -8,6 +8,7 @@ import { StampEvent } from "@/models/stamp-event.model";
 import { getStampEventsByCard, getCustomerStats, CustomerStats } from "@/services/card.service";
 import { timeAgo } from "@/lib/utils";
 import { getCustomerSession } from "@/app/actions/customerSession";
+import { EmptyState, StatsSkeleton, ChartSkeleton, TimelineSkeleton } from "@/components/ui/EmptyState";
 
 type EventRow = StampEvent & { id: string };
 
@@ -293,43 +294,35 @@ export default function HistoryPage() {
           </h1>
         </div>
 
-        {/* Loading skeleton */}
+        {/* Loading skeleton — premium staggered */}
         {loading && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-24 rounded-2xl bg-stone-900 animate-pulse" />
-              ))}
-            </div>
-            <div className="h-32 rounded-2xl bg-stone-900 animate-pulse" />
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 rounded-2xl bg-stone-900 animate-pulse" style={{ opacity: 1 - (i - 1) * 0.2 }} />
-            ))}
+          <div className="space-y-6">
+            <StatsSkeleton />
+            <ChartSkeleton />
+            <TimelineSkeleton count={3} />
           </div>
         )}
 
-        {/* Error */}
-        {error && (
-          <p className="text-[11px] uppercase tracking-widest text-red-500 text-center mt-8">{error}</p>
+        {/* Error — premium con ilustración */}
+        {error && !loading && (
+          <EmptyState
+            illustration="error"
+            title={error}
+            description="Revisa tu conexión e intenta de nuevo."
+            actionLabel="Reintentar"
+            onAction={() => window.location.reload()}
+          />
         )}
 
-        {/* Empty state */}
+        {/* Empty state — premium con ilustración animada */}
         {!loading && !error && events.length === 0 && (
-          <div className="text-center mt-20 space-y-4">
-            <p className="text-stone-400 text-sm leading-relaxed">
-              Tu historial aparecerá aquí cuando hagas tu primera visita.
-            </p>
-            <p className="text-[11px] text-stone-600 leading-relaxed max-w-[30ch] mx-auto">
-              Pide un café en la barra y el barista escaneará tu QR para agregar un sello.
-            </p>
-            <Link
-              href={`/card/${cardId}`}
-              className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest text-stone-500 hover:text-white transition-colors mt-2"
-            >
-              <span aria-hidden="true" className="w-4 h-px bg-stone-700" />
-              Ver mi tarjeta
-            </Link>
-          </div>
+          <EmptyState
+            illustration="history"
+            title="Aún no hay visitas"
+            description="Tu historial aparecerá aquí cuando hagas tu primera visita. Pide un café en la barra y el barista escaneará tu QR."
+            actionLabel="Ver mi tarjeta"
+            href={`/card/${cardId}`}
+          />
         )}
 
         {/* Content */}

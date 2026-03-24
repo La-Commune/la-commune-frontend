@@ -13,6 +13,8 @@ import { getDefaultReward } from "@/services/reward.service";
 import { setCustomerSession } from "@/app/actions/customerSession";
 import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
 import { logger } from "@/lib/logger";
+import { Skeleton } from "@/components/ui/EmptyState";
+import { LoadingButton } from "@/components/ui/LoadingButton";
 
 type ConfettiInstance = (opts: any) => void;
 
@@ -25,8 +27,10 @@ export default function RedeemPage() {
 
   const [toast, setToast] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [cardDoc, setCardDoc] = useState<Card | null>(null);
   const [rewardDoc, setRewardDoc] = useState<Reward | null>(null);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   // Load reward once
   useEffect(() => {
@@ -44,11 +48,13 @@ export default function RedeemPage() {
     const supabase = getSupabase();
 
     // Fetch inicial — cubre refresh de página y cuando realtime aún no entrega
-    supabase
-      .from("tarjetas")
-      .select("*")
-      .eq("id", cardId)
-      .single()
+    Promise.resolve(
+      supabase
+        .from("tarjetas")
+        .select("*")
+        .eq("id", cardId)
+        .single()
+    )
       .then(({ data }) => {
         if (data) {
           setCardDoc({
@@ -59,7 +65,8 @@ export default function RedeemPage() {
             createdAt: new Date(data.creado_en),
           });
         }
-      });
+      })
+      .finally(() => setInitialLoading(false));
 
     const channel = supabase
       .channel(`card-redeem-${cardId}`)
@@ -207,26 +214,31 @@ export default function RedeemPage() {
   }, [fireConfetti]);
 
   const handleShare = async () => {
+    setSharing(true);
     const shareUrl = typeof window !== "undefined" ? window.location.origin + `/card/${cardId}` : "";
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share({
-          title: "La Commune · Tarjeta completada!",
-          text: "Complete mi tarjeta de fidelidad en La Commune! Cada visita suma — y ya gane mi bebida de cortesia.",
-          url: shareUrl,
-        });
-        return;
-      } catch {
-        // User cancelled or share failed — fall through to clipboard
-      }
-    }
-    // Fallback: copy link
     try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Clipboard not available
+      if (typeof navigator !== "undefined" && navigator.share) {
+        try {
+          await navigator.share({
+            title: "La Commune · Tarjeta completada!",
+            text: "Complete mi tarjeta de fidelidad en La Commune! Cada visita suma — y ya gane mi bebida de cortesia.",
+            url: shareUrl,
+          });
+          return;
+        } catch {
+          // User cancelled or share failed — fall through to clipboard
+        }
+      }
+      // Fallback: copy link
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch {
+        // Clipboard not available
+      }
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -285,72 +297,99 @@ export default function RedeemPage() {
       {/* Contenido */}
       <div className="flex-1 flex flex-col items-center justify-center gap-10 px-4 pb-16 relative z-10">
 
-        {/* Encabezado celebratorio */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-center space-y-3"
-        >
-          <p className="text-[10px] uppercase tracking-[0.45em] text-amber-600">
-            Tarjeta completa
-          </p>
-          <h1 className="font-display text-5xl sm:text-6xl font-light tracking-wide">
-            Lo lograste!
-          </h1>
-          <p className="text-stone-400 text-sm tracking-wide max-w-xs mx-auto">
-            {rewardDescription}
-          </p>
-        </motion.div>
-
-        {/* Separador */}
-        <motion.div
-          initial={{ opacity: 0, scaleX: 0 }}
-          animate={{ opacity: 1, scaleX: 1 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          aria-hidden="true" className="w-24 h-px bg-stone-700"
-        />
-
-        {/* Instruccion + QR */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="flex flex-col items-center gap-5"
-        >
-          <p className="text-[10px] uppercase tracking-[0.35em] text-stone-500">
-            Muestrale este codigo al barista
-          </p>
-          <div className="p-4 bg-white rounded-2xl shadow-xl max-w-[60vw] sm:max-w-none">
-            <QRCodeCanvas
-              value={qrUrl}
-              size={200}
-              bgColor="#ffffff"
-              fgColor="#1a1a1a"
-              level="M"
-              className="w-full h-auto max-w-[200px]"
-            />
+        {/* Skeleton mientras carga la tarjeta */}
+        {initialLoading && (
+          <div className="flex flex-col items-center gap-8 w-full max-w-xs">
+            <div className="text-center space-y-4 w-full">
+              <Skeleton className="h-3 w-24 mx-auto" />
+              <Skeleton className="h-12 w-48 mx-auto" />
+              <Skeleton className="h-3 w-40 mx-auto" />
+            </div>
+            <Skeleton className="h-px w-24" />
+            <div className="flex flex-col items-center gap-4">
+              <Skeleton className="h-3 w-44" />
+              <Skeleton className="h-[200px] w-[200px] rounded-2xl" />
+            </div>
           </div>
-        </motion.div>
+        )}
 
-        {/* Separador */}
-        <motion.div
-          initial={{ opacity: 0, scaleX: 0 }}
-          animate={{ opacity: 1, scaleX: 1 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
-          aria-hidden="true" className="w-24 h-px bg-stone-700"
-        />
+        {/* Contenido real — una vez cargada la tarjeta */}
+        {!initialLoading && (
+          <>
+            {/* Encabezado celebratorio */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="text-center space-y-3"
+            >
+              <p className="text-[10px] uppercase tracking-[0.45em] text-amber-600">
+                Tarjeta completa
+              </p>
+              <h1 className="font-display text-5xl sm:text-6xl font-light tracking-wide">
+                Lo lograste!
+              </h1>
+              <p className="text-stone-400 text-sm tracking-wide max-w-xs mx-auto">
+                {rewardDescription}
+              </p>
+            </motion.div>
 
-        {/* Boton compartir — siempre visible con fallback a clipboard */}
-        <motion.button
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.7 }}
-          onClick={handleShare}
-          className="px-8 py-3 rounded-2xl border border-stone-700 text-[11px] uppercase tracking-[0.3em] text-stone-400 hover:border-stone-500 hover:text-stone-200 transition-colors duration-300"
-        >
-          {copied ? "Enlace copiado!" : "Compartir logro"}
-        </motion.button>
+            {/* Separador */}
+            <motion.div
+              initial={{ opacity: 0, scaleX: 0 }}
+              animate={{ opacity: 1, scaleX: 1 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              aria-hidden="true" className="w-24 h-px bg-stone-700"
+            />
+
+            {/* Instruccion + QR */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="flex flex-col items-center gap-5"
+            >
+              <p className="text-[10px] uppercase tracking-[0.35em] text-stone-500">
+                Muestrale este codigo al barista
+              </p>
+              <div className="p-4 bg-white rounded-2xl shadow-xl max-w-[60vw] sm:max-w-none">
+                <QRCodeCanvas
+                  value={qrUrl}
+                  size={200}
+                  bgColor="#ffffff"
+                  fgColor="#1a1a1a"
+                  level="M"
+                  className="w-full h-auto max-w-[200px]"
+                />
+              </div>
+            </motion.div>
+
+            {/* Separador */}
+            <motion.div
+              initial={{ opacity: 0, scaleX: 0 }}
+              animate={{ opacity: 1, scaleX: 1 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+              aria-hidden="true" className="w-24 h-px bg-stone-700"
+            />
+
+            {/* Boton compartir — con loading state */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.7 }}
+            >
+              <LoadingButton
+                onClick={handleShare}
+                loading={sharing}
+                loadingText="Compartiendo"
+                variant="outline"
+                size="lg"
+              >
+                {copied ? "Enlace copiado!" : "Compartir logro"}
+              </LoadingButton>
+            </motion.div>
+          </>
+        )}
 
       </div>
     </div>
