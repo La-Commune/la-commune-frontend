@@ -9,7 +9,7 @@ test.describe("Frontend — Onboarding", () => {
   test("muestra la pantalla de registro", async ({ page }) => {
     await page.goto("/onboarding");
     await expect(page.getByText("Crea tu tarjeta")).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText("Ingresa tu WhatsApp y un PIN de 4 digitos.")).toBeVisible();
+    await expect(page.getByText("Ingresa tu WhatsApp y un PIN de 4 dígitos.")).toBeVisible();
   });
 
   test("muestra los campos del formulario", async ({ page }) => {
@@ -39,7 +39,7 @@ test.describe("Frontend — Onboarding", () => {
     await phoneInput.fill("55512");
     await phoneInput.blur();
 
-    await expect(page.getByText("Ingresa los 10 digitos")).toBeVisible();
+    await expect(page.getByText("Ingresa los 10 dígitos")).toBeVisible();
   });
 
   test("contador de teléfono muestra progreso", async ({ page }) => {
@@ -74,7 +74,7 @@ test.describe("Frontend — Onboarding", () => {
     await emailInput.fill("invalido");
     await emailInput.blur();
 
-    await expect(page.getByText("Ingresa un email valido")).toBeVisible();
+    await expect(page.getByText("Ingresa un email válido")).toBeVisible();
   });
 
   test("botón se habilita con teléfono y PIN válidos", async ({ page }) => {
