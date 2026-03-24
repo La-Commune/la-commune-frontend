@@ -13,5 +13,5 @@ export interface StampEvent {
 
   notes?: string;
 
-  source: "manual" | "promo" | "auto" | "redemption" | "referral_bonus";
+  source: "manual" | "promo" | "auto" | "redemption" | "canje" | "referral_bonus";
 }
