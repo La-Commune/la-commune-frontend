@@ -316,7 +316,7 @@ const PremiumSection: React.FC<SectionProps> = ({
               onClick={() => router.push(ctaLink)}
               className="inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.35em] text-[#e8e0d2] hover:text-[#e8e0d2] transition-colors duration-300 group"
             >
-              <span aria-hidden="true" className="w-6 h-px bg-[#6b6458] group-hover:w-10 group-hover:bg-white transition-all duration-500" />
+              <span aria-hidden="true" className="w-6 h-px bg-[#8a7f72] group-hover:w-10 group-hover:bg-white transition-all duration-500" />
               {ctaText}
             </button>
 
@@ -324,14 +324,14 @@ const PremiumSection: React.FC<SectionProps> = ({
               onSecondaryCtaClick ? (
                 <button
                   onClick={onSecondaryCtaClick}
-                  className="text-[10px] uppercase tracking-[0.3em] text-[#6b6458] hover:text-[#a89f90] transition-colors duration-300"
+                  className="text-[10px] uppercase tracking-[0.3em] text-[#8a7f72] hover:text-[#a89f90] transition-colors duration-300"
                 >
                   {secondaryCtaText}
                 </button>
               ) : secondaryCtaLink ? (
                 <Link
                   href={secondaryCtaLink}
-                  className="text-[10px] uppercase tracking-[0.3em] text-[#6b6458] hover:text-[#a89f90] transition-colors duration-300"
+                  className="text-[10px] uppercase tracking-[0.3em] text-[#8a7f72] hover:text-[#a89f90] transition-colors duration-300"
                 >
                   {secondaryCtaText}
                 </Link>
@@ -349,14 +349,14 @@ const PremiumSection: React.FC<SectionProps> = ({
           transition={{ delay: 2.5, duration: 1 }}
           className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-3"
         >
-          <div className="w-[22px] h-[36px] rounded-[11px] border-[1.5px] border-[#6b6458] flex justify-center">
+          <div className="w-[22px] h-[36px] rounded-[11px] border-[1.5px] border-[#8a7f72] flex justify-center">
             <motion.div
               animate={prefersReduced ? {} : { y: [0, 8, 0], opacity: [1, 0.3, 1] }}
               transition={prefersReduced ? {} : { duration: 2, repeat: Infinity, ease: "easeInOut" }}
               className="w-[2px] h-[6px] bg-[#c8956c] rounded-sm mt-2"
             />
           </div>
-          <span className="text-xs uppercase tracking-[0.35em] text-[#6b6458]">
+          <span className="text-xs uppercase tracking-[0.35em] text-[#8a7f72]">
             Scroll
           </span>
         </motion.div>
@@ -405,7 +405,7 @@ const LoyaltySection = ({
   const steps = [
     {
       step: "01",
-      title: "Registrate",
+      title: "Regístrate",
       desc: "Solo necesitas tu WhatsApp. Tu tarjeta digital se crea al instante.",
     },
     {
@@ -521,7 +521,7 @@ const LoyaltySection = ({
             </Link>
             <Link
               href="/recover"
-              className="text-xs uppercase tracking-[0.3em] text-[#6b6458] hover:text-[#a89f90] transition-colors duration-300"
+              className="text-xs uppercase tracking-[0.3em] text-[#8a7f72] hover:text-[#a89f90] transition-colors duration-300"
             >
               Ya tengo cuenta
             </Link>
@@ -591,7 +591,7 @@ export default function Home() {
         </span>
         <div className="hidden sm:flex gap-8">
           {[
-            { label: "Menu", href: "/menu" },
+            { label: "Menú", href: "/menu" },
             { label: "Fidelidad", href: loyaltyCta.link },
           ].map((item) => (
             <Link
@@ -665,8 +665,8 @@ export default function Home() {
               <p className="font-display text-3xl sm:text-4xl font-light tracking-[0.25em] text-[#e8e0d2]">
                 La Commune
               </p>
-              <p className="text-xs uppercase tracking-[0.4em] text-[#6b6458] mt-2">
-                Cafe · Comunidad · Hidalgo
+              <p className="text-xs uppercase tracking-[0.4em] text-[#8a7f72] mt-2">
+                Café · Comunidad · Hidalgo
               </p>
               <div aria-hidden="true" className="w-8 h-px bg-[#c8956c] mt-6 mb-8 mx-auto" />
             </div>
@@ -674,7 +674,7 @@ export default function Home() {
             {/* Columna 2: Horario + ubicacion */}
             <div className="desktop-footer-col">
               <p className="text-sm text-[#a89f90] tracking-wide">
-                Todos los dias · 10:00 - 20:00
+                Todos los días · 10:00 - 20:00
               </p>
               {openStatus && (
                 <div className="flex items-center gap-2 mt-3">
@@ -698,8 +698,8 @@ export default function Home() {
                 <p className="text-sm text-[#a89f90] group-hover:text-[#e8e0d2] transition-colors duration-300">
                   Santa Natividad 135, Mineral de la Reforma
                 </p>
-                <p className="text-xs uppercase tracking-[0.25em] text-[#6b6458] group-hover:text-[#a89f90] transition-colors duration-300 mt-2">
-                  Como llegar &rarr;
+                <p className="text-xs uppercase tracking-[0.25em] text-[#8a7f72] group-hover:text-[#a89f90] transition-colors duration-300 mt-2">
+                  Cómo llegar &rarr;
                 </p>
               </a>
             </div>
@@ -710,7 +710,7 @@ export default function Home() {
                 href="/menu"
                 className="text-xs uppercase tracking-[0.25em] text-[#a89f90] hover:text-[#c8956c] transition-colors duration-300"
               >
-                Menu
+                Menú
               </Link>
               <Link
                 href={loyaltyCta.link}
@@ -720,7 +720,7 @@ export default function Home() {
               </Link>
               <Link
                 href="/admin"
-                className="text-xs uppercase tracking-[0.25em] text-[#6b6458] hover:text-[#a89f90] transition-colors duration-300"
+                className="text-xs uppercase tracking-[0.25em] text-[#8a7f72] hover:text-[#a89f90] transition-colors duration-300"
               >
                 Personal
               </Link>
@@ -729,7 +729,7 @@ export default function Home() {
 
           {/* Copyright */}
           <div className="mt-16 flex justify-center desktop-footer-copy">
-            <p className="text-xs tracking-[0.3em] uppercase text-[#6b6458]" suppressHydrationWarning>
+            <p className="text-xs tracking-[0.3em] uppercase text-[#8a7f72]" suppressHydrationWarning>
               &copy; {new Date().getFullYear()} La Commune
             </p>
           </div>

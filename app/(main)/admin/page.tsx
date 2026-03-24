@@ -1266,6 +1266,7 @@ function RewardConfig() {
 export default function AdminPage() {
   const pinLength = 4;
 
+  const [checkingSession, setCheckingSession] = useState(true);
   const [authed, setAuthed] = useState(false);
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
@@ -1299,7 +1300,7 @@ export default function AdminPage() {
         const tabs = getTabsForRole(session.rol);
         if (tabs.length > 0) setAdminTab(tabs[0]);
       }
-    });
+    }).finally(() => setCheckingSession(false));
   }, []);
 
   const handlePinSubmit = useCallback(async (pinValue: string) => {
@@ -1361,7 +1362,34 @@ export default function AdminPage() {
       <div className="flex-1 flex flex-col items-center justify-center gap-10 px-6 sm:px-10 pb-16">
 
         <AnimatePresence mode="wait">
-          {!authed ? (
+          {checkingSession ? (
+            <motion.div
+              key="session-check"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="flex flex-col items-center gap-8 w-full max-w-sm"
+            >
+              <div className="text-center space-y-3">
+                <div className="h-9 w-48 rounded-lg skeleton-shimmer mx-auto" />
+                <div className="h-3 w-24 rounded-full skeleton-shimmer mx-auto" />
+              </div>
+              <div className="flex gap-5 justify-center">
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="flex flex-col items-center gap-1">
+                    <div className="w-2.5 h-2.5 rounded-full skeleton-shimmer" />
+                    <div className="w-7 h-px skeleton-shimmer" />
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-3 gap-3 w-full max-w-[220px]">
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <div key={i} className="aspect-square rounded-full skeleton-shimmer" />
+                ))}
+              </div>
+            </motion.div>
+          ) : !authed ? (
             <motion.div
               key="pin"
               initial={{ opacity: 0, y: 16 }}
