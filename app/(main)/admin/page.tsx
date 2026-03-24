@@ -18,6 +18,8 @@ import { Reward } from "@/models/reward.model";
 import { ILLUSTRATION_CATALOG, StampIllustration, type IllustrationId } from "@/components/ui/stamp-illustrations";
 import { getFullMenu } from "@/services/menu.service";
 import { timeAgo } from "@/lib/utils";
+import { hapticMedium, hapticSuccess, hapticCelebration, hapticError } from "@/lib/haptics";
+import { fireCelebration } from "@/lib/confetti";
 import { toast } from "@/components/ui/use-toast";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
@@ -512,6 +514,7 @@ function StampView() {
         ...prev,
       ].slice(0, 5));
       setScreen("success");
+      hapticSuccess();
 
       // Iniciar countdown de undo (30s)
       setLastEventId(result.eventId);
@@ -530,6 +533,7 @@ function StampView() {
         });
       }, 1000);
     } catch {
+      hapticError();
       setError("Error al anadir el sello. Intenta de nuevo.");
     }
     setLoading(false);
@@ -574,12 +578,15 @@ function StampView() {
         rewardRef: defaultReward.id,
       });
       setScreen("redeemed");
+      hapticCelebration();
+      fireCelebration();
       resetTimer.current = setTimeout(() => {
         setScreen("stamp");
         setCardInput("");
         setCard(null);
       }, 4000);
     } catch {
+      hapticError();
       setError("Error al canjear. Intenta de nuevo.");
     }
     setLoading(false);
@@ -1302,6 +1309,7 @@ export default function AdminPage() {
     try {
       const result = await verifyAdminPin(pinValue);
       if (result.ok) {
+        hapticSuccess();
         setAuthed(true);
         setUserName(result.nombre);
         setUserRole(result.rol);
@@ -1310,14 +1318,17 @@ export default function AdminPage() {
         const tabs = getTabsForRole(result.rol);
         if (tabs.length > 0) setAdminTab(tabs[0]);
       } else if (result.blocked) {
+        hapticError();
         setLockout(result.retryAfter);
         setPinError("");
         setPin("");
       } else {
+        hapticError();
         setPinError("PIN incorrecto");
         setPin("");
       }
     } catch {
+      hapticError();
       setPinError("Error al verificar. Intenta de nuevo.");
       setPin("");
     }

@@ -157,10 +157,10 @@ export function PwaRegister() {
           <div className="flex items-start gap-4">
             <div className="flex-1 space-y-2">
               <p className="text-[11px] uppercase tracking-[0.3em] text-stone-400">
-                Nueva version
+                Nueva versión
               </p>
               <p className="text-sm text-stone-300 leading-snug">
-                Hay una nueva version disponible de La Commune.
+                Hay una nueva versión disponible de La Commune.
               </p>
               <button
                 onClick={reloadForUpdate}
