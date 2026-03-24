@@ -24,6 +24,8 @@ import { PushPrompt } from "@/components/ui/PushPrompt";
 import { getReferralCount } from "@/services/customer.service";
 import { fireCelebration } from "@/lib/confetti";
 import { hapticCelebration } from "@/lib/haptics";
+import { useRealtimeToasts } from "@/hooks/useRealtimeToasts";
+import { useInAppToast, InAppToastContainer } from "@/components/ui/InAppToast";
 
 
 // Pantalla cuando el cliente o tarjeta ya no existe
@@ -459,6 +461,10 @@ function Card({
   const router = useRouter();
   const name = customer?.name?.trim();
 
+  // In-app realtime toasts
+  const { toasts, showToast, dismiss } = useInAppToast();
+  useRealtimeToasts(customerId, showToast);
+
   // Reward info — usa el rewardId de la tarjeta, fallback a default
   const [rewardDoc, setRewardDoc] = useState<Reward | null>(null);
 
@@ -601,6 +607,9 @@ function Card({
 
   return (
     <div id="main-content" className="min-h-screen bg-stone-50 text-stone-900 dark:bg-neutral-950 dark:text-white flex flex-col">
+
+      {/* In-app toasts */}
+      <InAppToastContainer toasts={toasts} onDismiss={dismiss} />
 
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 sm:px-10 py-5">
