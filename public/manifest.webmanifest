@@ -1,7 +1,7 @@
 {
   "name": "La Commune — Tarjeta de Fidelidad",
   "short_name": "La Commune",
-  "description": "Tu tarjeta de sellos digital — Café La Commune",
+  "description": "Tu tarjeta de fidelidad digital — Café La Commune",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -33,7 +33,7 @@
   "shortcuts": [
     {
       "name": "Mi Tarjeta",
-      "url": "/card",
+      "url": "/card/preview",
       "description": "Ver mi tarjeta de sellos"
     },
     {
