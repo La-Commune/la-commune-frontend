@@ -28,6 +28,7 @@ import {
   removeFromQueue,
   markFailed,
   getQueue,
+  getQueueSync,
   resetFailed,
   hasPending,
   requestBackgroundSync,
@@ -316,11 +317,12 @@ function StampView() {
 
   // Cargar queue al montar
   useEffect(() => {
-    setPendingQueue(getQueue());
+    getQueue().then(setPendingQueue);
   }, []);
 
   const syncQueue = useCallback(async () => {
-    const pending = getQueue().filter((q) => q.status === "pending");
+    const all = await getQueue();
+    const pending = all.filter((q) => q.status === "pending");
     if (pending.length === 0) return;
     setSyncStatus("syncing");
     let hasError = false;
@@ -333,15 +335,16 @@ function StampView() {
           drinkType: item.drinkType,
           size: item.size,
         });
-        removeFromQueue(item.id);
+        await removeFromQueue(item.id);
         syncedCount++;
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Error desconocido";
-        markFailed(item.id, msg);
+        await markFailed(item.id, msg);
         hasError = true;
       }
     }
-    setPendingQueue(getQueue());
+    const updatedQueue = await getQueue();
+    setPendingQueue(updatedQueue);
     setSyncStatus(hasError ? "error" : "idle");
 
     // Notificar al SW para que muestre notificacion si la app no esta enfocada
@@ -349,7 +352,7 @@ function StampView() {
       navigator.serviceWorker.controller.postMessage({
         type: "SYNC_COMPLETE",
         synced: syncedCount,
-        failed: hasError ? getQueue().filter((q) => q.status === "failed").length : 0,
+        failed: hasError ? updatedQueue.filter((q) => q.status === "failed").length : 0,
       });
     }
 
@@ -359,24 +362,24 @@ function StampView() {
         variant: "default",
       });
       // Limpiar la barra de sync despues de 3s si todo salio bien
-      setTimeout(() => {
-        setPendingQueue(getQueue());
+      setTimeout(async () => {
+        setPendingQueue(await getQueue());
       }, 3000);
     }
   }, []);
 
   // Auto-sync al recuperar conexion o al montar con pendientes
   useEffect(() => {
-    if (isOnline && hasPending()) {
-      syncQueue();
+    if (isOnline) {
+      hasPending().then((has) => { if (has) syncQueue(); });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOnline]);
 
   // Sync on mount si hay pendientes (cubre el caso donde la app se cerro y reabre con conexion)
   useEffect(() => {
-    if (navigator.onLine && hasPending()) {
-      syncQueue();
+    if (navigator.onLine) {
+      hasPending().then((has) => { if (has) syncQueue(); });
     }
     // Registrar periodic sync como fallback para reintentos automaticos
     requestPeriodicSync();
@@ -479,7 +482,7 @@ function StampView() {
     // Offline path: enqueue and show queued screen
     if (!isOnline) {
       const optimisticStamps = Math.min(card.stamps + 1, card.maxStamps);
-      enqueue({
+      await enqueue({
         cardId: card.id,
         customerId: card.customerId,
         customerName: card.customerName,
@@ -493,7 +496,7 @@ function StampView() {
         { customerName: card.customerName || "Cliente", stamps: optimisticStamps, maxStamps: card.maxStamps, time: new Date() },
         ...prev,
       ].slice(0, 5));
-      setPendingQueue(getQueue());
+      setPendingQueue(await getQueue());
       setScreen("queued");
       resetTimer.current = setTimeout(() => resetStampForm(), 3000);
       return;
@@ -653,7 +656,7 @@ function StampView() {
             </span>
             {syncStatus === "error" && (
               <button
-                onClick={() => { resetFailed(); setPendingQueue(getQueue()); syncQueue(); }}
+                onClick={async () => { await resetFailed(); setPendingQueue(await getQueue()); syncQueue(); }}
                 className="text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors"
               >
                 Reintentar
