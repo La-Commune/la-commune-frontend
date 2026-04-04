@@ -1,9 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { addMenuItem } from "@/services/menu.service";
+
+function scrollIntoCenter(e: React.FocusEvent<HTMLElement>) {
+  setTimeout(() => {
+    e.target.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 150);
+}
 
 export function AddItemSheet({
   sectionId,
@@ -16,6 +23,7 @@ export function AddItemSheet({
   onCancel: () => void;
   nextOrder: number;
 }) {
+  useBodyScrollLock();
   const keyboardOffset = useKeyboardOffset();
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
@@ -51,7 +59,6 @@ export function AddItemSheet({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:px-4"
-      style={{ paddingBottom: keyboardOffset, transition: "padding-bottom 0.15s ease" }}
       onClick={onCancel}
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
@@ -60,16 +67,28 @@ export function AddItemSheet({
         animate={{ y: 0 }}
         exit={{ y: "100%" }}
         transition={{ type: "spring", stiffness: 350, damping: 35 }}
-        className="relative w-full max-w-sm bg-white dark:bg-neutral-900 border-t sm:border border-stone-200 dark:border-stone-800 rounded-t-3xl sm:rounded-3xl px-6 pb-10 sm:pb-6 pt-5 space-y-4"
+        className="relative w-full max-w-sm bg-white dark:bg-neutral-900 border-t sm:border border-stone-200 dark:border-stone-800 rounded-t-3xl sm:rounded-3xl flex flex-col max-h-[85vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="w-10 h-1 bg-stone-300 dark:bg-stone-700 rounded-full mx-auto mb-2 sm:hidden" />
-        <p className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">Nuevo item</p>
-        <input className={inputCls} placeholder="Nombre *" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
-        <input className={inputCls} placeholder="Precio  (ej: 45)" type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
-        <input className={inputCls} placeholder="Ingredientes separados por coma" value={ingredients} onChange={(e) => setIngredients(e.target.value)} />
-        <input className={inputCls} placeholder="Nota (opcional)" value={note} onChange={(e) => setNote(e.target.value)} />
-        <div className="flex gap-2 pt-1">
+        {/* Handle + header — fixed */}
+        <div className="px-6 pt-5 pb-2 shrink-0">
+          <div className="w-10 h-1 bg-stone-300 dark:bg-stone-700 rounded-full mx-auto mb-3 sm:hidden" />
+          <p className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">Nuevo item</p>
+        </div>
+
+        {/* Scrollable content */}
+        <div
+          className="flex-1 overflow-y-auto overscroll-contain px-6 space-y-4"
+          style={{ paddingBottom: Math.max(keyboardOffset, 16), transition: "padding-bottom 0.15s ease" }}
+        >
+          <input className={inputCls} placeholder="Nombre *" value={name} onChange={(e) => setName(e.target.value)} autoFocus onFocus={scrollIntoCenter} />
+          <input className={inputCls} placeholder="Precio  (ej: 45)" type="number" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} onFocus={scrollIntoCenter} />
+          <input className={inputCls} placeholder="Ingredientes separados por coma" value={ingredients} onChange={(e) => setIngredients(e.target.value)} onFocus={scrollIntoCenter} />
+          <input className={inputCls} placeholder="Nota (opcional)" value={note} onChange={(e) => setNote(e.target.value)} onFocus={scrollIntoCenter} />
+        </div>
+
+        {/* Buttons — fixed at bottom */}
+        <div className="px-6 pt-3 pb-10 sm:pb-6 shrink-0 flex gap-2">
           <button
             onClick={handleSave}
             disabled={!name.trim() || saving}

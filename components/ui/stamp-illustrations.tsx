@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export type IllustrationId =
@@ -29,6 +30,8 @@ export interface IllustrationProps {
   realStamps?: number;
   /** Max stamps reales (sin bonus). Para el texto "de X". */
   realMaxStamps?: number;
+  /** Unique prefix for SVG IDs to avoid collisions between instances */
+  uid?: string;
 }
 
 /** Catálogo de ilustraciones con metadatos para el selector admin */
@@ -72,28 +75,29 @@ function colors(isDark: boolean) {
 // ═══════════════════════════════════════════
 function FlatWhiteCenital(p: IllustrationProps) {
   const c = colors(p.isDark);
+  const u = p.uid ?? "";
   const CUP_R = 58;
   const fr = (p.displayedStamps / p.maxStamps) * CUP_R;
 
   return (
     <svg viewBox="0 0 180 180" className="w-[170px] h-[170px]">
       <defs>
-        <radialGradient id="coffeeFill-fw" cx="50%" cy="50%" r="50%">
+        <radialGradient id={`${u}coffeeFill-fw`} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor={p.isDark ? "#5a3f20" : "#8b6b3d"} />
           <stop offset="55%" stopColor={p.isDark ? "#8b6b3d" : "#a07850"} />
           <stop offset="85%" stopColor="#c8956c" />
           <stop offset="100%" stopColor={p.isDark ? "#a07850" : "#b08860"} />
         </radialGradient>
-        <clipPath id="cupClip-fw"><circle cx="90" cy="90" r="58" /></clipPath>
-        <filter id="glow-fw"><feGaussianBlur stdDeviation="3" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+        <clipPath id={`${u}cupClip-fw`}><circle cx="90" cy="90" r="58" /></clipPath>
+        <filter id={`${u}glow-fw`}><feGaussianBlur stdDeviation="3" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
       </defs>
       <circle cx="90" cy="90" r="78" fill="none" stroke={c.plateStroke} strokeWidth="1.5" />
-      <circle cx="90" cy="90" r="62" fill="none" stroke={c.cupStroke} strokeWidth="2.5" filter={p.isComplete ? "url(#glow-fw)" : undefined} />
+      <circle cx="90" cy="90" r="62" fill="none" stroke={c.cupStroke} strokeWidth="2.5" filter={p.isComplete ? `url(#${u}glow-fw)` : undefined} />
       <circle cx="90" cy="90" r="58" fill={c.emptyFill} />
       <path d="M148 78 Q170 78 170 90 Q170 102 148 102" fill="none" stroke={c.handleStroke} strokeWidth="2.5" strokeLinecap="round" />
-      <motion.circle cx={90} cy={90} fill="url(#coffeeFill-fw)" clipPath="url(#cupClip-fw)" initial={{ r: 0 }} animate={{ r: fr }} transition={{ duration: p.isNewStamp ? 0.8 : 0.5, ease: [0.16, 1, 0.3, 1] }} />
+      <motion.circle cx={90} cy={90} fill={`url(#${u}coffeeFill-fw)`} clipPath={`url(#${u}cupClip-fw)`} initial={{ r: 0 }} animate={{ r: fr }} transition={{ duration: p.isNewStamp ? 0.8 : 0.5, ease: [0.16, 1, 0.3, 1] }} />
       <AnimatePresence>
-        {p.isNewStamp && <motion.circle cx={90} cy={90} r={fr} fill="none" stroke={c.accent} strokeWidth={1.5} clipPath="url(#cupClip-fw)" initial={{ r: fr * 0.5, opacity: 0.8 }} animate={{ r: fr + 8, opacity: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.8, ease: "easeOut" }} />}
+        {p.isNewStamp && <motion.circle cx={90} cy={90} r={fr} fill="none" stroke={c.accent} strokeWidth={1.5} clipPath={`url(#${u}cupClip-fw)`} initial={{ r: fr * 0.5, opacity: 0.8 }} animate={{ r: fr + 8, opacity: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.8, ease: "easeOut" }} />}
       </AnimatePresence>
       {p.isComplete && (
         <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 0.3 }}>
@@ -114,25 +118,26 @@ function FlatWhiteCenital(p: IllustrationProps) {
 // ═══════════════════════════════════════════
 function LatteLateral(p: IllustrationProps) {
   const c = colors(p.isDark);
+  const u = p.uid ?? "";
   const fillPct = p.displayedStamps / p.maxStamps;
   const topY = 155 - fillPct * 65;
 
   return (
     <svg viewBox="0 0 180 200" className="w-[160px] h-[180px]">
       <defs>
-        <linearGradient id="cFill-ll" x1="0" y1="1" x2="0" y2="0">
+        <linearGradient id={`${u}cFill-ll`} x1="0" y1="1" x2="0" y2="0">
           <stop offset="0%" stopColor={p.isDark ? "#3d2810" : "#5a3f20"} />
           <stop offset="50%" stopColor={p.isDark ? "#5a3f20" : "#8b6b3d"} />
           <stop offset="100%" stopColor="#c8956c" />
         </linearGradient>
-        <clipPath id="cupClip-ll">
+        <clipPath id={`${u}cupClip-ll`}>
           <path d="M45 50 Q42 50 40 55 L32 155 Q30 165 45 168 L135 168 Q150 165 148 155 L140 55 Q138 50 135 50Z" />
         </clipPath>
       </defs>
       <ellipse cx="90" cy="172" rx="75" ry="10" fill="none" stroke={c.plateStroke} strokeWidth="1.5" />
       <path d="M45 50 Q42 50 40 55 L32 155 Q30 165 45 168 L135 168 Q150 165 148 155 L140 55 Q138 50 135 50Z" fill={c.emptyFill} stroke={c.cupStroke} strokeWidth="2" />
       <path d="M140 70 Q165 70 165 100 Q165 130 140 130" fill="none" stroke={c.handleStroke} strokeWidth="2.5" strokeLinecap="round" />
-      <motion.rect x="30" width="120" height="70" fill="url(#cFill-ll)" clipPath="url(#cupClip-ll)" opacity="0.9" initial={{ y: 170 }} animate={{ y: topY }} transition={{ duration: p.isNewStamp ? 0.8 : 0.5, ease: [0.16, 1, 0.3, 1] }} />
+      <motion.rect x="30" width="120" height="70" fill={`url(#${u}cFill-ll)`} clipPath={`url(#${u}cupClip-ll)`} opacity="0.9" initial={{ y: 170 }} animate={{ y: topY }} transition={{ duration: p.isNewStamp ? 0.8 : 0.5, ease: [0.16, 1, 0.3, 1] }} />
       <path d="M43 50 L137 50" stroke={c.cupStroke} strokeWidth="3" strokeLinecap="round" />
       {!p.isComplete && <CentralCount {...p} cx={90} cy={130} svgFont="28px" />}
       {p.isComplete && <CompleteMark cx={90} cy={125} isDark={p.isDark} />}
@@ -145,25 +150,26 @@ function LatteLateral(p: IllustrationProps) {
 // ═══════════════════════════════════════════
 function CappuccinoCenital(p: IllustrationProps) {
   const c = colors(p.isDark);
+  const u = p.uid ?? "";
   const CUP_R = 58;
   const fr = (p.displayedStamps / p.maxStamps) * CUP_R;
 
   return (
     <svg viewBox="0 0 180 180" className="w-[170px] h-[170px]">
       <defs>
-        <radialGradient id="foam-cap" cx="50%" cy="50%" r="50%">
+        <radialGradient id={`${u}foam-cap`} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor={p.isDark ? "#d4c8be" : "#f5f0ea"} />
           <stop offset="40%" stopColor={p.isDark ? "#a89e97" : "#e8ddd5"} />
           <stop offset="70%" stopColor={p.isDark ? "#7a706a" : "#d4c8be"} />
           <stop offset="100%" stopColor={p.isDark ? "#5a524c" : "#c7b7a3"} />
         </radialGradient>
-        <clipPath id="cupClip-cap"><circle cx="90" cy="90" r="58" /></clipPath>
+        <clipPath id={`${u}cupClip-cap`}><circle cx="90" cy="90" r="58" /></clipPath>
       </defs>
       <circle cx="90" cy="90" r="78" fill="none" stroke={c.plateStroke} strokeWidth="1.5" />
       <circle cx="90" cy="90" r="62" fill="none" stroke={c.cupStroke} strokeWidth="2.5" />
       <circle cx="90" cy="90" r="58" fill={c.emptyFill} />
       <path d="M148 78 Q170 78 170 90 Q170 102 148 102" fill="none" stroke={c.handleStroke} strokeWidth="2.5" strokeLinecap="round" />
-      <motion.circle cx={90} cy={90} fill="url(#foam-cap)" clipPath="url(#cupClip-cap)" opacity="0.95" initial={{ r: 0 }} animate={{ r: fr }} transition={{ duration: p.isNewStamp ? 0.8 : 0.5, ease: [0.16, 1, 0.3, 1] }} />
+      <motion.circle cx={90} cy={90} fill={`url(#${u}foam-cap)`} clipPath={`url(#${u}cupClip-cap)`} opacity="0.95" initial={{ r: 0 }} animate={{ r: fr }} transition={{ duration: p.isNewStamp ? 0.8 : 0.5, ease: [0.16, 1, 0.3, 1] }} />
       {fr > 15 && <>
         <circle cx="78" cy="80" r="12" fill="none" stroke={c.cupStroke} strokeWidth="0.5" opacity="0.3" />
         <circle cx="100" cy="85" r="10" fill="none" stroke={c.cupStroke} strokeWidth="0.5" opacity="0.25" />
@@ -180,26 +186,27 @@ function CappuccinoCenital(p: IllustrationProps) {
 // ═══════════════════════════════════════════
 function EspressoShot(p: IllustrationProps) {
   const c = colors(p.isDark);
+  const u = p.uid ?? "";
   const fillPct = p.displayedStamps / p.maxStamps;
   const topY = 145 - fillPct * 42;
 
   return (
     <svg viewBox="0 0 180 200" className="w-[155px] h-[175px]">
       <defs>
-        <linearGradient id="eFill-es" x1="0" y1="1" x2="0" y2="0">
+        <linearGradient id={`${u}eFill-es`} x1="0" y1="1" x2="0" y2="0">
           <stop offset="0%" stopColor={p.isDark ? "#1a0f05" : "#3d2810"} />
           <stop offset="60%" stopColor={p.isDark ? "#3d2810" : "#5a3f20"} />
           <stop offset="90%" stopColor={p.isDark ? "#5a3f20" : "#8b6b3d"} />
           <stop offset="100%" stopColor="#c8956c" />
         </linearGradient>
-        <clipPath id="cupClip-es">
+        <clipPath id={`${u}cupClip-es`}>
           <path d="M55 80 Q52 80 50 85 L46 145 Q44 155 55 158 L125 158 Q136 155 134 145 L130 85 Q128 80 125 80Z" />
         </clipPath>
       </defs>
       <ellipse cx="90" cy="162" rx="55" ry="8" fill="none" stroke={c.plateStroke} strokeWidth="1.5" />
       <path d="M55 80 Q52 80 50 85 L46 145 Q44 155 55 158 L125 158 Q136 155 134 145 L130 85 Q128 80 125 80Z" fill={c.emptyFill} stroke={c.cupStroke} strokeWidth="2" />
       <path d="M130 90 Q150 90 150 110 Q150 130 130 130" fill="none" stroke={c.handleStroke} strokeWidth="2" strokeLinecap="round" />
-      <motion.rect x="44" width="92" height="55" fill="url(#eFill-es)" clipPath="url(#cupClip-es)" opacity="0.95" initial={{ y: 158 }} animate={{ y: topY }} transition={{ duration: p.isNewStamp ? 0.8 : 0.5, ease: [0.16, 1, 0.3, 1] }} />
+      <motion.rect x="44" width="92" height="55" fill={`url(#${u}eFill-es)`} clipPath={`url(#${u}cupClip-es)`} opacity="0.95" initial={{ y: 158 }} animate={{ y: topY }} transition={{ duration: p.isNewStamp ? 0.8 : 0.5, ease: [0.16, 1, 0.3, 1] }} />
       {fillPct > 0 && <motion.path d="M52 107 Q70 103 90 105 Q110 107 128 104" fill="none" stroke="#d4a57c" strokeWidth="1.5" initial={{ opacity: 0 }} animate={{ opacity: 0.6 }} transition={{ delay: 0.6 }} />}
       <path d="M53 80 L127 80" stroke={c.cupStroke} strokeWidth="2.5" strokeLinecap="round" />
       {!p.isComplete && <CentralCount {...p} cx={90} cy={125} svgFont="26px" />}
@@ -293,6 +300,7 @@ function RebanadaPastel(p: IllustrationProps) {
 // ═══════════════════════════════════════════
 function TagDescuento(p: IllustrationProps) {
   const c = colors(p.isDark);
+  const u = p.uid ?? "";
   const pct = p.displayedStamps / p.maxStamps;
   const circumference = 2 * Math.PI * 65;
   const offset = circumference * (1 - pct);
@@ -300,13 +308,13 @@ function TagDescuento(p: IllustrationProps) {
   return (
     <svg viewBox="0 0 180 180" className="w-[170px] h-[170px]">
       <defs>
-        <linearGradient id="tagGrad" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={`${u}tagGrad`} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#c8956c" />
           <stop offset="100%" stopColor={p.isDark ? "#5a3f20" : "#8b6b3d"} />
         </linearGradient>
       </defs>
       <circle cx="90" cy="90" r="65" fill="none" stroke={p.isDark ? "#2a2722" : "#e8e0d8"} strokeWidth="6" />
-      <motion.circle cx="90" cy="90" r="65" fill="none" stroke="url(#tagGrad)" strokeWidth="6" strokeLinecap="round" strokeDasharray={circumference} transform="rotate(-90 90 90)" initial={{ strokeDashoffset: circumference }} animate={{ strokeDashoffset: offset }} transition={{ duration: p.isNewStamp ? 0.8 : 0.5, ease: [0.16, 1, 0.3, 1] }} />
+      <motion.circle cx="90" cy="90" r="65" fill="none" stroke={`url(#${u}tagGrad)`} strokeWidth="6" strokeLinecap="round" strokeDasharray={circumference} transform="rotate(-90 90 90)" initial={{ strokeDashoffset: circumference }} animate={{ strokeDashoffset: offset }} transition={{ duration: p.isNewStamp ? 0.8 : 0.5, ease: [0.16, 1, 0.3, 1] }} />
       <circle cx="90" cy="90" r="48" fill={p.isDark ? "#1a1412" : "#FAF7F4"} stroke={p.isDark ? "#2a2722" : "#e8e0d8"} strokeWidth="1" />
       {!p.isComplete ? (
         <>
@@ -357,24 +365,25 @@ function Monedas(p: IllustrationProps) {
 // ═══════════════════════════════════════════
 function GranoCenital(p: IllustrationProps) {
   const c = colors(p.isDark);
+  const u = p.uid ?? "";
   const fillPct = p.displayedStamps / p.maxStamps;
   const topY = 170 - fillPct * 100;
 
   return (
     <svg viewBox="0 0 180 200" className="w-[160px] h-[180px]">
       <defs>
-        <linearGradient id="bFill-gc" x1="0" y1="1" x2="0" y2="0">
+        <linearGradient id={`${u}bFill-gc`} x1="0" y1="1" x2="0" y2="0">
           <stop offset="0%" stopColor={p.isDark ? "#1a0f05" : "#3d2810"} />
           <stop offset="50%" stopColor={p.isDark ? "#3d2810" : "#5a3f20"} />
           <stop offset="100%" stopColor={p.isDark ? "#5a3f20" : "#8b6b3d"} />
         </linearGradient>
-        <clipPath id="beanClip-gc">
+        <clipPath id={`${u}beanClip-gc`}>
           <path d="M90 30 Q130 30 135 75 Q138 110 125 140 Q115 165 90 170 Q65 165 55 140 Q42 110 45 75 Q50 30 90 30Z" />
         </clipPath>
       </defs>
       <path d="M90 30 Q130 30 135 75 Q138 110 125 140 Q115 165 90 170 Q65 165 55 140 Q42 110 45 75 Q50 30 90 30Z" fill={c.emptyFill} stroke={c.cupStroke} strokeWidth="2" />
       <path d="M90 45 Q82 70 88 100 Q92 130 90 155" fill="none" stroke={c.cupStroke} strokeWidth="1.5" strokeLinecap="round" />
-      <motion.rect x="40" width="100" height="105" fill="url(#bFill-gc)" clipPath="url(#beanClip-gc)" opacity="0.85" initial={{ y: 170 }} animate={{ y: topY }} transition={{ duration: p.isNewStamp ? 0.8 : 0.5, ease: [0.16, 1, 0.3, 1] }} />
+      <motion.rect x="40" width="100" height="105" fill={`url(#${u}bFill-gc)`} clipPath={`url(#${u}beanClip-gc)`} opacity="0.85" initial={{ y: 170 }} animate={{ y: topY }} transition={{ duration: p.isNewStamp ? 0.8 : 0.5, ease: [0.16, 1, 0.3, 1] }} />
       {fillPct > 0.3 && <path d="M90 100 Q92 130 90 155" fill="none" stroke={p.isDark ? "#0a0805" : "#1a1412"} strokeWidth="1" strokeLinecap="round" opacity="0.3" />}
       {!p.isComplete && <CentralCount {...p} cx={90} cy={110} svgFont="28px" />}
       {p.isComplete && <CompleteMark cx={90} cy={105} isDark={p.isDark} />}
@@ -387,6 +396,7 @@ function GranoCenital(p: IllustrationProps) {
 // ═══════════════════════════════════════════
 function GranoAroma(p: IllustrationProps) {
   const c = colors(p.isDark);
+  const u = p.uid ?? "";
   const fillPct = p.displayedStamps / p.maxStamps;
   const topY = 152 - fillPct * 72;
   const showVapor = fillPct > 0.2;
@@ -394,12 +404,12 @@ function GranoAroma(p: IllustrationProps) {
   return (
     <svg viewBox="0 0 180 200" className="w-[160px] h-[180px]">
       <defs>
-        <radialGradient id="bFill-ga" cx="50%" cy="60%" r="50%">
+        <radialGradient id={`${u}bFill-ga`} cx="50%" cy="60%" r="50%">
           <stop offset="0%" stopColor={p.isDark ? "#3d2810" : "#5a3f20"} />
           <stop offset="60%" stopColor={p.isDark ? "#5a3f20" : "#8b6b3d"} />
           <stop offset="100%" stopColor="#c8956c" />
         </radialGradient>
-        <clipPath id="beanClip-ga">
+        <clipPath id={`${u}beanClip-ga`}>
           <path d="M90 50 Q120 50 123 85 Q125 110 118 130 Q112 148 90 152 Q68 148 62 130 Q55 110 57 85 Q60 50 90 50Z" />
         </clipPath>
       </defs>
@@ -410,7 +420,7 @@ function GranoAroma(p: IllustrationProps) {
       </>}
       <path d="M90 50 Q120 50 123 85 Q125 110 118 130 Q112 148 90 152 Q68 148 62 130 Q55 110 57 85 Q60 50 90 50Z" fill={c.emptyFill} stroke={c.cupStroke} strokeWidth="2" />
       <path d="M90 60 Q84 80 88 100 Q92 120 90 142" fill="none" stroke={c.cupStroke} strokeWidth="1.5" strokeLinecap="round" />
-      <motion.rect x="54" width="72" height="72" fill="url(#bFill-ga)" clipPath="url(#beanClip-ga)" opacity="0.85" initial={{ y: 152 }} animate={{ y: topY }} transition={{ duration: p.isNewStamp ? 0.8 : 0.5, ease: [0.16, 1, 0.3, 1] }} />
+      <motion.rect x="54" width="72" height="72" fill={`url(#${u}bFill-ga)`} clipPath={`url(#${u}beanClip-ga)`} opacity="0.85" initial={{ y: 152 }} animate={{ y: topY }} transition={{ duration: p.isNewStamp ? 0.8 : 0.5, ease: [0.16, 1, 0.3, 1] }} />
       {!p.isComplete && <CentralCount {...p} cx={90} cy={108} svgFont="26px" />}
       {p.isComplete && <CompleteMark cx={90} cy={105} isDark={p.isDark} />}
     </svg>
@@ -422,25 +432,26 @@ function GranoAroma(p: IllustrationProps) {
 // ═══════════════════════════════════════════
 function ColdBrew(p: IllustrationProps) {
   const c = colors(p.isDark);
+  const u = p.uid ?? "";
   const fillPct = p.displayedStamps / p.maxStamps;
   const topY = 184 - fillPct * 95;
 
   return (
     <svg viewBox="0 0 180 210" className="w-[150px] h-[185px]">
       <defs>
-        <linearGradient id="cbFill" x1="0" y1="1" x2="0" y2="0">
+        <linearGradient id={`${u}cbFill`} x1="0" y1="1" x2="0" y2="0">
           <stop offset="0%" stopColor={p.isDark ? "#0a0805" : "#1a0f05"} />
           <stop offset="40%" stopColor={p.isDark ? "#1a0f05" : "#3d2810"} />
           <stop offset="80%" stopColor={p.isDark ? "#3d2810" : "#5a3f20"} />
           <stop offset="100%" stopColor="#8b6b3d" />
         </linearGradient>
-        <clipPath id="glassClip-cb">
+        <clipPath id={`${u}glassClip-cb`}>
           <path d="M62 40 L58 175 Q57 182 68 184 L112 184 Q123 182 122 175 L118 40Z" />
         </clipPath>
       </defs>
       <path d="M62 40 L58 175 Q57 182 68 184 L112 184 Q123 182 122 175 L118 40Z" fill={p.isDark ? "#1a1412" : "#faf7f4"} stroke={c.cupStroke} strokeWidth="1.5" opacity="0.9" />
       <path d="M60 40 L120 40" stroke={c.cupStroke} strokeWidth="3" strokeLinecap="round" />
-      <motion.rect x="56" width="70" height="96" fill="url(#cbFill)" clipPath="url(#glassClip-cb)" opacity="0.85" initial={{ y: 184 }} animate={{ y: topY }} transition={{ duration: p.isNewStamp ? 0.8 : 0.5, ease: [0.16, 1, 0.3, 1] }} />
+      <motion.rect x="56" width="70" height="96" fill={`url(#${u}cbFill)`} clipPath={`url(#${u}glassClip-cb)`} opacity="0.85" initial={{ y: 184 }} animate={{ y: topY }} transition={{ duration: p.isNewStamp ? 0.8 : 0.5, ease: [0.16, 1, 0.3, 1] }} />
       {fillPct > 0.2 && <>
         <rect x="70" y="100" width="16" height="14" rx="3" fill={c.emptyFill} stroke={c.plateStroke} strokeWidth="0.8" opacity="0.7" transform="rotate(-8 78 107)" />
         <rect x="94" y="110" width="14" height="12" rx="3" fill={c.emptyFill} stroke={c.plateStroke} strokeWidth="0.8" opacity="0.6" transform="rotate(5 101 116)" />
@@ -457,6 +468,7 @@ function ColdBrew(p: IllustrationProps) {
 // ═══════════════════════════════════════════
 function MatchaLatte(p: IllustrationProps) {
   const c = colors(p.isDark);
+  const u = p.uid ?? "";
   const CUP_R = 58;
   const fr = (p.displayedStamps / p.maxStamps) * CUP_R;
   const matchaStroke = p.isDark ? "#5a7a3d" : "#a0b878";
@@ -464,19 +476,19 @@ function MatchaLatte(p: IllustrationProps) {
   return (
     <svg viewBox="0 0 180 180" className="w-[170px] h-[170px]">
       <defs>
-        <radialGradient id="matchaFill-ml" cx="50%" cy="50%" r="50%">
+        <radialGradient id={`${u}matchaFill-ml`} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor={p.isDark ? "#3d5a20" : "#5a7a3d"} />
           <stop offset="55%" stopColor={p.isDark ? "#5a7a3d" : "#7a9850"} />
           <stop offset="85%" stopColor="#a0b878" />
           <stop offset="100%" stopColor={p.isDark ? "#7a9850" : "#8ba860"} />
         </radialGradient>
-        <clipPath id="cupClip-ml"><circle cx="90" cy="90" r="58" /></clipPath>
+        <clipPath id={`${u}cupClip-ml`}><circle cx="90" cy="90" r="58" /></clipPath>
       </defs>
       <circle cx="90" cy="90" r="78" fill="none" stroke={c.plateStroke} strokeWidth="1.5" />
       <circle cx="90" cy="90" r="62" fill="none" stroke={matchaStroke} strokeWidth="2.5" />
       <circle cx="90" cy="90" r="58" fill={c.emptyFill} />
       <path d="M148 78 Q170 78 170 90 Q170 102 148 102" fill="none" stroke={matchaStroke} strokeWidth="2.5" strokeLinecap="round" />
-      <motion.circle cx={90} cy={90} fill="url(#matchaFill-ml)" clipPath="url(#cupClip-ml)" initial={{ r: 0 }} animate={{ r: fr }} transition={{ duration: p.isNewStamp ? 0.8 : 0.5, ease: [0.16, 1, 0.3, 1] }} />
+      <motion.circle cx={90} cy={90} fill={`url(#${u}matchaFill-ml)`} clipPath={`url(#${u}cupClip-ml)`} initial={{ r: 0 }} animate={{ r: fr }} transition={{ duration: p.isNewStamp ? 0.8 : 0.5, ease: [0.16, 1, 0.3, 1] }} />
       {fr > 20 && <path d="M75 88 Q80 82 85 88 Q90 94 95 88 Q100 82 105 88" fill="none" stroke={c.latteArt} strokeWidth="0.8" opacity="0.5" />}
       {!p.isComplete && <CentralCount {...p} cx={90} cy={85} />}
       {p.isComplete && <CompleteMark cx={90} cy={87} isDark={p.isDark} />}
@@ -525,6 +537,7 @@ const ILLUSTRATION_MAP: Record<IllustrationId, React.FC<IllustrationProps>> = {
 };
 
 export function StampIllustration({ id, ...props }: IllustrationProps & { id: IllustrationId }) {
+  const uid = useId().replace(/:/g, "");
   const Component = ILLUSTRATION_MAP[id] ?? FlatWhiteCenital;
-  return <Component {...props} />;
+  return <Component {...props} uid={uid} />;
 }

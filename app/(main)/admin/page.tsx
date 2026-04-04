@@ -18,6 +18,8 @@ import { Reward } from "@/models/reward.model";
 import { ILLUSTRATION_CATALOG, StampIllustration, type IllustrationId } from "@/components/ui/stamp-illustrations";
 import { getFullMenu } from "@/services/menu.service";
 import { timeAgo } from "@/lib/utils";
+import { hapticMedium, hapticSuccess, hapticCelebration, hapticError } from "@/lib/haptics";
+import { fireCelebration } from "@/lib/confetti";
 import { toast } from "@/components/ui/use-toast";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
@@ -26,6 +28,7 @@ import {
   removeFromQueue,
   markFailed,
   getQueue,
+  getQueueSync,
   resetFailed,
   hasPending,
   requestBackgroundSync,
@@ -57,11 +60,11 @@ const TAB_LABELS: Record<AdminTabId, string> = {
 
 const TAB_TITLES: Record<AdminTabId, string> = {
   stamps: "Añadir sello",
-  menu: "Gestionar menu",
+  menu: "Gestionar menú",
   promos: "Promociones",
   customers: "Clientes",
   analytics: "Analytics",
-  config: "Configuracion",
+  config: "Configuración",
 };
 
 function getTabsForRole(rol: string): AdminTabId[] {
@@ -263,7 +266,7 @@ interface StampEntry {
 }
 
 /* -- Vista de anadir sello ----------------------------------- */
-function StampView({ onLogout }: { onLogout: () => void }) {
+function StampView() {
   const [cardInput, setCardInput] = useState("");
   const [card, setCard] = useState<LoadedCard | null>(null);
   const [loading, setLoading] = useState(false);
@@ -314,11 +317,12 @@ function StampView({ onLogout }: { onLogout: () => void }) {
 
   // Cargar queue al montar
   useEffect(() => {
-    setPendingQueue(getQueue());
+    getQueue().then(setPendingQueue);
   }, []);
 
   const syncQueue = useCallback(async () => {
-    const pending = getQueue().filter((q) => q.status === "pending");
+    const all = await getQueue();
+    const pending = all.filter((q) => q.status === "pending");
     if (pending.length === 0) return;
     setSyncStatus("syncing");
     let hasError = false;
@@ -331,15 +335,16 @@ function StampView({ onLogout }: { onLogout: () => void }) {
           drinkType: item.drinkType,
           size: item.size,
         });
-        removeFromQueue(item.id);
+        await removeFromQueue(item.id);
         syncedCount++;
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Error desconocido";
-        markFailed(item.id, msg);
+        await markFailed(item.id, msg);
         hasError = true;
       }
     }
-    setPendingQueue(getQueue());
+    const updatedQueue = await getQueue();
+    setPendingQueue(updatedQueue);
     setSyncStatus(hasError ? "error" : "idle");
 
     // Notificar al SW para que muestre notificacion si la app no esta enfocada
@@ -347,7 +352,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
       navigator.serviceWorker.controller.postMessage({
         type: "SYNC_COMPLETE",
         synced: syncedCount,
-        failed: hasError ? getQueue().filter((q) => q.status === "failed").length : 0,
+        failed: hasError ? updatedQueue.filter((q) => q.status === "failed").length : 0,
       });
     }
 
@@ -357,24 +362,24 @@ function StampView({ onLogout }: { onLogout: () => void }) {
         variant: "default",
       });
       // Limpiar la barra de sync despues de 3s si todo salio bien
-      setTimeout(() => {
-        setPendingQueue(getQueue());
+      setTimeout(async () => {
+        setPendingQueue(await getQueue());
       }, 3000);
     }
   }, []);
 
   // Auto-sync al recuperar conexion o al montar con pendientes
   useEffect(() => {
-    if (isOnline && hasPending()) {
-      syncQueue();
+    if (isOnline) {
+      hasPending().then((has) => { if (has) syncQueue(); });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOnline]);
 
   // Sync on mount si hay pendientes (cubre el caso donde la app se cerro y reabre con conexion)
   useEffect(() => {
-    if (navigator.onLine && hasPending()) {
-      syncQueue();
+    if (navigator.onLine) {
+      hasPending().then((has) => { if (has) syncQueue(); });
     }
     // Registrar periodic sync como fallback para reintentos automaticos
     requestPeriodicSync();
@@ -443,7 +448,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
     } catch {
       setError(
         !navigator.onLine
-          ? "Sin conexion. Si ya cargaste esta tarjeta antes, intentalo de nuevo."
+          ? "Sin conexión. Si ya cargaste esta tarjeta antes, inténtalo de nuevo."
           : "Error al cargar la tarjeta",
       );
     }
@@ -477,7 +482,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
     // Offline path: enqueue and show queued screen
     if (!isOnline) {
       const optimisticStamps = Math.min(card.stamps + 1, card.maxStamps);
-      enqueue({
+      await enqueue({
         cardId: card.id,
         customerId: card.customerId,
         customerName: card.customerName,
@@ -491,7 +496,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
         { customerName: card.customerName || "Cliente", stamps: optimisticStamps, maxStamps: card.maxStamps, time: new Date() },
         ...prev,
       ].slice(0, 5));
-      setPendingQueue(getQueue());
+      setPendingQueue(await getQueue());
       setScreen("queued");
       resetTimer.current = setTimeout(() => resetStampForm(), 3000);
       return;
@@ -512,6 +517,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
         ...prev,
       ].slice(0, 5));
       setScreen("success");
+      hapticSuccess();
 
       // Iniciar countdown de undo (30s)
       setLastEventId(result.eventId);
@@ -530,6 +536,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
         });
       }, 1000);
     } catch {
+      hapticError();
       setError("Error al anadir el sello. Intenta de nuevo.");
     }
     setLoading(false);
@@ -574,12 +581,15 @@ function StampView({ onLogout }: { onLogout: () => void }) {
         rewardRef: defaultReward.id,
       });
       setScreen("redeemed");
+      hapticCelebration();
+      fireCelebration();
       resetTimer.current = setTimeout(() => {
         setScreen("stamp");
         setCardInput("");
         setCard(null);
       }, 4000);
     } catch {
+      hapticError();
       setError("Error al canjear. Intenta de nuevo.");
     }
     setLoading(false);
@@ -646,7 +656,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
             </span>
             {syncStatus === "error" && (
               <button
-                onClick={() => { resetFailed(); setPendingQueue(getQueue()); syncQueue(); }}
+                onClick={async () => { await resetFailed(); setPendingQueue(await getQueue()); syncQueue(); }}
                 className="text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors"
               >
                 Reintentar
@@ -777,7 +787,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
               </div>
               {isComplete && (
                 <p className="text-[10px] uppercase tracking-widest text-amber-500">
-                  ✓ Tarjeta completada — cortesia lista
+                  ✓ Tarjeta completada — cortesía lista
                 </p>
               )}
             </div>
@@ -855,12 +865,12 @@ function StampView({ onLogout }: { onLogout: () => void }) {
               </div>
             )}
 
-            {/* Banner umbral: a 1 sello de la cortesia */}
+            {/* Banner umbral: a 1 sello de la cortesía */}
             {!isComplete && card.stamps === card.maxStamps - 1 && (
               <div className="px-4 py-3 rounded-xl border border-amber-300/40 dark:border-amber-800/40 bg-amber-50/50 dark:bg-amber-900/10 flex items-center gap-2">
                 <span className="text-base leading-none">⚡</span>
                 <span className="text-[11px] uppercase tracking-[0.2em] text-amber-600 dark:text-amber-400">
-                  ¡Este cliente esta a 1 sello de su bebida gratis!
+                  ¡Este cliente está a 1 sello de su bebida gratis!
                 </span>
               </div>
             )}
@@ -872,7 +882,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
                 disabled={loading}
                 className="w-full py-4 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/40 text-amber-700 dark:text-amber-400 text-[11px] uppercase tracking-[0.35em] hover:bg-amber-100 dark:hover:bg-amber-500/20 hover:border-amber-400 dark:hover:border-amber-400 transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed font-medium"
               >
-                {loading ? "Canjeando…" : "Canjear cortesia · Nueva tarjeta"}
+                {loading ? "Canjeando…" : "Canjear cortesía · Nueva tarjeta"}
               </button>
             ) : (
               <button
@@ -934,7 +944,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
               className="text-xl font-light text-emerald-700 dark:text-emerald-300"
               style={{ fontFamily: "var(--font-display)" }}
             >
-              Sello anadido
+              Sello añadido
             </p>
             <p className="text-[10px] uppercase tracking-widest text-emerald-500 dark:text-emerald-600">
               {card?.customerName || "Cliente"} · {card?.stamps} / {card?.maxStamps} visitas
@@ -988,15 +998,7 @@ function StampView({ onLogout }: { onLogout: () => void }) {
         )}
       </AnimatePresence>
 
-      {/* Cerrar sesion */}
-      <button
-        onClick={onLogout}
-        className="text-[10px] uppercase tracking-[0.3em] text-stone-300 dark:text-stone-700 hover:text-stone-600 dark:hover:text-stone-400 transition-colors duration-200 mx-auto"
-      >
-        Cerrar sesion
-      </button>
-
-      {/* Historial de sellos de sesion */}
+      {/* Historial de sellos de sesión */}
       {stampHistory.length > 0 && (
         <div className="w-full space-y-2">
           <p className="text-[10px] uppercase tracking-widest text-stone-300 dark:text-stone-700 text-center">
@@ -1156,7 +1158,7 @@ function RewardConfig() {
             </button>
           </div>
           <p className="text-[11px] text-stone-400 dark:text-stone-600">
-            Las tarjetas nuevas usaran este numero. Las existentes no se afectan.
+            Las tarjetas nuevas usarán este número. Las existentes no se afectan.
           </p>
         </div>
       </div>
@@ -1266,6 +1268,7 @@ function RewardConfig() {
 export default function AdminPage() {
   const pinLength = 4;
 
+  const [checkingSession, setCheckingSession] = useState(true);
   const [authed, setAuthed] = useState(false);
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
@@ -1299,7 +1302,7 @@ export default function AdminPage() {
         const tabs = getTabsForRole(session.rol);
         if (tabs.length > 0) setAdminTab(tabs[0]);
       }
-    });
+    }).finally(() => setCheckingSession(false));
   }, []);
 
   const handlePinSubmit = useCallback(async (pinValue: string) => {
@@ -1309,6 +1312,7 @@ export default function AdminPage() {
     try {
       const result = await verifyAdminPin(pinValue);
       if (result.ok) {
+        hapticSuccess();
         setAuthed(true);
         setUserName(result.nombre);
         setUserRole(result.rol);
@@ -1317,14 +1321,17 @@ export default function AdminPage() {
         const tabs = getTabsForRole(result.rol);
         if (tabs.length > 0) setAdminTab(tabs[0]);
       } else if (result.blocked) {
+        hapticError();
         setLockout(result.retryAfter);
         setPinError("");
         setPin("");
       } else {
+        hapticError();
         setPinError("PIN incorrecto");
         setPin("");
       }
     } catch {
+      hapticError();
       setPinError("Error al verificar. Intenta de nuevo.");
       setPin("");
     }
@@ -1361,7 +1368,34 @@ export default function AdminPage() {
       <div className="flex-1 flex flex-col items-center justify-center gap-10 px-6 sm:px-10 pb-16">
 
         <AnimatePresence mode="wait">
-          {!authed ? (
+          {checkingSession ? (
+            <motion.div
+              key="session-check"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="flex flex-col items-center gap-8 w-full max-w-sm"
+            >
+              <div className="text-center space-y-3">
+                <div className="h-9 w-48 rounded-lg skeleton-shimmer mx-auto" />
+                <div className="h-3 w-24 rounded-full skeleton-shimmer mx-auto" />
+              </div>
+              <div className="flex gap-5 justify-center">
+                {[0, 1, 2, 3].map((i) => (
+                  <div key={i} className="flex flex-col items-center gap-1">
+                    <div className="w-2.5 h-2.5 rounded-full skeleton-shimmer" />
+                    <div className="w-7 h-px skeleton-shimmer" />
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-3 gap-3 w-full max-w-[220px]">
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <div key={i} className="aspect-square rounded-full skeleton-shimmer" />
+                ))}
+              </div>
+            </motion.div>
+          ) : !authed ? (
             <motion.div
               key="pin"
               initial={{ opacity: 0, y: 16 }}
@@ -1444,7 +1478,7 @@ export default function AdminPage() {
                     transition={{ duration: 0.2 }}
                     className="w-full"
                   >
-                    <StampView onLogout={() => { logoutBarista(); setAuthed(false); setPin(""); setUserName(null); setUserRole(null); }} />
+                    <StampView />
                   </motion.div>
                 )}
                 {adminTab === "menu" && allowedTabs.includes("menu") && (
@@ -1508,6 +1542,14 @@ export default function AdminPage() {
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              {/* Cerrar sesión — siempre visible */}
+              <button
+                onClick={() => { logoutBarista(); setAuthed(false); setPin(""); setUserName(null); setUserRole(null); }}
+                className="text-[10px] uppercase tracking-[0.3em] text-stone-300 dark:text-stone-700 hover:text-stone-600 dark:hover:text-stone-400 transition-colors duration-200 mx-auto mt-4"
+              >
+                Cerrar sesión
+              </button>
             </motion.div>
           )}
         </AnimatePresence>

@@ -4,10 +4,17 @@ import { useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { MenuItem } from "@/models/menu.model";
 import { updateMenuItem } from "@/services/menu.service";
 import { Toggle } from "./Toggle";
 import { ITEM_TAGS } from "./menu-admin.constants";
+
+function scrollIntoCenter(e: React.FocusEvent<HTMLElement>) {
+  setTimeout(() => {
+    e.target.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 150);
+}
 
 export function EditItemModal({
   item,
@@ -20,6 +27,7 @@ export function EditItemModal({
   onSaved: () => void;
   onClose: () => void;
 }) {
+  useBodyScrollLock();
   const keyboardOffset = useKeyboardOffset();
   const [name, setName] = useState(item.name);
   const [note, setNote] = useState(item.note ?? "");
@@ -111,8 +119,7 @@ export function EditItemModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/70 px-4"
-      style={{ paddingBottom: Math.max(keyboardOffset, 16), transition: "padding-bottom 0.15s ease" }}
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/70 sm:px-4"
       onClick={onClose}
     >
       <motion.div
@@ -120,156 +127,175 @@ export function EditItemModal({
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 40, opacity: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="w-full max-w-md bg-white dark:bg-neutral-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-6 space-y-4 max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-md bg-white dark:bg-neutral-900 border-t sm:border border-stone-200 dark:border-stone-800 rounded-t-3xl sm:rounded-3xl flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between">
-          <p className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">Editar</p>
-          <button onClick={onClose} className="text-stone-300 dark:text-stone-700 hover:text-stone-600 dark:hover:text-stone-400 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
-        </div>
-
-        <input className={inputCls} placeholder="Nombre *" value={name} onChange={(e) => setName(e.target.value)} />
-        <input className={inputCls} placeholder="Ingredientes separados por coma" value={ingredients} onChange={(e) => setIngredients(e.target.value)} />
-        <input className={inputCls} placeholder="Nota opcional" value={note} onChange={(e) => setNote(e.target.value)} />
-
-        {/* Imagen */}
-        <div className="space-y-2">
-          <p className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-600">Imagen (URL)</p>
-          <input
-            className={`${inputCls} ${!imageUrlValid ? "border-red-800 focus:border-red-600" : ""}`}
-            placeholder="https://…"
-            type="url"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-          />
-          {!imageUrlValid && (
-            <p className="text-[10px] uppercase tracking-widest text-red-500">
-              Solo se permiten URLs https://
-            </p>
-          )}
-          {imageUrl.trim() && imageUrlValid && (
-            <div className="relative w-full h-28 rounded-xl overflow-hidden border border-stone-200 dark:border-stone-800">
-              <Image
-                src={imageUrl.trim()}
-                alt="preview"
-                fill
-                unoptimized
-                className="object-cover"
-                onError={(e) => { (e.currentTarget as HTMLImageElement).parentElement!.style.display = "none"; }}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* ── Precio / Tamaños ── */}
-        <div className="space-y-3">
+        {/* Handle + header — fixed */}
+        <div className="px-6 pt-5 pb-2 shrink-0">
+          <div className="w-10 h-1 bg-stone-300 dark:bg-stone-700 rounded-full mx-auto mb-3 sm:hidden" />
           <div className="flex items-center justify-between">
-            <p className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-600">Precio</p>
-            <div className="flex gap-1 p-0.5 bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-lg">
-              {(["single", "sizes"] as const).map((mode) => (
+            <p className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">Editar</p>
+            <button onClick={onClose} className="text-stone-300 dark:text-stone-700 hover:text-stone-600 dark:hover:text-stone-400 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Scrollable content */}
+        <div
+          className="flex-1 overflow-y-auto overscroll-contain px-6 space-y-4"
+          style={{ paddingBottom: Math.max(keyboardOffset, 16), transition: "padding-bottom 0.15s ease" }}
+        >
+          <input className={inputCls} placeholder="Nombre *" value={name} onChange={(e) => setName(e.target.value)} onFocus={scrollIntoCenter} />
+          <input className={inputCls} placeholder="Ingredientes separados por coma" value={ingredients} onChange={(e) => setIngredients(e.target.value)} onFocus={scrollIntoCenter} />
+          <input className={inputCls} placeholder="Nota opcional" value={note} onChange={(e) => setNote(e.target.value)} onFocus={scrollIntoCenter} />
+
+          {/* Imagen */}
+          <div className="space-y-2">
+            <p className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-600">Imagen (URL)</p>
+            <input
+              className={`${inputCls} ${!imageUrlValid ? "border-red-800 focus:border-red-600" : ""}`}
+              placeholder="https://…"
+              type="url"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              onFocus={scrollIntoCenter}
+            />
+            {!imageUrlValid && (
+              <p className="text-[10px] uppercase tracking-widest text-red-500">
+                Solo se permiten URLs https://
+              </p>
+            )}
+            {imageUrl.trim() && imageUrlValid && (
+              <div className="relative w-full h-28 rounded-xl overflow-hidden border border-stone-200 dark:border-stone-800">
+                <Image
+                  src={imageUrl.trim()}
+                  alt="preview"
+                  fill
+                  unoptimized
+                  className="object-cover"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).parentElement!.style.display = "none"; }}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* ── Precio / Tamaños ── */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-600">Precio</p>
+              <div className="flex gap-1 p-0.5 bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-lg">
+                {(["single", "sizes"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => setPricingMode(mode)}
+                    className={`px-3 py-1 rounded-md text-[10px] uppercase tracking-wider transition-all duration-150 ${
+                      pricingMode === mode
+                        ? "bg-stone-300 dark:bg-stone-700 text-stone-700 dark:text-stone-200"
+                        : "text-stone-400 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400"
+                    }`}
+                  >
+                    {mode === "single" ? "Único" : "Por tamaño"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {pricingMode === "single" ? (
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-600 text-sm">$</span>
+                <input
+                  className="w-full bg-stone-50 dark:bg-neutral-950 border border-stone-200 dark:border-stone-800 rounded-xl pl-8 pr-4 py-3 text-sm text-stone-900 dark:text-white placeholder:text-stone-300 dark:placeholder:text-stone-700 focus:outline-none focus:border-stone-400 dark:focus:border-stone-600 transition-colors"
+                  placeholder="45"
+                  type="number"
+                  inputMode="decimal"
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  onFocus={scrollIntoCenter}
+                />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {sizes.map((size, i) => (
+                  <div key={i} className="flex gap-2 items-center">
+                    <input
+                      className={`flex-1 ${smallInputCls}`}
+                      placeholder="10 oz"
+                      value={size.label}
+                      onChange={(e) => updateSize(i, "label", e.target.value)}
+                      onFocus={scrollIntoCenter}
+                    />
+                    <div className="relative w-24 shrink-0">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-600 text-sm">$</span>
+                      <input
+                        className="w-full pl-6 pr-3 py-2.5 bg-stone-50 dark:bg-neutral-950 border border-stone-200 dark:border-stone-800 rounded-xl text-sm text-stone-900 dark:text-white placeholder:text-stone-300 dark:placeholder:text-stone-700 focus:outline-none focus:border-stone-400 dark:focus:border-stone-600 transition-colors"
+                        placeholder="45"
+                        type="number"
+                        inputMode="decimal"
+                        value={size.price}
+                        onChange={(e) => updateSize(i, "price", e.target.value)}
+                        onFocus={scrollIntoCenter}
+                      />
+                    </div>
+                    <button
+                      onClick={() => removeSize(i)}
+                      disabled={sizes.length === 1}
+                      className="w-9 h-9 flex items-center justify-center rounded-xl border border-stone-200 dark:border-stone-800 text-stone-300 dark:text-stone-700 hover:border-stone-400 dark:hover:border-stone-600 hover:text-red-600 transition-colors disabled:opacity-20 shrink-0"
+                      aria-label="Eliminar tamaño"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    </button>
+                  </div>
+                ))}
                 <button
-                  key={mode}
-                  onClick={() => setPricingMode(mode)}
-                  className={`px-3 py-1 rounded-md text-[10px] uppercase tracking-wider transition-all duration-150 ${
-                    pricingMode === mode
-                      ? "bg-stone-300 dark:bg-stone-700 text-stone-700 dark:text-stone-200"
-                      : "text-stone-400 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400"
+                  onClick={addSize}
+                  className="w-full py-2.5 rounded-xl border border-dashed border-stone-200 dark:border-stone-800 text-stone-400 dark:text-stone-600 hover:border-stone-400 dark:hover:border-stone-600 hover:text-stone-600 dark:hover:text-stone-400 text-[10px] uppercase tracking-widest transition-all duration-200"
+                >
+                  + Agregar tamaño
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-600">Tags</p>
+            <div className="flex flex-wrap gap-2">
+              {ITEM_TAGS.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => toggleTag(tag)}
+                  className={`text-[10px] uppercase tracking-widest px-3 py-1.5 rounded-full border transition-all duration-150 ${
+                    tags.includes(tag)
+                      ? "border-stone-400 text-stone-800 dark:text-stone-100 bg-stone-200 dark:bg-stone-800"
+                      : "border-stone-200 dark:border-stone-800 text-stone-400 dark:text-stone-600 hover:border-stone-300 dark:hover:border-stone-700"
                   }`}
                 >
-                  {mode === "single" ? "Único" : "Por tamaño"}
+                  {tag}
                 </button>
               ))}
             </div>
           </div>
 
-          {pricingMode === "single" ? (
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-600 text-sm">$</span>
-              <input
-                className="w-full bg-stone-50 dark:bg-neutral-950 border border-stone-200 dark:border-stone-800 rounded-xl pl-8 pr-4 py-3 text-sm text-stone-900 dark:text-white placeholder:text-stone-300 dark:placeholder:text-stone-700 focus:outline-none focus:border-stone-400 dark:focus:border-stone-600 transition-colors"
-                placeholder="45"
-                type="number"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-              />
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {sizes.map((size, i) => (
-                <div key={i} className="flex gap-2 items-center">
-                  <input
-                    className={`flex-1 ${smallInputCls}`}
-                    placeholder="10 oz"
-                    value={size.label}
-                    onChange={(e) => updateSize(i, "label", e.target.value)}
-                  />
-                  <div className="relative w-24 shrink-0">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 dark:text-stone-600 text-sm">$</span>
-                    <input
-                      className="w-full pl-6 pr-3 py-2.5 bg-stone-50 dark:bg-neutral-950 border border-stone-200 dark:border-stone-800 rounded-xl text-sm text-stone-900 dark:text-white placeholder:text-stone-300 dark:placeholder:text-stone-700 focus:outline-none focus:border-stone-400 dark:focus:border-stone-600 transition-colors"
-                      placeholder="45"
-                      type="number"
-                      value={size.price}
-                      onChange={(e) => updateSize(i, "price", e.target.value)}
-                    />
-                  </div>
-                  <button
-                    onClick={() => removeSize(i)}
-                    disabled={sizes.length === 1}
-                    className="w-9 h-9 flex items-center justify-center rounded-xl border border-stone-200 dark:border-stone-800 text-stone-300 dark:text-stone-700 hover:border-stone-400 dark:hover:border-stone-600 hover:text-red-600 transition-colors disabled:opacity-20 shrink-0"
-                    aria-label="Eliminar tamaño"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                  </button>
-                </div>
-              ))}
-              <button
-                onClick={addSize}
-                className="w-full py-2.5 rounded-xl border border-dashed border-stone-200 dark:border-stone-800 text-stone-400 dark:text-stone-600 hover:border-stone-400 dark:hover:border-stone-600 hover:text-stone-600 dark:hover:text-stone-400 text-[10px] uppercase tracking-widest transition-all duration-200"
-              >
-                + Agregar tamaño
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <p className="text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-600">Tags</p>
-          <div className="flex flex-wrap gap-2">
-            {ITEM_TAGS.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => toggleTag(tag)}
-                className={`text-[10px] uppercase tracking-widest px-3 py-1.5 rounded-full border transition-all duration-150 ${
-                  tags.includes(tag)
-                    ? "border-stone-400 text-stone-800 dark:text-stone-100 bg-stone-200 dark:bg-stone-800"
-                    : "border-stone-200 dark:border-stone-800 text-stone-400 dark:text-stone-600 hover:border-stone-300 dark:hover:border-stone-700"
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
+          <div className="flex gap-5 pt-1">
+            <Toggle checked={highlight} onChange={setHighlight} label="Especial" />
+            <Toggle checked={seasonal} onChange={setSeasonal} label="Temporada" />
           </div>
         </div>
 
-        <div className="flex gap-5 pt-1">
-          <Toggle checked={highlight} onChange={setHighlight} label="Especial" />
-          <Toggle checked={seasonal} onChange={setSeasonal} label="Temporada" />
+        {/* Save button — fixed at bottom */}
+        <div className="px-6 pt-3 pb-10 sm:pb-6 shrink-0">
+          <button
+            onClick={handleSave}
+            disabled={!name.trim() || !imageUrlValid || saving}
+            className="w-full py-3.5 rounded-2xl bg-stone-800 text-white dark:bg-stone-200 dark:text-neutral-900 text-[11px] uppercase tracking-[0.35em] hover:bg-stone-900 dark:hover:bg-white transition-colors disabled:opacity-30"
+          >
+            {saving ? "Guardando…" : "Guardar cambios"}
+          </button>
         </div>
-
-        <button
-          onClick={handleSave}
-          disabled={!name.trim() || !imageUrlValid || saving}
-          className="w-full py-3.5 rounded-2xl bg-stone-800 text-white dark:bg-stone-200 dark:text-neutral-900 text-[11px] uppercase tracking-[0.35em] hover:bg-stone-900 dark:hover:bg-white transition-colors disabled:opacity-30 mt-2"
-        >
-          {saving ? "Guardando…" : "Guardar cambios"}
-        </button>
       </motion.div>
     </motion.div>
   );

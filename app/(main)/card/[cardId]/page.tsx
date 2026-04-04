@@ -18,23 +18,14 @@ import {
   getCustomerSession,
   setCustomerSession,
   clearCustomerSession,
-  updateCustomerPhone,
 } from "@/app/actions/customerSession";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
 import { PushPrompt } from "@/components/ui/PushPrompt";
+import { getReferralCount } from "@/services/customer.service";
+import { fireCelebration } from "@/lib/confetti";
+import { hapticCelebration } from "@/lib/haptics";
+import { useRealtimeToasts } from "@/hooks/useRealtimeToasts";
+import { useInAppToast, InAppToastContainer } from "@/components/ui/InAppToast";
 
 
 // Pantalla cuando el cliente o tarjeta ya no existe
@@ -67,10 +58,11 @@ function GoneScreen() {
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900 dark:bg-neutral-950 dark:text-white flex flex-col">
-      <nav className="flex items-center justify-center px-6 py-5">
-        <span className="text-[10px] uppercase tracking-[0.45em] text-stone-400 dark:text-stone-500">
+      <nav className="flex items-center justify-between px-6 sm:px-10 py-5">
+        <Link href="/" className="font-mono text-xs font-medium tracking-[0.25em] uppercase text-stone-900 dark:text-stone-200 hover:text-amber-700 dark:hover:text-amber-500 transition-colors duration-300">
           La Commune
-        </span>
+        </Link>
+        <ThemeToggle />
       </nav>
       <div className="flex-1 flex items-center justify-center px-6">
         <motion.div
@@ -469,6 +461,10 @@ function Card({
   const router = useRouter();
   const name = customer?.name?.trim();
 
+  // In-app realtime toasts
+  const { toasts, showToast, dismiss } = useInAppToast();
+  useRealtimeToasts(customerId, showToast);
+
   // Reward info — usa el rewardId de la tarjeta, fallback a default
   const [rewardDoc, setRewardDoc] = useState<Reward | null>(null);
 
@@ -517,6 +513,23 @@ function Card({
     };
   }, []);
 
+  // Confetti + haptic cuando la tarjeta está completa
+  const celebratedRef = useRef(false);
+  useEffect(() => {
+    if (isCompleted && !celebratedRef.current) {
+      celebratedRef.current = true;
+      // Solo celebrar si no se ha celebrado esta tarjeta antes
+      const key = `celebrated-${cardId}`;
+      if (!localStorage.getItem(key)) {
+        localStorage.setItem(key, "1");
+        setTimeout(() => {
+          fireCelebration();
+          hapticCelebration();
+        }, 600);
+      }
+    }
+  }, [isCompleted, cardId]);
+
   // Pull-to-refresh hint (show once)
   useEffect(() => {
     const hintKey = "pull-refresh-hint-shown";
@@ -552,6 +565,19 @@ function Card({
   }, [router]);
 
   const [copied, setCopied] = useState(false);
+  const [referralCount, setReferralCount] = useState(0);
+
+  // Cargar conteo de referidos
+  useEffect(() => {
+    getReferralCount(customerId)
+      .then(setReferralCount)
+      .catch(() => {}); // silencioso
+  }, [customerId]);
+
+  // Link de referido: usa el customerId como param estable
+  const referralUrl = typeof window !== "undefined"
+    ? `${window.location.origin}/onboarding?ref=${customerId}`
+    : "";
 
   const handleShare = async () => {
     if (typeof navigator !== "undefined" && navigator.share) {
@@ -559,9 +585,9 @@ function Card({
         await navigator.share({
           title: "La Commune · Tarjeta de fidelidad",
           text: name
-            ? `${name} ya tiene su tarjeta de fidelidad en La Commune. Cada visita suma — a las 5 te invitan una bebida.`
-            : "Ya tengo mi tarjeta de fidelidad en La Commune. Cada visita suma — a las 5 te invitan una bebida.",
-          url: window.location.href,
+            ? `${name} te invita a La Commune. Registrate y ambos reciben un sello extra en su tarjeta de fidelidad.`
+            : "Te invito a La Commune. Registrate y ambos recibimos un sello extra en nuestra tarjeta de fidelidad.",
+          url: referralUrl,
         });
         return;
       } catch {
@@ -570,7 +596,7 @@ function Card({
     }
     // Fallback: copy link to clipboard
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      await navigator.clipboard.writeText(referralUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -578,74 +604,35 @@ function Card({
     }
   };
 
-  const handleLogout = async () => {
-    localStorage.removeItem("cardId");
-    localStorage.removeItem("customerId");
-    await clearCustomerSession();
-    router.replace("/");
-  };
-
-  // --- Update phone state ---
-  const [showPhoneUpdate, setShowPhoneUpdate] = useState(false);
-  const [newPhone, setNewPhone] = useState("");
-  const [phonePin, setPhonePin] = useState("");
-  const [phoneUpdateLoading, setPhoneUpdateLoading] = useState(false);
-  const [phoneUpdateMsg, setPhoneUpdateMsg] = useState<{
-    type: "ok" | "err";
-    text: string;
-  } | null>(null);
-
-  const handlePhoneUpdate = async () => {
-    if (newPhone.length !== 10 || phonePin.length !== 4) return;
-    const cid =
-      typeof window !== "undefined"
-        ? localStorage.getItem("customerId")
-        : null;
-    if (!cid) return;
-
-    setPhoneUpdateLoading(true);
-    setPhoneUpdateMsg(null);
-
-    try {
-      const res = await updateCustomerPhone(cid, phonePin, newPhone);
-      if (res.ok) {
-        setPhoneUpdateMsg({ type: "ok", text: "Telefono actualizado." });
-        setNewPhone("");
-        setPhonePin("");
-        setTimeout(() => {
-          setShowPhoneUpdate(false);
-          setPhoneUpdateMsg(null);
-        }, 2000);
-      } else {
-        setPhoneUpdateMsg({ type: "err", text: res.error });
-      }
-    } catch {
-      setPhoneUpdateMsg({ type: "err", text: "Error inesperado." });
-    } finally {
-      setPhoneUpdateLoading(false);
-    }
-  };
 
   return (
     <div id="main-content" className="min-h-screen bg-stone-50 text-stone-900 dark:bg-neutral-950 dark:text-white flex flex-col">
+
+      {/* In-app toasts */}
+      <InAppToastContainer toasts={toasts} onDismiss={dismiss} />
 
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 sm:px-10 py-5">
         <Link
           href="/"
-          className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors duration-300 group"
+          className="font-mono text-xs font-medium tracking-[0.25em] uppercase text-stone-900 dark:text-stone-200 hover:text-amber-700 dark:hover:text-amber-500 transition-colors duration-300"
         >
-          <span aria-hidden="true" className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
-          Inicio
-        </Link>
-        <span className="text-[10px] uppercase tracking-[0.45em] text-stone-400 dark:text-stone-500">
           La Commune
-        </span>
-        <div className="flex items-center gap-2">
+        </Link>
+        <div className="flex items-center gap-6">
+          <div className="hidden sm:flex gap-8">
+            <Link
+              href="/menu"
+              className="font-mono text-xs tracking-[0.12em] uppercase text-stone-400 dark:text-stone-500 hover:text-amber-700 dark:hover:text-amber-500 transition-colors duration-300 relative group"
+            >
+              Menu
+              <span className="absolute bottom-[-2px] left-0 w-0 h-px bg-amber-700 dark:bg-amber-500 group-hover:w-full transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]" />
+            </Link>
+          </div>
           <ThemeToggle />
           <Link
             href="/menu"
-            className="inline-flex items-center gap-2.5 text-[10px] uppercase tracking-[0.3em] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors duration-300 group"
+            className="sm:hidden inline-flex items-center gap-2.5 text-xs uppercase tracking-[0.3em] text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white transition-colors duration-300 group"
           >
             Menu
             <span aria-hidden="true" className="w-4 h-px bg-stone-400 dark:bg-stone-500 group-hover:w-7 group-hover:bg-stone-900 dark:group-hover:bg-white transition-all duration-500" />
@@ -663,7 +650,7 @@ function Card({
             transition={{ duration: 0.2 }}
             className="flex justify-center py-2"
           >
-            <span className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">
+            <span className="text-xs uppercase tracking-[0.4em] text-stone-400 dark:text-stone-500">
               Actualizando...
             </span>
           </motion.div>
@@ -676,41 +663,45 @@ function Card({
             transition={{ duration: 0.4 }}
             className="flex justify-center py-2"
           >
-            <span className="text-[10px] uppercase tracking-[0.4em] text-stone-400 dark:text-stone-600">
-              Desliza hacia abajo para actualizar
+            <span className="text-xs uppercase tracking-[0.4em] text-stone-400 dark:text-stone-500">
+              Desliza para actualizar
             </span>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Contenido */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-5 px-4 pb-10">
+      <div className="flex-1 flex flex-col items-center justify-center gap-6 lg:gap-10 px-5 pb-12">
 
-        {/* Saludo — compacto */}
+        {/* Saludo + subtitulo */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="text-center"
+          className="text-center space-y-2"
         >
           <h1 className="font-display text-3xl sm:text-4xl font-light tracking-wide">
             {name ? `Hola, ${name}` : "Hola"}
           </h1>
+          {/* En desktop el eyebrow "Programa de fidelidad" ya cumple esta función */}
+          <p className="text-xs tracking-[0.3em] uppercase text-stone-400 dark:text-stone-500 lg:hidden">
+            Tu tarjeta de fidelidad
+          </p>
         </motion.div>
 
-        {/* Promo inline — solo si hay promos activas */}
+        {/* Promo inline */}
         {hasPromos && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="w-full max-w-xs"
+            className="w-full max-w-xs lg:max-w-md"
           >
             <PromoBannerInline />
           </motion.div>
         )}
 
-        {/* Tarjeta */}
+        {/* Tarjeta — en desktop: layout expandido, en mobile: flip card */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -731,160 +722,109 @@ function Card({
             >
               <Link
                 href={`/card/${cardId}/redeem`}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-amber-100/50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700/50 text-amber-700 dark:text-amber-300 text-[11px] uppercase tracking-[0.3em] hover:bg-amber-100 dark:hover:bg-amber-900/50 hover:border-amber-400 dark:hover:border-amber-600 transition-colors duration-300"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-amber-100/50 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700/50 text-amber-700 dark:text-amber-300 text-xs uppercase tracking-[0.3em] hover:bg-amber-100 dark:hover:bg-amber-900/50 hover:border-amber-400 dark:hover:border-amber-600 transition-colors duration-300"
               >
-                Canjear {rewardName.toLowerCase()} →
+                Canjear {rewardName.toLowerCase()} &rarr;
               </Link>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Actions: Historial + Descargar + Invitar */}
+        {/* Actions: Historial + Descargar */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="flex items-center justify-center gap-5"
+          className="flex items-center justify-center gap-10 lg:gap-12"
         >
           <Link
             href={`/card/${cardId}/history`}
-            className="flex flex-col items-center gap-1 group"
+            className="flex flex-col items-center gap-2 group"
           >
-            <span className="w-9 h-9 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center group-hover:border-stone-500 dark:group-hover:border-stone-500 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-stone-400 dark:text-stone-500 group-hover:text-stone-700 dark:group-hover:text-stone-300 transition-colors">
+            <span className="w-11 h-11 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center group-hover:border-stone-500 dark:group-hover:border-stone-500 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px] text-stone-400 dark:text-stone-500 group-hover:text-stone-700 dark:group-hover:text-stone-300 transition-colors">
                 <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
               </svg>
             </span>
-            <span className="text-[8px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-600 group-hover:text-stone-600 dark:group-hover:text-stone-400 transition-colors">
+            <span className="text-[10px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-500 group-hover:text-stone-600 dark:group-hover:text-stone-400 transition-colors">
               Historial
             </span>
           </Link>
 
           <DownloadCardButton cardId={cardId} customerName={name} />
-
-          <button
-            onClick={handleShare}
-            className="flex flex-col items-center gap-1 group sm:hidden"
-          >
-            <span className="w-9 h-9 rounded-full border border-stone-300 dark:border-stone-700 flex items-center justify-center group-hover:border-stone-500 dark:group-hover:border-stone-500 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 text-stone-400 dark:text-stone-500 group-hover:text-stone-700 dark:group-hover:text-stone-300 transition-colors">
-                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
-              </svg>
-            </span>
-            <span className="text-[8px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-600 group-hover:text-stone-600 dark:group-hover:text-stone-400 transition-colors">
-              {copied ? "Copiado!" : "Invitar"}
-            </span>
-          </button>
         </motion.div>
 
         {/* Push notification prompt */}
         <PushPrompt clienteId={customerId} />
 
+        {/* Sección referidos — más ancha en desktop */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="w-full max-w-xs lg:max-w-sm"
+        >
+          <div className="rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-neutral-900 px-5 py-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <p className="text-sm font-medium text-stone-800 dark:text-stone-200">
+                  Invita a un amigo
+                </p>
+                <p className="text-[11px] text-stone-400 dark:text-stone-500 leading-snug">
+                  Ambos reciben un sello extra
+                </p>
+              </div>
+              {referralCount > 0 && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40">
+                  <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                    {referralCount}
+                  </span>
+                  <span className="text-[10px] text-emerald-500 dark:text-emerald-500">
+                    {referralCount === 1 ? "invitado" : "invitados"}
+                  </span>
+                </span>
+              )}
+            </div>
+
+            <button
+              onClick={handleShare}
+              className="w-full flex items-center justify-center gap-2.5 rounded-xl bg-stone-800 dark:bg-white text-white dark:text-neutral-900 py-3 text-xs uppercase tracking-[0.2em] hover:bg-stone-900 dark:hover:bg-stone-100 transition-colors"
+            >
+              {copied ? (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  Link copiado
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+                  </svg>
+                  Compartir invitación
+                </>
+              )}
+            </button>
+          </div>
+        </motion.div>
+
       </div>
 
-      {/* Footer discreto: ajustes de cuenta */}
+      {/* Footer discreto */}
       <motion.footer
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8, delay: 0.8 }}
-        className="w-full border-t border-stone-200/50 dark:border-stone-800/50 py-6 px-4"
+        className="w-full border-t border-stone-200/50 dark:border-stone-800/50 py-6 px-5"
       >
-        <div className="max-w-xs mx-auto space-y-3">
-          <div className="flex items-center justify-center gap-6">
-            <button
-              onClick={() => setShowPhoneUpdate((v) => !v)}
-              className="text-[9px] uppercase tracking-[0.2em] text-stone-300 dark:text-stone-700 hover:text-stone-500 dark:hover:text-stone-500 transition-colors"
-            >
-              Cambiar telefono
-            </button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <button
-                  className="text-[9px] uppercase tracking-[0.2em] text-stone-300 dark:text-stone-700 hover:text-red-400 dark:hover:text-red-500 transition-colors"
-                >
-                  Cerrar sesion
-                </button>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="bg-white dark:bg-neutral-900 border-stone-200 dark:border-stone-800">
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="text-stone-900 dark:text-stone-100">
-                    Cerrar sesion
-                  </AlertDialogTitle>
-                  <AlertDialogDescription className="text-stone-500 dark:text-stone-400">
-                    Necesitaras tu PIN de 4 digitos para volver a entrar.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel className="text-stone-600 dark:text-stone-400 border-stone-300 dark:border-stone-700">
-                    Cancelar
-                  </AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleLogout}
-                    className="bg-red-600 text-white hover:bg-red-700"
-                  >
-                    Cerrar sesion
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-
-          <AnimatePresence>
-            {showPhoneUpdate && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden space-y-3 pt-2"
-              >
-                <Input
-                  type="tel"
-                  inputMode="numeric"
-                  placeholder="Nuevo telefono (10 digitos)"
-                  value={newPhone}
-                  onChange={(e) =>
-                    setNewPhone(e.target.value.replace(/\D/g, "").slice(0, 10))
-                  }
-                  className="text-sm text-center tracking-widest bg-white dark:bg-neutral-900 border-stone-300 dark:border-stone-700 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600"
-                />
-                <Input
-                  type="password"
-                  inputMode="numeric"
-                  placeholder="Tu PIN de 4 digitos"
-                  value={phonePin}
-                  maxLength={4}
-                  onChange={(e) =>
-                    setPhonePin(
-                      e.target.value.replace(/\D/g, "").slice(0, 4),
-                    )
-                  }
-                  className="text-sm text-center tracking-[0.5em] bg-white dark:bg-neutral-900 border-stone-300 dark:border-stone-700 text-stone-900 dark:text-white placeholder:text-stone-400 dark:placeholder:text-stone-600"
-                />
-                {phoneUpdateMsg && (
-                  <p
-                    className={`text-[11px] text-center ${
-                      phoneUpdateMsg.type === "ok"
-                        ? "text-emerald-500"
-                        : "text-red-500 dark:text-red-400"
-                    }`}
-                  >
-                    {phoneUpdateMsg.text}
-                  </p>
-                )}
-                <Button
-                  onClick={handlePhoneUpdate}
-                  disabled={
-                    newPhone.length !== 10 ||
-                    phonePin.length !== 4 ||
-                    phoneUpdateLoading
-                  }
-                  className="w-full rounded-full bg-stone-800 text-white dark:bg-white dark:text-neutral-900 py-2 text-[11px] tracking-wide disabled:opacity-30"
-                >
-                  {phoneUpdateLoading ? "Actualizando..." : "Actualizar telefono"}
-                </Button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+        <div className="flex items-center justify-center">
+          <Link
+            href="/profile"
+            className="text-[10px] uppercase tracking-[0.2em] text-stone-400 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400 transition-colors"
+          >
+            Mi perfil
+          </Link>
         </div>
       </motion.footer>
 
@@ -896,7 +836,7 @@ function Card({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 60, opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed bottom-0 left-0 right-0 bg-white dark:bg-neutral-900 border-t border-stone-200 dark:border-stone-800 px-6 py-3 text-center text-[10px] uppercase tracking-widest text-stone-400 dark:text-stone-500"
+            className="fixed bottom-0 left-0 right-0 bg-white dark:bg-neutral-900 border-t border-stone-200 dark:border-stone-800 px-6 py-4 text-center text-xs uppercase tracking-widest text-stone-400 dark:text-stone-500"
           >
             Sin conexión — tu QR sigue disponible
           </motion.div>

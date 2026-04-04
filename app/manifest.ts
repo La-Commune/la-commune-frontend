@@ -3,16 +3,16 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/la-commune",
-    name: "La Commune",
+    name: "La Commune — Tarjeta de Fidelidad",
     short_name: "La Commune",
     description:
       "Tu tarjeta de fidelidad digital. Acumula visitas y desbloquea tu bebida de cortesía.",
-    start_url: "/card/preview",
+    start_url: "/",
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#111111",
-    theme_color: "#111111",
+    background_color: "#1C1917",
+    theme_color: "#1C1917",
     categories: ["food", "lifestyle"],
     icons: [
       {
@@ -49,16 +49,14 @@ export default function manifest(): MetadataRoute.Manifest {
       {
         src: "/images/screenshot-card.jpeg",
         sizes: "390x844",
-        type: "image/png",
-
+        type: "image/jpeg",
         form_factor: "narrow",
         label: "Tu tarjeta de sellos digital",
       },
       {
         src: "/images/screenshot-menu.jpeg",
         sizes: "390x844",
-        type: "image/png",
-
+        type: "image/jpeg",
         form_factor: "narrow",
         label: "Menú del café",
       },
