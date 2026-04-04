@@ -689,19 +689,19 @@ export default function Home() {
                 </div>
               )}
 
-              <a
-                href="https://maps.google.com/?q=Santa+Natividad+135,+La+Providencia,+Mineral+de+la+Reforma,+Hidalgo"
+              {/* <a
+                href="https://maps.google.com/?q=La+Commune+Cafe,+Mineral+de+la+Reforma,+Hidalgo"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-6 group block"
               >
                 <p className="text-sm text-[#a89f90] group-hover:text-[#e8e0d2] transition-colors duration-300">
-                  Santa Natividad 135, Mineral de la Reforma
+                  Mineral de la Reforma, Hidalgo
                 </p>
                 <p className="text-xs uppercase tracking-[0.25em] text-[#8a7f72] group-hover:text-[#a89f90] transition-colors duration-300 mt-2">
                   Cómo llegar &rarr;
                 </p>
-              </a>
+              </a> */}
             </div>
 
             {/* Columna 3: Links */}
