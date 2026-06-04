@@ -139,7 +139,9 @@ highlight → destacado, seasonal → estacional, sizes → (opciones_tamano)
 - `app/actions/__tests__/verifyAdminPin.test.ts` — session tokens, rate limiting (8 tests)
 - `services/__tests__/customer.service.test.ts` — referidos: getReferralCount, createCustomer con/sin id_referidor (8 tests)
 - `services/__tests__/customer-stats.test.ts` — getCustomerStats: rachas, frecuencia, bebida favorita, weeklyActivity (13 tests)
-- Total: 45 tests, todos pasando
+- `services/__tests__/promotion.service.test.ts` — vigencia (rango, end-of-day, días semana), CRUD con scope (11 tests)
+- `services/__tests__/reward.service.test.ts` — getDefault, upsert update/insert, updateStamps (9 tests)
+- Total: 65 tests, todos pasando
 
 ## Sesión de cliente
 
