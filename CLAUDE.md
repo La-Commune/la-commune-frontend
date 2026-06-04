@@ -137,7 +137,8 @@ highlight → destacado, seasonal → estacional, sizes → (opciones_tamano)
 - `services/__tests__/card.service.test.ts` — addStamp, undoStamp, redeemCard, getStampEventsByCard, getCardByCustomer, createCard (10 tests)
 - `services/__tests__/menu.service.test.ts` — getFullMenu, deleteMenuItem, addMenuSection, deleteMenuSection (6 tests)
 - `app/actions/__tests__/verifyAdminPin.test.ts` — session tokens, rate limiting (8 tests)
-- Total: 25 tests, todos pasando
+- `services/__tests__/customer.service.test.ts` — referidos: getReferralCount, createCustomer con/sin id_referidor (8 tests)
+- Total: 32 tests, todos pasando
 
 ## Sesión de cliente
 
@@ -212,7 +213,15 @@ Ver `.env.example`. Variables requeridas:
 ### Archivos nuevos de la auditoría:
 - `lib/logger.ts` — logger centralizado (dev vs producción)
 
+## Trabajo Nocturno (3-4 Jun 2026) — branch `nocturno-2026-06-03`
+
+- **Seguridad**: `npm audit fix` — 25 vulnerabilidades → 2 moderate (ws vía @supabase/realtime-js, sin fix)
+- **Tests**: +8 unit para referidos (`customer.service.test.ts`)
+- **npm update**: supabase-js 2.98→2.107, playwright 1.58→1.60, react 19.2.4→19.2.7, react-hook-form, recharts, autoprefixer (solo lock, tsc y tests limpios)
+- Detalle completo en `../REPORTE-NOCTURNO.md`
+
 ## Pendiente
 
 1. Crear iconos PWA reales si se necesitan nuevos
 2. Tests E2E contra Supabase staging (auth real, flujo completo con persistencia)
+3. Upgrades major pendientes de decisión: zod 3→4, framer-motion 11→12, tailwind-merge 1→3 (unificar versiones con POS), tailwindcss 3→4 (delicado, design system usa CSS vars)
