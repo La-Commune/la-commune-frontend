@@ -142,7 +142,8 @@ highlight → destacado, seasonal → estacional, sizes → (opciones_tamano)
 - `services/__tests__/promotion.service.test.ts` — vigencia (rango, end-of-day, días semana), CRUD con scope (11 tests)
 - `services/__tests__/reward.service.test.ts` — getDefault, upsert update/insert, updateStamps (9 tests)
 - `lib/__tests__/offlineQueue.test.ts` — cola dual IDB+localStorage, fallback iOS Safari (8 tests)
-- Total: 73 tests, todos pasando
+- `services/__tests__/analytics.service.test.ts` — paginación por lotes, counts, top drinks (9 tests)
+- Total: 83 tests, todos pasando
 
 ## Sesión de cliente
 
