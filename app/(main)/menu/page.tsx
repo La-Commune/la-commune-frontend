@@ -22,7 +22,7 @@ function MenuItemImage({ src, alt }: { src: string; alt: string }) {
 
   return (
     <div
-      className="rounded-xl overflow-hidden print:hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+      className="rounded-xl overflow-hidden print:hidden transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]"
       style={{
         maxHeight: errored ? 0 : "12rem",
         opacity: errored ? 0 : 1,
@@ -188,7 +188,7 @@ export default function CafeMenu() {
               className="font-mono text-xs tracking-[0.12em] uppercase text-stone-400 dark:text-stone-500 hover:text-amber-700 dark:hover:text-amber-500 transition-colors duration-300 relative group"
             >
               Fidelidad
-              <span className="absolute bottom-[-2px] left-0 w-0 h-px bg-amber-700 dark:bg-amber-500 group-hover:w-full transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]" />
+              <span className="absolute bottom-[-2px] left-0 w-0 h-px bg-amber-700 dark:bg-amber-500 group-hover:w-full transition-all [transition-duration:400ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]" />
             </Link>
           </div>
           <ThemeToggle />
@@ -258,7 +258,7 @@ export default function CafeMenu() {
               <select
                 value={activeTag ?? ""}
                 onChange={(e) => setActiveTag(e.target.value || null)}
-                className="appearance-none text-xs uppercase tracking-[0.3em] pl-4 pr-8 py-2 rounded-full border border-stone-200 dark:border-stone-700 bg-transparent text-stone-500 dark:text-stone-400 cursor-pointer focus:outline-none focus:border-stone-400 dark:focus:border-stone-500 transition-colors"
+                className="appearance-none text-xs uppercase tracking-[0.3em] pl-4 pr-8 py-2 rounded-full border border-stone-200 dark:border-stone-700 bg-transparent text-stone-500 dark:text-stone-400 cursor-pointer focus:outline-none focus:border-stone-600 dark:focus:border-stone-400 transition-colors"
                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
               >
                 <option value="">Filtrar por tipo</option>
