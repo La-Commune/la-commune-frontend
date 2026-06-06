@@ -953,7 +953,7 @@ function StampView() {
               <button
                 onClick={handleUndo}
                 disabled={loading}
-                className="mt-1 text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400 transition-colors disabled:opacity-40"
+                className="mt-1 min-h-[44px] px-4 text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400 transition-colors disabled:opacity-40"
               >
                 Deshacer ({undoSecondsLeft}s)
               </button>

@@ -600,7 +600,7 @@ export default function Home() {
               className="font-mono text-xs tracking-[0.12em] uppercase text-[#a89f90] hover:text-[#c8956c] transition-colors duration-300 relative group"
             >
               {item.label}
-              <span className="absolute bottom-[-2px] left-0 w-0 h-px bg-[#c8956c] group-hover:w-full transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]" />
+              <span className="absolute bottom-[-2px] left-0 w-0 h-px bg-[#c8956c] group-hover:w-full transition-all [transition-duration:400ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]" />
             </Link>
           ))}
         </div>
@@ -708,19 +708,19 @@ export default function Home() {
             <div className="mt-10 flex flex-col items-center gap-4 desktop-footer-links">
               <Link
                 href="/menu"
-                className="text-xs uppercase tracking-[0.25em] text-[#a89f90] hover:text-[#c8956c] transition-colors duration-300"
+                className="text-xs uppercase tracking-[0.25em] text-[#a89f90] hover:text-[#c8956c] transition-colors duration-300 py-2.5 px-3 -my-1"
               >
                 Menú
               </Link>
               <Link
                 href={loyaltyCta.link}
-                className="text-xs uppercase tracking-[0.25em] text-[#a89f90] hover:text-[#c8956c] transition-colors duration-300"
+                className="text-xs uppercase tracking-[0.25em] text-[#a89f90] hover:text-[#c8956c] transition-colors duration-300 py-2.5 px-3 -my-1"
               >
                 Fidelidad
               </Link>
               <Link
                 href="/admin"
-                className="text-xs uppercase tracking-[0.25em] text-[#8a7f72] hover:text-[#a89f90] transition-colors duration-300"
+                className="text-xs uppercase tracking-[0.25em] text-[#8a7f72] hover:text-[#a89f90] transition-colors duration-300 py-2.5 px-3 -my-1"
               >
                 Personal
               </Link>
