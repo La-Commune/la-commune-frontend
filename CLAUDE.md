@@ -142,8 +142,10 @@ highlight → destacado, seasonal → estacional, sizes → (opciones_tamano)
 - `services/__tests__/promotion.service.test.ts` — vigencia (rango, end-of-day, días semana), CRUD con scope (11 tests)
 - `services/__tests__/reward.service.test.ts` — getDefault (orden por creado_en), getRewardById, versionado por diseño DAV-67, updateStamps (15 tests)
 - `lib/__tests__/offlineQueue.test.ts` — cola dual IDB+localStorage, fallback iOS Safari (8 tests)
+- `components/ui/__tests__/stamp-illustrations.test.ts` — smoke render de TODO el catálogo (16 ilustraciones × 4 estados) + integridad del catálogo (20 tests)
+- `app/actions/__tests__/rewardConfig.test.ts` — gate de sesión admin, validación de input, errores genéricos (10 tests)
 - `services/__tests__/analytics.service.test.ts` — paginación por lotes, counts, top drinks (9 tests)
-- Total: 89 tests, todos pasando
+- Total: 119 tests, todos pasando
 
 ## Sesión de cliente
 
