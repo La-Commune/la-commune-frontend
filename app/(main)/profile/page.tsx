@@ -403,10 +403,13 @@ export default function ProfilePage() {
       try {
         const supabase = getSupabase();
 
-        // Fetch customer
+        // Fetch customer — select explícito: pin_hmac y notas NUNCA viajan
+        // al cliente (la UI no los usa)
         const { data: clienteRow, error: clienteError } = await supabase
           .from("clientes")
-          .select("*")
+          .select(
+            "nombre, telefono, email, activo, total_visitas, total_sellos, creado_en, ultima_visita, consentimiento_whatsapp, consentimiento_email, id_referidor, bono_referido_entregado"
+          )
           .eq("id", customerId)
           .eq("negocio_id", NEGOCIO_ID)
           .single();
@@ -427,8 +430,6 @@ export default function ProfilePage() {
           lastVisitAt: clienteRow.ultima_visita ? new Date(clienteRow.ultima_visita) : undefined,
           consentWhatsApp: clienteRow.consentimiento_whatsapp,
           consentEmail: clienteRow.consentimiento_email,
-          pinHmac: clienteRow.pin_hmac,
-          notes: clienteRow.notas,
           referrerCustomerId: clienteRow.id_referidor,
           referralBonusGiven: clienteRow.bono_referido_entregado,
           schemaVersion: 1,

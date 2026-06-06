@@ -12,7 +12,12 @@ vi.mock("@/lib/supabase", () => ({
   NEGOCIO_ID: "test-negocio-id",
 }));
 
-import { createCustomer, getReferralCount } from "../customer.service";
+import {
+  createCustomer,
+  getReferralCount,
+  getCustomerByPhone,
+  getAllCustomers,
+} from "../customer.service";
 
 /**
  * Chain mock "thenable": permite tanto `.select().eq().eq().single()`
@@ -37,6 +42,68 @@ function chainMock(resolution: Record<string, unknown>): MockChain {
 
 beforeEach(() => {
   vi.clearAllMocks();
+});
+
+describe("SEGURIDAD: lookups de clientes nunca seleccionan pin_hmac", () => {
+  // El leak de realtime (pin_hmac en cada sello) enseñó la lección: cualquier
+  // lectura de `clientes` que llegue a un navegador debe excluir el HMAC del PIN.
+  // Estos lookups corren con anon key — el select EXPLÍCITO es la defensa.
+
+  it("getCustomerByPhone (onboarding público) no pide pin_hmac ni notas", async () => {
+    const chain = chainMock({ data: { id: "cli-1" }, error: null });
+    mockFrom.mockReturnValue(chain);
+
+    await getCustomerByPhone("7711234567");
+
+    expect(mockFrom).toHaveBeenCalledWith("clientes");
+    const selectArg = chain.select.mock.calls[0][0] as string;
+    expect(selectArg).not.toContain("*");
+    expect(selectArg).not.toContain("pin_hmac");
+    expect(selectArg).not.toContain("notas");
+    expect(selectArg).toContain("id");
+  });
+
+  it("getAllCustomers (directorio admin) trae notas pero NUNCA pin_hmac", async () => {
+    const chain = chainMock({ data: [], error: null });
+    mockFrom.mockReturnValue(chain);
+
+    await getAllCustomers();
+
+    const selectArg = chain.select.mock.calls[0][0] as string;
+    expect(selectArg).not.toContain("*");
+    expect(selectArg).not.toContain("pin_hmac");
+    expect(selectArg).toContain("notas"); // el admin sí edita notas
+  });
+
+  it("getAllCustomers no expone pinHmac en el modelo mapeado", async () => {
+    const chain = chainMock({
+      data: [
+        {
+          id: "cli-1",
+          nombre: "Carol",
+          telefono: "7711234567",
+          email: null,
+          activo: true,
+          total_visitas: 5,
+          total_sellos: 12,
+          creado_en: "2026-01-01T00:00:00",
+          ultima_visita: null,
+          consentimiento_whatsapp: true,
+          consentimiento_email: null,
+          notas: "cliente frecuente",
+          id_referidor: null,
+          bono_referido_entregado: false,
+        },
+      ],
+      error: null,
+    });
+    mockFrom.mockReturnValue(chain);
+
+    const customers = await getAllCustomers();
+
+    expect(customers[0]).not.toHaveProperty("pinHmac");
+    expect(customers[0].notes).toBe("cliente frecuente");
+  });
 });
 
 describe("getReferralCount", () => {
