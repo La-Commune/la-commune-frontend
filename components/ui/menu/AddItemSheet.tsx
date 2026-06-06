@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
@@ -30,6 +30,14 @@ export function AddItemSheet({
   const [ingredients, setIngredients] = useState("");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onCancel]);
 
   const handleSave = async () => {
     if (!name.trim()) return;
@@ -63,6 +71,9 @@ export function AddItemSheet({
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
       <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Nuevo item"
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         exit={{ y: "100%" }}

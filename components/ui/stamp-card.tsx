@@ -67,6 +67,7 @@ export function StampCardView({ cardId }: { cardId: string }) {
   }, []);
 
   const fireConfetti = useCallback(() => {
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     confettiRef.current?.({
       particleCount: 80,
       spread: 60,
@@ -162,7 +163,7 @@ export function StampCardView({ cardId }: { cardId: string }) {
       </motion.div>
       <AnimatePresence mode="wait">
         {stampNotification ? (
-          <motion.p key="stamp-notif" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.3 }} className="text-xs uppercase tracking-[0.3em] text-stone-600 dark:text-stone-300">Sello anadido</motion.p>
+          <motion.p key="stamp-notif" role="status" aria-live="polite" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.3 }} className="text-xs uppercase tracking-[0.3em] text-stone-600 dark:text-stone-300">Sello anadido</motion.p>
         ) : !flipped ? (
           <motion.p key="hint" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4, delay: 0.6 }} className="text-xs uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600">Desliza o toca para ver tu QR</motion.p>
         ) : (
@@ -412,6 +413,8 @@ function DesktopCinematicView({
               {stampNotification ? (
                 <motion.div
                   key="stamp-added"
+                  role="status"
+                  aria-live="polite"
                   initial={{ opacity: 0, y: 6, filter: "blur(4px)" }}
                   animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                   exit={{ opacity: 0, y: -6, filter: "blur(4px)" }}
@@ -503,6 +506,16 @@ function ExpandableQR({
     }
   }, [stampAdded, expanded]);
 
+  // Cerrar con Escape cuando el QR está expandido
+  useEffect(() => {
+    if (!expanded) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setExpanded(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [expanded]);
+
   if (!origin) return null;
 
   return (
@@ -512,8 +525,17 @@ function ExpandableQR({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 1 }}
+        role="button"
+        tabIndex={0}
+        aria-label="Ampliar código QR"
         className="flex items-center gap-5 cursor-pointer group"
         onClick={() => setExpanded(true)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setExpanded(true);
+          }
+        }}
       >
         <div
           className="rounded-xl p-2.5 transition-all duration-300 group-hover:shadow-lg"
@@ -546,6 +568,9 @@ function ExpandableQR({
         {expanded && (
           <motion.div
             key="qr-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Código QR"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

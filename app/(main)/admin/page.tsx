@@ -707,7 +707,7 @@ function StampView() {
         {!scanning && (
           <div className="flex items-center gap-3">
             <div aria-hidden="true" className="flex-1 h-px bg-stone-200 dark:bg-stone-800" />
-            <span className="text-[10px] uppercase tracking-widest text-stone-300 dark:text-stone-700">o</span>
+            <span className="text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-700">o</span>
             <div aria-hidden="true" className="flex-1 h-px bg-stone-200 dark:bg-stone-800" />
           </div>
         )}
@@ -736,6 +736,7 @@ function StampView() {
         <AnimatePresence>
           {error && (
             <motion.p
+              role="alert"
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
@@ -788,7 +789,7 @@ function StampView() {
                 />
               </div>
               {isComplete && (
-                <p className="text-[10px] uppercase tracking-widest text-amber-500">
+                <p className="text-[10px] uppercase tracking-widest text-amber-700 dark:text-amber-500">
                   ✓ Tarjeta completada — cortesía lista
                 </p>
               )}
@@ -1003,7 +1004,7 @@ function StampView() {
       {/* Historial de sellos de sesión */}
       {stampHistory.length > 0 && (
         <div className="w-full space-y-2">
-          <p className="text-[10px] uppercase tracking-widest text-stone-300 dark:text-stone-700 text-center">
+          <p className="text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-700 text-center">
             Sellos de esta sesion
           </p>
           <div className="space-y-1.5">
@@ -1018,7 +1019,7 @@ function StampView() {
                 <span className="text-[10px] tracking-widest">
                   {entry.stamps}/{entry.maxStamps}
                 </span>
-                <span className="text-[10px] text-stone-300 dark:text-stone-700">
+                <span className="text-[10px] text-stone-500 dark:text-stone-700">
                   {timeAgo(entry.time)}
                 </span>
               </div>
@@ -1189,6 +1190,8 @@ function RewardConfig() {
                       key={ilu.id}
                       type="button"
                       onClick={() => setIllustration(ilu.id)}
+                      aria-label={`Ilustración ${ilu.name}`}
+                      aria-pressed={isSelected}
                       className={`relative flex flex-col items-center gap-1.5 p-2 rounded-xl border transition-all duration-200 ${
                         isSelected
                           ? "border-stone-700 dark:border-stone-300 bg-stone-200/60 dark:bg-neutral-800 ring-1 ring-stone-700/30 dark:ring-stone-300/30"
