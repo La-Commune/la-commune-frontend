@@ -10,6 +10,7 @@ import {
   useSpring,
 } from "framer-motion";
 import React, { useRef, useState, useEffect } from "react";
+import { preload } from "react-dom";
 import { SplashScreen } from "@/components/ui/SplashScreen";
 import { HowItWorksAnimation } from "@/components/ui/HowItWorksAnimation";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -92,14 +93,24 @@ const PremiumSection: React.FC<SectionProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoFailed, setVideoFailed] = useState(false);
   const stalledTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // El poster del hero ES el LCP — precargarlo con prioridad alta
+  // (react-dom preload es idempotente, seguro en render)
+  if (!lazy && videoPoster && typeof window !== "undefined") {
+    preload(videoPoster, { as: "image", fetchPriority: "high" });
+  }
   const loopOverlayRef = useRef<HTMLDivElement>(null);
   const loopFadingOut = useRef(false);
   const rafRef = useRef<number | null>(null);
   const FADE_SECS = 1.8;
   const prefersReduced = useReducedMotion();
 
-  // rAF a 60 fps — lee currentTime cada frame para opacidad perfectamente continua
+  // rAF a 60 fps — lee currentTime cada frame para opacidad perfectamente continua.
+  // Solo corre MIENTRAS el video reproduce y la pestaña es visible: antes corría
+  // desde el montaje, por sección, para siempre (CPU/batería en móvil).
   useEffect(() => {
+    let running = false;
+
     const tick = () => {
       const video = videoRef.current;
       const overlay = loopOverlayRef.current;
@@ -109,10 +120,43 @@ const PremiumSection: React.FC<SectionProps> = ({
           overlay.style.opacity = String(Math.min(1, 1 - timeLeft / FADE_SECS));
         }
       }
+      if (running) rafRef.current = requestAnimationFrame(tick);
+    };
+
+    const start = () => {
+      if (running) return;
+      running = true;
       rafRef.current = requestAnimationFrame(tick);
     };
-    rafRef.current = requestAnimationFrame(tick);
-    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+    const stop = () => {
+      running = false;
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+
+    const video = videoRef.current;
+    video?.addEventListener("playing", start);
+    video?.addEventListener("pause", stop);
+    video?.addEventListener("ended", stop);
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        stop();
+      } else if (videoRef.current && !videoRef.current.paused) {
+        start();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    // Si el video ya está reproduciendo al montar el efecto
+    if (video && !video.paused && !video.ended) start();
+
+    return () => {
+      stop();
+      video?.removeEventListener("playing", start);
+      video?.removeEventListener("pause", stop);
+      video?.removeEventListener("ended", stop);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -190,7 +234,9 @@ const PremiumSection: React.FC<SectionProps> = ({
           autoPlay={!lazy && !prefersReduced}
           muted
           playsInline
-          preload={lazy ? "none" : "auto"}
+          // metadata: el poster pinta el LCP de inmediato y el MP4 (5.9 MB)
+          // se streamea al reproducir, en vez de bufferearse completo upfront
+          preload={lazy ? "none" : "metadata"}
           poster={videoPoster}
           onError={() => setVideoFailed(true)}
           onStalled={() => {

@@ -88,15 +88,30 @@ export function useNetworkStatus() {
       startPolling(OFFLINE_RETRY_MS);
     };
 
+    // Pausar el polling con la pestaña en background — sin esto la PWA
+    // baja un PNG cada 30s para siempre (datos + batería en móvil)
+    const handleVisibility = () => {
+      if (document.hidden) {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+      } else {
+        checkConnectivity();
+        startPolling(navigator.onLine ? CHECK_INTERVAL_MS : OFFLINE_RETRY_MS);
+      }
+    };
+
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
+    document.addEventListener("visibilitychange", handleVisibility);
 
-    // Polling normal
-    startPolling(navigator.onLine ? CHECK_INTERVAL_MS : OFFLINE_RETRY_MS);
+    // Polling normal (solo si la pestaña está visible)
+    if (!document.hidden) {
+      startPolling(navigator.onLine ? CHECK_INTERVAL_MS : OFFLINE_RETRY_MS);
+    }
 
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
+      document.removeEventListener("visibilitychange", handleVisibility);
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [checkConnectivity, startPolling]);
