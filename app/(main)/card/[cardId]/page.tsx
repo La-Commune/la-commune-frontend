@@ -7,8 +7,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { StampCardView } from "@/components/ui/stamp-card";
 import { DownloadCardButton } from "@/components/ui/DownloadCardButton";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { Customer } from "@/models/customer.model";
-import type { Card } from "@/models/card.model";
+import { Customer, ClienteRow, mapClienteToCustomer } from "@/models/customer.model";
+import { type Card, type TarjetaRow, mapTarjetaToCard } from "@/models/card.model";
 import { Reward } from "@/models/reward.model";
 import { getCardByCustomer } from "@/services/card.service";
 import { getDefaultReward, getRewardById } from "@/services/reward.service";
@@ -132,31 +132,10 @@ export default function CardEntry() {
 
     const supabase = getSupabase();
 
-    // OJO: este mapper también recibe payloads de REALTIME, que traen la fila
-    // completa (el select acotado solo protege el fetch inicial). Por eso aquí
-    // NUNCA se mapean pin_hmac/notas — si se mapearan, cada sello (UPDATE de
-    // clientes) los filtraría al navegador vía el canal realtime.
-    function mapClienteRow(row: Record<string, unknown>): Customer {
-      return {
-        name: row.nombre as string,
-        phone: row.telefono as string,
-        email: row.email as string | undefined,
-        active: row.activo as boolean,
-        totalVisits: row.total_visitas as number,
-        totalStamps: row.total_sellos as number,
-        createdAt: new Date(row.creado_en as string),
-        lastVisitAt: row.ultima_visita ? new Date(row.ultima_visita as string) : undefined,
-        consentWhatsApp: row.consentimiento_whatsapp as boolean | undefined,
-        consentEmail: row.consentimiento_email as boolean | undefined,
-        referrerCustomerId: row.id_referidor as string | undefined,
-        referralBonusGiven: row.bono_referido_entregado as boolean | undefined,
-        schemaVersion: 1,
-      };
-    }
-
-    // Fetch inicial
-    // Select explicito: pin_hmac y notas NUNCA viajan al cliente
-    // (la UI no los usa; el cardId de la URL no debe dar acceso a ellos)
+    // Fetch inicial — select explícito sin pin_hmac/notas (el cardId de la
+    // URL no debe dar acceso a ellos). El mapper del modelo
+    // (mapClienteToCustomer) tampoco los mapea — clave porque el canal
+    // realtime entrega la fila COMPLETA en cada UPDATE (cada sello).
     supabase
       .from("clientes")
       .select(
@@ -170,7 +149,7 @@ export default function CardEntry() {
           setGone(true);
           return;
         }
-        setCustomer(mapClienteRow(data as Record<string, unknown>));
+        setCustomer(mapClienteToCustomer(data as ClienteRow));
       });
 
     // Suscripción realtime para cambios futuros
@@ -194,7 +173,7 @@ export default function CardEntry() {
             setGone(true);
             return;
           }
-          setCustomer(mapClienteRow(row));
+          setCustomer(mapClienteToCustomer(row as unknown as ClienteRow));
         }
       )
       .subscribe();
@@ -221,14 +200,7 @@ export default function CardEntry() {
           setGone(true);
           return;
         }
-        setCardDoc({
-          id: row.id as string,
-          rewardId: row.recompensa_id as string,
-          stamps: row.sellos as number,
-          maxStamps: row.sellos_maximos as number,
-          status: row.estado as Card["status"],
-          createdAt: new Date(row.creado_en as string),
-        });
+        setCardDoc(mapTarjetaToCard(row as TarjetaRow));
       });
 
     const channel = supabase
@@ -246,15 +218,7 @@ export default function CardEntry() {
             setGone(true);
             return;
           }
-          const row = payload.new as Record<string, unknown>;
-          setCardDoc({
-            id: row.id as string,
-            rewardId: row.recompensa_id as string,
-            stamps: row.sellos as number,
-            maxStamps: row.sellos_maximos as number,
-            status: row.estado as Card["status"],
-            createdAt: new Date(row.creado_en as string),
-          });
+          setCardDoc(mapTarjetaToCard(payload.new as TarjetaRow));
         }
       )
       .subscribe();
@@ -329,14 +293,7 @@ export default function CardEntry() {
             setGone(true);
             return;
           }
-          setCardDoc({
-            id: row.id as string,
-            rewardId: row.recompensa_id as string,
-            stamps: row.sellos as number,
-            maxStamps: row.sellos_maximos as number,
-            status: row.estado as Card["status"],
-            createdAt: new Date(row.creado_en as string),
-          });
+          setCardDoc(mapTarjetaToCard(row as TarjetaRow));
         });
     };
 
