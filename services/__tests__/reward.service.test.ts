@@ -37,12 +37,18 @@ const rewardRow = {
  * - `maybeSingle`/`single`: terminales con resolución propia
  * - `then`: para awaits directos sobre la chain (update/insert sin terminal)
  */
+type MockChain = Record<string, ReturnType<typeof vi.fn>> & {
+  single: ReturnType<typeof vi.fn>;
+  maybeSingle: ReturnType<typeof vi.fn>;
+  then: (resolve: (v: unknown) => unknown, reject?: (e: unknown) => unknown) => Promise<unknown>;
+};
+
 function makeChain(opts: {
   maybeSingle?: unknown;
   single?: unknown;
   resolution?: unknown;
 } = {}) {
-  const chain: any = {};
+  const chain = {} as MockChain;
   for (const m of ["select", "eq", "neq", "limit", "order", "insert", "update", "delete"]) {
     chain[m] = vi.fn().mockReturnValue(chain);
   }
