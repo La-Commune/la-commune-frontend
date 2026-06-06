@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 // ── Mock de Supabase (patrón thenable) ──
 const mockFrom = vi.fn();
@@ -9,7 +10,12 @@ vi.mock("@/lib/supabase", () => ({
   NEGOCIO_ID: "test-negocio-id",
 }));
 
-import { getDefaultReward, upsertDefaultReward, updateRewardStamps } from "../reward.service";
+import {
+  getDefaultReward,
+  getRewardById,
+  upsertDefaultRewardWith,
+  updateRewardStamps,
+} from "../reward.service";
 
 const rewardRow = {
   id: "rew-1",
@@ -26,15 +32,30 @@ const rewardRow = {
   actualizado_en: "2026-03-01T00:00:00",
 };
 
-function chainWith(resolution: Record<string, unknown>) {
+/**
+ * Chain mock: todos los métodos intermedios devuelven la misma chain.
+ * - `maybeSingle`/`single`: terminales con resolución propia
+ * - `then`: para awaits directos sobre la chain (update/insert sin terminal)
+ */
+function makeChain(opts: {
+  maybeSingle?: unknown;
+  single?: unknown;
+  resolution?: unknown;
+} = {}) {
   const chain: any = {};
-  for (const m of ["select", "eq", "limit", "insert", "update", "delete"]) {
+  for (const m of ["select", "eq", "neq", "limit", "order", "insert", "update", "delete"]) {
     chain[m] = vi.fn().mockReturnValue(chain);
   }
-  chain.single = vi.fn().mockResolvedValue(resolution);
-  chain.then = (resolve: (v: unknown) => void) => resolve(resolution);
+  chain.single = vi.fn().mockResolvedValue(opts.single ?? { data: null, error: null });
+  chain.maybeSingle = vi
+    .fn()
+    .mockResolvedValue(opts.maybeSingle ?? { data: null, error: null });
+  chain.then = (resolve: (v: unknown) => unknown, reject?: (e: unknown) => unknown) =>
+    Promise.resolve(opts.resolution ?? { data: null, error: null }).then(resolve, reject);
   return chain;
 }
+
+const asClient = mockSupabase as unknown as SupabaseClient;
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -42,7 +63,7 @@ beforeEach(() => {
 
 describe("getDefaultReward", () => {
   it("mapea la fila de Supabase al modelo Reward", async () => {
-    mockFrom.mockReturnValue(chainWith({ data: rewardRow, error: null }));
+    mockFrom.mockReturnValue(makeChain({ maybeSingle: { data: rewardRow, error: null } }));
     const r = await getDefaultReward();
 
     expect(r).not.toBeNull();
@@ -52,24 +73,67 @@ describe("getDefaultReward", () => {
     expect(r!.illustration).toBe("flat-white-cenital");
   });
 
-  it("devuelve null cuando no hay reward default (PGRST116)", async () => {
-    mockFrom.mockReturnValue(chainWith({ data: null, error: { code: "PGRST116" } }));
+  it("prefiere la default más NUEVA (order creado_en desc) y solo activas", async () => {
+    const chain = makeChain({ maybeSingle: { data: rewardRow, error: null } });
+    mockFrom.mockReturnValue(chain);
+
+    await getDefaultReward();
+
+    expect(chain.order).toHaveBeenCalledWith("creado_en", { ascending: false });
+    expect(chain.eq).toHaveBeenCalledWith("activa", true);
+    expect(chain.eq).toHaveBeenCalledWith("es_default", true);
+    expect(chain.limit).toHaveBeenCalledWith(1);
+  });
+
+  it("devuelve null cuando no hay reward default", async () => {
+    mockFrom.mockReturnValue(makeChain({ maybeSingle: { data: null, error: null } }));
     expect(await getDefaultReward()).toBeNull();
   });
 
   it("lanza errores que no sean PGRST116", async () => {
-    mockFrom.mockReturnValue(chainWith({ data: null, error: { code: "500", message: "boom" } }));
+    mockFrom.mockReturnValue(
+      makeChain({ maybeSingle: { data: null, error: { code: "500", message: "boom" } } }),
+    );
     await expect(getDefaultReward()).rejects.toEqual({ code: "500", message: "boom" });
   });
 
   it("ilustración vacía cae al default flat-white-cenital", async () => {
-    mockFrom.mockReturnValue(chainWith({ data: { ...rewardRow, ilustracion: "" }, error: null }));
+    mockFrom.mockReturnValue(
+      makeChain({ maybeSingle: { data: { ...rewardRow, ilustracion: "" }, error: null } }),
+    );
     const r = await getDefaultReward();
     expect(r!.illustration).toBe("flat-white-cenital");
   });
 });
 
-describe("upsertDefaultReward", () => {
+describe("getRewardById (DAV-67)", () => {
+  it("busca la recompensa por id — la de la tarjeta, no la default", async () => {
+    const chain = makeChain({
+      maybeSingle: { data: { ...rewardRow, id: "rew-vieja", ilustracion: "croissant" }, error: null },
+    });
+    mockFrom.mockReturnValue(chain);
+
+    const r = await getRewardById("rew-vieja");
+
+    expect(chain.eq).toHaveBeenCalledWith("id", "rew-vieja");
+    expect(r!.id).toBe("rew-vieja");
+    expect(r!.illustration).toBe("croissant");
+  });
+
+  it("devuelve null si la recompensa ya no existe/no es visible", async () => {
+    mockFrom.mockReturnValue(makeChain({ maybeSingle: { data: null, error: null } }));
+    expect(await getRewardById("rew-x")).toBeNull();
+  });
+
+  it("propaga errores reales", async () => {
+    mockFrom.mockReturnValue(
+      makeChain({ maybeSingle: { data: null, error: { code: "500", message: "rls" } } }),
+    );
+    await expect(getRewardById("rew-x")).rejects.toEqual({ code: "500", message: "rls" });
+  });
+});
+
+describe("upsertDefaultRewardWith — versionado por diseño (DAV-67)", () => {
   const cambios = {
     name: "Postre de cortesía",
     description: "Cualquier postre",
@@ -78,48 +142,103 @@ describe("upsertDefaultReward", () => {
     active: true,
   };
 
-  it("actualiza el reward existente", async () => {
-    const chain = chainWith({ data: { id: "rew-1" }, error: null });
-    mockFrom.mockReturnValue(chain);
+  it("actualiza in place cuando NO cambia la ilustración", async () => {
+    const selectChain = makeChain({
+      maybeSingle: { data: { id: "rew-1", ilustracion: "flat-white-cenital" }, error: null },
+    });
+    const updateChain = makeChain({ resolution: { error: null } });
+    mockFrom.mockReturnValueOnce(selectChain).mockReturnValueOnce(updateChain);
 
-    await upsertDefaultReward(cambios);
+    const result = await upsertDefaultRewardWith(asClient, {
+      ...cambios,
+      illustration: "flat-white-cenital" as never,
+    });
 
-    expect(chain.update).toHaveBeenCalledWith(
-      expect.objectContaining({ nombre: "Postre de cortesía", sellos_requeridos: 8 })
+    expect(result.versioned).toBe(false);
+    expect(updateChain.update).toHaveBeenCalledWith(
+      expect.objectContaining({ nombre: "Postre de cortesía", sellos_requeridos: 8 }),
     );
-    expect(chain.insert).not.toHaveBeenCalled();
-    expect(chain.eq).toHaveBeenCalledWith("id", "rew-1");
+    expect(updateChain.eq).toHaveBeenCalledWith("id", "rew-1");
+    expect(updateChain.insert).not.toHaveBeenCalled();
+    expect(selectChain.insert).not.toHaveBeenCalled();
+  });
+
+  it("actualiza in place cuando la ilustración no viene en los cambios", async () => {
+    const selectChain = makeChain({
+      maybeSingle: { data: { id: "rew-1", ilustracion: "flat-white-cenital" }, error: null },
+    });
+    const updateChain = makeChain({ resolution: { error: null } });
+    mockFrom.mockReturnValueOnce(selectChain).mockReturnValueOnce(updateChain);
+
+    const result = await upsertDefaultRewardWith(asClient, cambios);
+
+    expect(result.versioned).toBe(false);
+    expect(updateChain.update).toHaveBeenCalled();
+    expect(updateChain.insert).not.toHaveBeenCalled();
+  });
+
+  it("VERSIONA cuando cambia la ilustración: inserta nueva default y degrada la vieja", async () => {
+    const selectChain = makeChain({
+      maybeSingle: { data: { id: "rew-old", ilustracion: "flat-white-cenital" }, error: null },
+    });
+    const insertChain = makeChain({ single: { data: { id: "rew-new" }, error: null } });
+    const demoteChain = makeChain({ resolution: { error: null } });
+    mockFrom
+      .mockReturnValueOnce(selectChain)
+      .mockReturnValueOnce(insertChain)
+      .mockReturnValueOnce(demoteChain);
+
+    const result = await upsertDefaultRewardWith(asClient, {
+      ...cambios,
+      illustration: "croissant" as never,
+    });
+
+    expect(result.versioned).toBe(true);
+
+    // Nueva fila: diseño nuevo, default y activa
+    const inserted = insertChain.insert.mock.calls[0][0][0];
+    expect(inserted.ilustracion).toBe("croissant");
+    expect(inserted.es_default).toBe(true);
+    expect(inserted.activa).toBe(true);
+    expect(inserted.negocio_id).toBe("test-negocio-id");
+
+    // Vieja fila: SOLO pierde es_default (sigue activa para que las
+    // tarjetas existentes puedan leer su diseño con anon)
+    expect(demoteChain.update).toHaveBeenCalledWith({ es_default: false });
+    expect(demoteChain.neq).toHaveBeenCalledWith("id", "rew-new");
   });
 
   it("crea el reward si no existe default, marcándolo es_default", async () => {
-    const chain = chainWith({ data: null, error: null });
-    chain.single.mockResolvedValue({ data: null, error: { code: "PGRST116" } });
-    mockFrom.mockReturnValue(chain);
+    const selectChain = makeChain({ maybeSingle: { data: null, error: null } });
+    const insertChain = makeChain({ resolution: { error: null } });
+    mockFrom.mockReturnValueOnce(selectChain).mockReturnValueOnce(insertChain);
 
-    await upsertDefaultReward(cambios);
+    const result = await upsertDefaultRewardWith(asClient, cambios);
 
-    expect(chain.insert).toHaveBeenCalled();
-    const inserted = chain.insert.mock.calls[0][0][0];
+    expect(result.versioned).toBe(false);
+    expect(insertChain.insert).toHaveBeenCalled();
+    const inserted = insertChain.insert.mock.calls[0][0][0];
     expect(inserted.es_default).toBe(true);
     expect(inserted.negocio_id).toBe("test-negocio-id");
     expect(inserted.nombre).toBe("Postre de cortesía");
   });
 
-  it("solo incluye ilustracion cuando viene en los cambios", async () => {
-    const chain = chainWith({ data: { id: "rew-1" }, error: null });
-    mockFrom.mockReturnValue(chain);
+  it("propaga error si el insert de la nueva versión falla", async () => {
+    const selectChain = makeChain({
+      maybeSingle: { data: { id: "rew-old", ilustracion: "flat-white-cenital" }, error: null },
+    });
+    const insertChain = makeChain({ single: { data: null, error: { message: "rls" } } });
+    mockFrom.mockReturnValueOnce(selectChain).mockReturnValueOnce(insertChain);
 
-    await upsertDefaultReward({ ...cambios, illustration: "croissant" as never });
-
-    expect(chain.update).toHaveBeenCalledWith(
-      expect.objectContaining({ ilustracion: "croissant" })
-    );
+    await expect(
+      upsertDefaultRewardWith(asClient, { ...cambios, illustration: "croissant" as never }),
+    ).rejects.toEqual({ message: "rls" });
   });
 });
 
 describe("updateRewardStamps", () => {
   it("actualiza sellos_requeridos del default con scope de negocio", async () => {
-    const chain = chainWith({ data: null, error: null });
+    const chain = makeChain({ resolution: { data: null, error: null } });
     mockFrom.mockReturnValue(chain);
 
     await updateRewardStamps(7);
@@ -130,7 +249,7 @@ describe("updateRewardStamps", () => {
   });
 
   it("propaga errores", async () => {
-    mockFrom.mockReturnValue(chainWith({ data: null, error: { message: "rls" } }));
+    mockFrom.mockReturnValue(makeChain({ resolution: { data: null, error: { message: "rls" } } }));
     await expect(updateRewardStamps(7)).rejects.toEqual({ message: "rls" });
   });
 });

@@ -9,7 +9,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import { Card } from "@/models/card.model";
 import { Reward } from "@/models/reward.model";
 import { getCardByCustomer } from "@/services/card.service";
-import { getDefaultReward } from "@/services/reward.service";
+import { getDefaultReward, getRewardById } from "@/services/reward.service";
 import { setCustomerSession } from "@/app/actions/customerSession";
 import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
 import { logger } from "@/lib/logger";
@@ -32,14 +32,28 @@ export default function RedeemPage() {
   const [rewardDoc, setRewardDoc] = useState<Reward | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
 
-  // Load reward once
+  // Load reward — la de ESTA tarjeta (no la default actual), para que la
+  // descripción corresponda al diseño/recompensa con la que se completó (DAV-67)
+  const cardRewardId = cardDoc?.rewardId;
   useEffect(() => {
-    getDefaultReward().then((reward) => {
-      if (reward) {
-        setRewardDoc(reward);
-      }
-    });
-  }, []);
+    if (cardDoc === null) return; // aún no carga la tarjeta
+    if (cardRewardId) {
+      getRewardById(cardRewardId).then((reward) => {
+        if (reward) {
+          setRewardDoc(reward);
+        } else {
+          getDefaultReward().then((fallback) => {
+            if (fallback) setRewardDoc(fallback);
+          });
+        }
+      });
+    } else {
+      // Tarjeta legacy sin recompensa_id
+      getDefaultReward().then((reward) => {
+        if (reward) setRewardDoc(reward);
+      });
+    }
+  }, [cardDoc === null, cardRewardId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch inicial + realtime subscription for card
   useEffect(() => {
@@ -59,6 +73,7 @@ export default function RedeemPage() {
         if (data) {
           setCardDoc({
             id: data.id,
+            rewardId: data.recompensa_id ?? undefined,
             stamps: data.sellos,
             maxStamps: data.sellos_maximos,
             status: data.estado as Card["status"],
@@ -82,6 +97,7 @@ export default function RedeemPage() {
           const row = payload.new as Record<string, unknown>;
           setCardDoc({
             id: row.id as string,
+            rewardId: (row.recompensa_id as string) ?? undefined,
             stamps: row.sellos as number,
             maxStamps: row.sellos_maximos as number,
             status: row.estado as Card["status"],

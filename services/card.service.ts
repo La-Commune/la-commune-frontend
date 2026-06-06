@@ -28,6 +28,7 @@ export async function createCard(params: {
   }
 
   // Si no tenemos un rewardId válido, buscar la recompensa default
+  // (la más nueva: el versionado de diseño puede dejar defaults viejos degradados)
   if (!rewardId) {
     const { data: defaultReward, error: defaultError } = await supabase
       .from("recompensas")
@@ -35,6 +36,7 @@ export async function createCard(params: {
       .eq("negocio_id", NEGOCIO_ID)
       .eq("es_default", true)
       .eq("activa", true)
+      .order("creado_en", { ascending: false })
       .limit(1)
       .maybeSingle();
 

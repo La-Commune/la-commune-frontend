@@ -9,9 +9,9 @@ import { DownloadCardButton } from "@/components/ui/DownloadCardButton";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Customer } from "@/models/customer.model";
 import type { Card } from "@/models/card.model";
-import { Reward, RecompensaRow, mapRecompensaToReward } from "@/models/reward.model";
+import { Reward } from "@/models/reward.model";
 import { getCardByCustomer } from "@/services/card.service";
-import { getDefaultReward } from "@/services/reward.service";
+import { getDefaultReward, getRewardById } from "@/services/reward.service";
 import { logger } from "@/lib/logger";
 import { PromoBannerInline, useActivePromos } from "@/components/ui/promos/PromoBanner";
 import {
@@ -470,19 +470,20 @@ function Card({
 
   useEffect(() => {
     if (rewardId) {
-      const supabase = getSupabase();
-      supabase
-        .from("recompensas")
-        .select("*")
-        .eq("id", rewardId)
-        .single()
-        .then(({ data }) => {
-          if (data) {
-            setRewardDoc(mapRecompensaToReward(data as RecompensaRow));
-          }
-        });
+      // La recompensa DE ESTA tarjeta — conserva su diseño original
+      // aunque el default haya cambiado (DAV-67)
+      getRewardById(rewardId).then((reward) => {
+        if (reward) {
+          setRewardDoc(reward);
+        } else {
+          // Reward borrada/desactivada — usar la default actual
+          getDefaultReward().then((fallback) => {
+            if (fallback) setRewardDoc(fallback);
+          });
+        }
+      });
     } else {
-      // Fallback si la tarjeta no tiene rewardId (no debería pasar)
+      // Fallback si la tarjeta no tiene rewardId (tarjetas legacy)
       getDefaultReward().then((reward) => {
         if (reward) setRewardDoc(reward);
       });

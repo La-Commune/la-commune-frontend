@@ -13,7 +13,8 @@ import { AnalyticsDashboard } from "@/components/ui/AnalyticsDashboard";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { verifyAdminPin, checkBaristaSession, logoutBarista, type SessionResult } from "@/app/actions/verifyAdminPin";
 import { addStamp, redeemCard, undoStamp } from "@/services/card.service";
-import { getDefaultReward, upsertDefaultReward } from "@/services/reward.service";
+import { getDefaultReward } from "@/services/reward.service";
+import { saveRewardConfig } from "@/app/actions/rewardConfig";
 import { Reward } from "@/models/reward.model";
 import { ILLUSTRATION_CATALOG, StampIllustration, type IllustrationId } from "@/components/ui/stamp-illustrations";
 import { getFullMenu } from "@/services/menu.service";
@@ -565,14 +566,18 @@ function StampView() {
     setError("");
     try {
       if (!card.customerId) throw new Error("Cliente no encontrado");
-      // Obtener la recompensa default para crear la nueva tarjeta
+      // Obtener la recompensa default para crear la nueva tarjeta.
+      // order + maybeSingle: si el versionado de diseño dejara dos defaults
+      // por un instante, gana la más nueva en vez de tronar .single()
       const { data: defaultReward } = await getSupabase()
         .from("recompensas")
         .select("id")
         .eq("negocio_id", NEGOCIO_ID)
         .eq("es_default", true)
         .eq("activa", true)
-        .single();
+        .order("creado_en", { ascending: false })
+        .limit(1)
+        .maybeSingle();
       if (!defaultReward) throw new Error("No hay recompensa default configurada");
 
       await redeemCard({
@@ -1078,7 +1083,10 @@ function RewardConfig() {
     setSaving(true);
     setSaved(false);
     try {
-      await upsertDefaultReward({
+      // Server action con service role: anon no puede escribir en recompensas
+      // (el guardado client-side anterior fallaba en silencio). Además
+      // versiona la recompensa cuando cambia el diseño (DAV-67).
+      const result = await saveRewardConfig({
         name: rewardName || "Bebida gratis",
         description: rewardDesc || "Completa tu tarjeta y recibe una bebida gratis",
         requiredStamps: stamps,
@@ -1086,8 +1094,12 @@ function RewardConfig() {
         active: true,
         illustration,
       });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+      if (!result.ok) {
+        toast({ title: "Error al guardar", description: result.error, variant: "destructive" });
+      } else {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2500);
+      }
     } catch {
       toast({ title: "Error al guardar", description: "No se pudieron guardar los cambios. Intenta de nuevo.", variant: "destructive" });
     }
