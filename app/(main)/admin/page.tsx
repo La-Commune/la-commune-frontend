@@ -3,22 +3,20 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Card } from "@/models/card.model";
-import { Customer } from "@/models/customer.model";
 import { QrScanner } from "@/components/ui/QrScanner";
 import { MenuAdmin } from "@/components/ui/MenuAdmin";
 import { PromosAdmin } from "@/components/ui/promos/PromosAdmin";
 import { CustomerDirectory } from "@/components/ui/CustomerDirectory";
 import { AnalyticsDashboard } from "@/components/ui/AnalyticsDashboard";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { verifyAdminPin, checkBaristaSession, logoutBarista, type SessionResult } from "@/app/actions/verifyAdminPin";
+import { verifyAdminPin, checkBaristaSession, logoutBarista } from "@/app/actions/verifyAdminPin";
 import { addStamp, redeemCard, undoStamp } from "@/services/card.service";
 import { getDefaultReward, upsertDefaultReward } from "@/services/reward.service";
 import { Reward } from "@/models/reward.model";
 import { ILLUSTRATION_CATALOG, StampIllustration, type IllustrationId } from "@/components/ui/stamp-illustrations";
 import { getFullMenu } from "@/services/menu.service";
 import { timeAgo } from "@/lib/utils";
-import { hapticMedium, hapticSuccess, hapticCelebration, hapticError } from "@/lib/haptics";
+import { hapticSuccess, hapticCelebration, hapticError } from "@/lib/haptics";
 import { fireCelebration } from "@/lib/confetti";
 import { toast } from "@/components/ui/use-toast";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
@@ -28,7 +26,6 @@ import {
   removeFromQueue,
   markFailed,
   getQueue,
-  getQueueSync,
   resetFailed,
   hasPending,
   requestBackgroundSync,
@@ -1030,7 +1027,7 @@ function StampView() {
 
 /* -- Config del reward ---------------------------------------- */
 function RewardConfig() {
-  const [reward, setReward] = useState<(Reward & { id: string }) | null>(null);
+  const [, setReward] = useState<(Reward & { id: string }) | null>(null);
   const [loadingReward, setLoadingReward] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);

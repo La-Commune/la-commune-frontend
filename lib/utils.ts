@@ -7,10 +7,21 @@ export function cn(...inputs: ClassValue[]) {
 
 export const isBrowser = () => typeof window !== "undefined"
 
-export function formatDate(date?: any) {
+type DateLike = Date | string | number | { toDate: () => Date };
+
+function hasToDate(value: DateLike): value is { toDate: () => Date } {
+  return (
+    typeof value === "object" &&
+    !(value instanceof Date) &&
+    "toDate" in value &&
+    typeof value.toDate === "function"
+  );
+}
+
+export function formatDate(date?: DateLike | null) {
   if (!date) return null;
   // Soportar Date objects, strings ISO, y objetos con .toDate()
-  const d = typeof date?.toDate === "function"
+  const d = hasToDate(date)
     ? date.toDate()
     : date instanceof Date
       ? date

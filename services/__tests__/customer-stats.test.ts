@@ -11,9 +11,13 @@ vi.mock("@/lib/supabase", () => ({
 
 import { getCustomerStats } from "../card.service";
 
+type MockChain = {
+  [key: string]: ReturnType<typeof vi.fn> | ((...args: unknown[]) => unknown);
+};
+
 /** Query builder awaitable que resuelve con los eventos dados */
-function chainWith(rows: Array<{ creado_en: string; origen: string; tipo_bebida: string | null }>) {
-  const chain: any = {};
+function chainWith(rows: Array<{ creado_en: string; origen: string; tipo_bebida: string | null }>): MockChain {
+  const chain: MockChain = {};
   for (const m of ["select", "eq", "order"]) {
     chain[m] = vi.fn().mockReturnValue(chain);
   }
@@ -173,7 +177,7 @@ describe("getCustomerStats", () => {
   });
 
   it("propaga errores de Supabase", async () => {
-    const chain: any = {};
+    const chain: MockChain = {};
     for (const m of ["select", "eq", "order"]) chain[m] = vi.fn().mockReturnValue(chain);
     chain.then = (resolve: (v: unknown) => void) =>
       resolve({ data: null, error: { message: "boom" } });

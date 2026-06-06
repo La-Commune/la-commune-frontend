@@ -241,11 +241,20 @@ export async function hasPending(): Promise<boolean> {
  * Registra Background Sync para que el SW procese la cola
  * cuando vuelva la conexión, incluso si la app está cerrada.
  */
+// Experimental Background Sync APIs no presentes en los tipos estándar del DOM
+interface SyncRegistration {
+  register: (tag: string) => Promise<void>;
+}
+interface PeriodicSyncRegistration {
+  register: (tag: string, options?: { minInterval: number }) => Promise<void>;
+}
+
 export async function requestBackgroundSync(): Promise<void> {
   if (!("serviceWorker" in navigator) || !("SyncManager" in window)) return;
   try {
     const registration = await navigator.serviceWorker.ready;
-    await (registration as any).sync.register("flush-stamps");
+    const sync = (registration as unknown as { sync?: SyncRegistration }).sync;
+    await sync?.register("flush-stamps");
   } catch {
     // SyncManager no soportado o permiso denegado
   }
@@ -264,10 +273,13 @@ export async function requestPeriodicSync(): Promise<void> {
   try {
     const registration = await navigator.serviceWorker.ready;
     const status = await navigator.permissions.query({
-      name: "periodic-background-sync" as any,
+      name: "periodic-background-sync" as PermissionName,
     });
     if (status.state === "granted") {
-      await (registration as any).periodicSync.register("retry-stamps", {
+      const periodicSync = (
+        registration as unknown as { periodicSync?: PeriodicSyncRegistration }
+      ).periodicSync;
+      await periodicSync?.register("retry-stamps", {
         minInterval: 5 * 60 * 1000,
       });
     }

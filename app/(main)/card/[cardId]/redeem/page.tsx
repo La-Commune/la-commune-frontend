@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import ReactCanvasConfetti from "react-canvas-confetti";
+import type { TCanvasConfettiInstance } from "react-canvas-confetti/dist/types";
 import { QRCodeCanvas } from "qrcode.react";
 import { Card } from "@/models/card.model";
 import { Reward } from "@/models/reward.model";
@@ -16,7 +17,7 @@ import { logger } from "@/lib/logger";
 import { Skeleton } from "@/components/ui/EmptyState";
 import { LoadingButton } from "@/components/ui/LoadingButton";
 
-type ConfettiInstance = (opts: any) => void;
+type ConfettiInstance = TCanvasConfettiInstance;
 
 export default function RedeemPage() {
   const { cardId } = useParams<{ cardId: string }>();

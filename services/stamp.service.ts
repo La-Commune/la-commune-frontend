@@ -1,4 +1,4 @@
-import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 
 /**
  * @deprecated Use card.service.ts addStamp() instead

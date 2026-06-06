@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { Promotion } from "@/models/promotion.model";
 import {
   getPromotions,
-  addPromotion,
   updatePromotion,
   deletePromotion,
 } from "@/services/promotion.service";

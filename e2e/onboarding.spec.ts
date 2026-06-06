@@ -59,8 +59,6 @@ test.describe("Frontend — Onboarding", () => {
     const pinInput = page.locator("#pin");
     await pinInput.waitFor({ timeout: 10_000 });
 
-    // Inicialmente hay 4 dots vacíos
-    const dots = page.locator("#pin ~ div .rounded-full, #pin + div + div .rounded-full");
     // Simplemente verificar que el input acepta 4 dígitos
     await pinInput.fill("1234");
     await expect(pinInput).toHaveValue("1234");

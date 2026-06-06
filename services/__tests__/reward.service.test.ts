@@ -26,8 +26,12 @@ const rewardRow = {
   actualizado_en: "2026-03-01T00:00:00",
 };
 
-function chainWith(resolution: Record<string, unknown>) {
-  const chain: any = {};
+type MockChain = {
+  [key: string]: ReturnType<typeof vi.fn> | ((...args: unknown[]) => unknown);
+};
+
+function chainWith(resolution: Record<string, unknown>): MockChain {
+  const chain: MockChain = {};
   for (const m of ["select", "eq", "limit", "insert", "update", "delete"]) {
     chain[m] = vi.fn().mockReturnValue(chain);
   }

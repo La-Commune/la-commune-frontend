@@ -19,8 +19,12 @@ import { createCustomer, getReferralCount } from "../customer.service";
  * como `await supabase.from(...).select(...).eq(...)` directo
  * (el query builder de supabase-js es awaitable).
  */
-function chainMock(resolution: Record<string, unknown>) {
-  const chain: any = {};
+type MockChain = {
+  [key: string]: ReturnType<typeof vi.fn> | ((...args: unknown[]) => unknown);
+};
+
+function chainMock(resolution: Record<string, unknown>): MockChain {
+  const chain: MockChain = {};
   for (const m of ["select", "insert", "update", "delete", "eq", "is", "limit", "order"]) {
     chain[m] = vi.fn().mockReturnValue(chain);
   }
