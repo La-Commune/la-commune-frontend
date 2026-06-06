@@ -132,10 +132,13 @@ export default function CardEntry() {
 
     const supabase = getSupabase();
 
-    // Fetch inicial
+    // Fetch inicial — select explícito sin pin_hmac/notas (el cardId de la
+    // URL no debe dar acceso a ellos; el mapper tampoco los mapea)
     supabase
       .from("clientes")
-      .select("*")
+      .select(
+        "nombre, telefono, email, activo, total_visitas, total_sellos, creado_en, ultima_visita, consentimiento_whatsapp, consentimiento_email, id_referidor, bono_referido_entregado"
+      )
       .eq("id", resolvedCustomerId)
       .eq("negocio_id", NEGOCIO_ID)
       .single()

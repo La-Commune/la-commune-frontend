@@ -33,7 +33,15 @@ export interface Customer {
   schemaVersion: number;
 }
 
-/** Fila cruda de Supabase (tabla clientes) — campos que el frontend consume */
+/**
+ * Fila cruda de Supabase (tabla clientes) — campos que el frontend de CLIENTE consume.
+ *
+ * SEGURIDAD: pin_hmac y notas NO están aquí a propósito. Este mapper también
+ * procesa payloads de REALTIME (que traen la fila completa en cada UPDATE —
+ * p. ej. en cada sello). Mapearlos filtraría el HMAC del PIN y las notas del
+ * staff al navegador. Las vistas de admin que los necesitan tienen su propio
+ * fetch (customer.service / CustomerDirectory).
+ */
 export interface ClienteRow {
   nombre: string;
   telefono: string;
@@ -45,8 +53,6 @@ export interface ClienteRow {
   ultima_visita?: string | null;
   consentimiento_whatsapp?: boolean | null;
   consentimiento_email?: boolean | null;
-  pin_hmac?: string | null;
-  notas?: string | null;
   id_referidor?: string | null;
   bono_referido_entregado?: boolean | null;
 }
@@ -68,8 +74,6 @@ export function mapClienteToCustomer(row: ClienteRow): Customer {
     lastVisitAt: row.ultima_visita ? new Date(row.ultima_visita) : undefined,
     consentWhatsApp: row.consentimiento_whatsapp ?? undefined,
     consentEmail: row.consentimiento_email ?? undefined,
-    pinHmac: row.pin_hmac ?? undefined,
-    notes: row.notas ?? undefined,
     referrerCustomerId: row.id_referidor ?? undefined,
     referralBonusGiven: row.bono_referido_entregado ?? undefined,
     schemaVersion: 1,

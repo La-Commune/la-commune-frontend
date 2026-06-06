@@ -65,8 +65,6 @@ describe("mapClienteToCustomer", () => {
     ultima_visita: "2026-06-01T08:30:00",
     consentimiento_whatsapp: true,
     consentimiento_email: null,
-    pin_hmac: null,
-    notas: null,
     id_referidor: "cli-9",
     bono_referido_entregado: false,
   };
@@ -99,6 +97,20 @@ describe("mapClienteToCustomer", () => {
     const c = mapClienteToCustomer(row);
     expect(c.referrerCustomerId).toBe("cli-9");
     expect(c.referralBonusGiven).toBe(false);
+  });
+
+  it("SEGURIDAD: nunca mapea pin_hmac/notas aunque vengan en el payload (realtime trae la fila completa)", () => {
+    // El canal realtime entrega TODAS las columnas en cada UPDATE de clientes
+    // (p. ej. en cada sello) — el mapper es la última línea de defensa
+    const rowConSensibles = {
+      ...row,
+      pin_hmac: "deadbeef".repeat(8),
+      notas: "nota interna del staff",
+    } as unknown as ClienteRow;
+
+    const c = mapClienteToCustomer(rowConSensibles);
+    expect(c.pinHmac).toBeUndefined();
+    expect(c.notes).toBeUndefined();
   });
 });
 
