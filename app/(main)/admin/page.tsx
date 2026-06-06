@@ -3,11 +3,28 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { QrScanner } from "@/components/ui/QrScanner";
+import dynamic from "next/dynamic";
 import { MenuAdmin } from "@/components/ui/MenuAdmin";
 import { PromosAdmin } from "@/components/ui/promos/PromosAdmin";
 import { CustomerDirectory } from "@/components/ui/CustomerDirectory";
-import { AnalyticsDashboard } from "@/components/ui/AnalyticsDashboard";
+
+// Dynamic imports: recharts (~215 kB gz) y @zxing solo se bajan al usarlos
+// (tab Analytics / abrir la cámara), no en el First Load del admin
+const AnalyticsDashboard = dynamic(
+  () => import("@/components/ui/AnalyticsDashboard").then((m) => m.AnalyticsDashboard),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="py-20 text-center text-xs uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600">
+        Cargando analíticas…
+      </div>
+    ),
+  }
+);
+const QrScanner = dynamic(
+  () => import("@/components/ui/QrScanner").then((m) => m.QrScanner),
+  { ssr: false }
+);
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { verifyAdminPin, checkBaristaSession, logoutBarista } from "@/app/actions/verifyAdminPin";
 import { addStamp, redeemCard, undoStamp } from "@/services/card.service";
