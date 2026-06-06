@@ -3,7 +3,7 @@
 import { Card, TarjetaRow, mapTarjetaToCard } from "@/models/card.model";
 import { Reward, RecompensaRow, mapRecompensaToReward } from "@/models/reward.model";
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useTheme } from "next-themes";
 import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
 import { StampIllustration, type IllustrationId } from "./stamp-illustrations";
@@ -61,6 +61,7 @@ export function StampCardFront({
   frontReady?: boolean;
 }) {
   const { resolvedTheme } = useTheme();
+  const reduceMotion = useReducedMotion();
   const isDark = resolvedTheme === "dark";
   const [card, setCard] = useState<Card | undefined>(undefined);
   const [reward, setReward] = useState<Reward | undefined>(undefined);
@@ -382,8 +383,25 @@ export function StampCardFront({
         </p>
       </div>
 
-      {/* Ilustración dinámica */}
-      <div className="flex-1 flex items-center justify-center relative">
+      {/* Ilustración dinámica — micro-rebote al sellar, pulso al completar */}
+      <motion.div
+        className="flex-1 flex items-center justify-center relative"
+        animate={
+          reduceMotion
+            ? {}
+            : isComplete
+              ? { scale: [1, 1.06, 1] }
+              : isNewStamp
+                ? { scale: [1, 0.965, 1.02, 1] }
+                : { scale: 1 }
+        }
+        transition={{
+          duration: isComplete ? 0.9 : 0.6,
+          ease: [0.16, 1, 0.3, 1],
+          times: isComplete ? [0, 0.45, 1] : [0, 0.35, 0.7, 1],
+        }}
+        style={{ transformOrigin: "50% 55%" }}
+      >
         <StampIllustration
           id={illustrationId}
           stamps={visualStamps}
@@ -397,7 +415,7 @@ export function StampCardFront({
           realStamps={stamps}
           realMaxStamps={maxStamps}
         />
-      </div>
+      </motion.div>
 
       {/* Progress message + conteo */}
       <div className="px-5 pb-4 space-y-1.5">
