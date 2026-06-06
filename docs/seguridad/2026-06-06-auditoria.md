@@ -139,9 +139,17 @@ de DAV-67) y después REVOKE anon (R1). → REQUIERE-DAVID (checkbox en R1).
 recibía `pin_hmac` (HMAC de PIN de 4 dígitos → verificable offline si la key se filtra,
 10⁴ candidatos) y `notas` (anotaciones del staff). La UI no usa ninguno.
 **✅ APLICADO HOY:** select explícito sin `pin_hmac`/`notas` en ambas páginas.
-**Caveat anotado:** el canal realtime de `clientes` sigue entregando la fila completa en
-UPDATEs (realtime no filtra columnas) — el cierre total es no exponer `pin_hmac` a anon
-vía columna-grant/vista (DDL → R3-bis). → checkbox abajo.
+**⚠️ La revisión adversarial posterior CONFIRMÓ el caveat como exploit activo:** el canal
+realtime de `clientes` de la card page entrega `payload.new` COMPLETO en cada UPDATE
+(verificado contra BD dev: tabla en publicación realtime + grant de columna a anon + la
+RPC `agregar_sello_a_tarjeta()` hace UPDATE de clientes EN CADA SELLO) — cada sello
+re-filtraba `pin_hmac` al navegador aunque el fetch inicial estuviera acotado.
+**✅ FIX APLICADO (2º commit):** el mapper de la card page ya no mapea esas 2 columnas
+(ni fetch ni realtime las entregan al estado), con comentario que explica por qué.
+**Cierre de fondo sigue siendo DDL (R3-bis):** `REVOKE SELECT (pin_hmac, notas) ON
+clientes FROM anon` — PERO el admin frontend (CustomerDirectory/customer.service) SÍ lee
+`notas`/`pin_hmac` con anon key; revocar lo rompería. El REVOKE requiere migrar antes
+esas lecturas admin a server actions (patrón saveRewardConfig). → checkbox abajo.
 
 ### 🔴 C3 — `/recover` (PIN de cliente) SIN rate limiting → fuerza bruta en minutos
 `verifyCustomerPin` no tenía límite de intentos (el admin sí: 10/15min). PIN de 4 dígitos

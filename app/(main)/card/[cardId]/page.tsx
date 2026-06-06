@@ -132,6 +132,10 @@ export default function CardEntry() {
 
     const supabase = getSupabase();
 
+    // OJO: este mapper también recibe payloads de REALTIME, que traen la fila
+    // completa (el select acotado solo protege el fetch inicial). Por eso aquí
+    // NUNCA se mapean pin_hmac/notas — si se mapearan, cada sello (UPDATE de
+    // clientes) los filtraría al navegador vía el canal realtime.
     function mapClienteRow(row: Record<string, unknown>): Customer {
       return {
         name: row.nombre as string,
@@ -144,8 +148,6 @@ export default function CardEntry() {
         lastVisitAt: row.ultima_visita ? new Date(row.ultima_visita as string) : undefined,
         consentWhatsApp: row.consentimiento_whatsapp as boolean | undefined,
         consentEmail: row.consentimiento_email as boolean | undefined,
-        pinHmac: row.pin_hmac as string | undefined,
-        notes: row.notas as string | undefined,
         referrerCustomerId: row.id_referidor as string | undefined,
         referralBonusGiven: row.bono_referido_entregado as boolean | undefined,
         schemaVersion: 1,
