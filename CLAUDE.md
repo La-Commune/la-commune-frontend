@@ -145,7 +145,7 @@ highlight → destacado, seasonal → estacional, sizes → (opciones_tamano)
 - `components/ui/__tests__/stamp-illustrations.test.ts` — smoke render de TODO el catálogo (16 ilustraciones × 4 estados) + integridad del catálogo (20 tests)
 - `app/actions/__tests__/rewardConfig.test.ts` — gate de sesión admin, validación de input, errores genéricos (10 tests)
 - `services/__tests__/analytics.service.test.ts` — paginación por lotes, counts, top drinks (9 tests)
-- Total: 119 tests, todos pasando
+- Total: 120 tests, todos pasando
 
 ## Sesión de cliente
 

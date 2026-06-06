@@ -154,6 +154,20 @@ export async function upsertDefaultRewardWith(
     .eq("negocio_id", NEGOCIO_ID);
 
   if (error) throw error;
+
+  // Auto-sanado: insert y demote del versionado NO son atómicos. Si un
+  // versionado anterior insertó la nueva default pero su demote falló, queda
+  // una default huérfana vieja — y el retry cae a ESTA rama (la ilustración
+  // ya coincide con la fila más nueva). Degradar aquí cualquier rezagada
+  // garantiza que el sistema converge a UNA sola default.
+  const { error: healError } = await supabase
+    .from("recompensas")
+    .update({ es_default: false })
+    .eq("negocio_id", NEGOCIO_ID)
+    .eq("es_default", true)
+    .neq("id", existingReward.id);
+
+  if (healError) throw healError;
   return { versioned: false };
 }
 

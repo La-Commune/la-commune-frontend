@@ -147,7 +147,11 @@ describe("upsertDefaultRewardWith — versionado por diseño (DAV-67)", () => {
       maybeSingle: { data: { id: "rew-1", ilustracion: "flat-white-cenital" }, error: null },
     });
     const updateChain = makeChain({ resolution: { error: null } });
-    mockFrom.mockReturnValueOnce(selectChain).mockReturnValueOnce(updateChain);
+    const healChain = makeChain({ resolution: { error: null } });
+    mockFrom
+      .mockReturnValueOnce(selectChain)
+      .mockReturnValueOnce(updateChain)
+      .mockReturnValueOnce(healChain);
 
     const result = await upsertDefaultRewardWith(asClient, {
       ...cambios,
@@ -168,13 +172,39 @@ describe("upsertDefaultRewardWith — versionado por diseño (DAV-67)", () => {
       maybeSingle: { data: { id: "rew-1", ilustracion: "flat-white-cenital" }, error: null },
     });
     const updateChain = makeChain({ resolution: { error: null } });
-    mockFrom.mockReturnValueOnce(selectChain).mockReturnValueOnce(updateChain);
+    const healChain = makeChain({ resolution: { error: null } });
+    mockFrom
+      .mockReturnValueOnce(selectChain)
+      .mockReturnValueOnce(updateChain)
+      .mockReturnValueOnce(healChain);
 
     const result = await upsertDefaultRewardWith(asClient, cambios);
 
     expect(result.versioned).toBe(false);
     expect(updateChain.update).toHaveBeenCalled();
     expect(updateChain.insert).not.toHaveBeenCalled();
+  });
+
+  it("AUTO-SANADO: el update in place degrada defaults huérfanas (retry tras demote fallido converge a UNA default)", async () => {
+    // Escenario: un versionado anterior insertó la nueva default pero su
+    // demote falló → quedó la vieja con es_default=true. El retry encuentra
+    // la fila más nueva (misma ilustración) → rama in-place → debe degradar
+    // a cualquier OTRA default rezagada.
+    const selectChain = makeChain({
+      maybeSingle: { data: { id: "rew-new", ilustracion: "croissant" }, error: null },
+    });
+    const updateChain = makeChain({ resolution: { error: null } });
+    const healChain = makeChain({ resolution: { error: null } });
+    mockFrom
+      .mockReturnValueOnce(selectChain)
+      .mockReturnValueOnce(updateChain)
+      .mockReturnValueOnce(healChain);
+
+    await upsertDefaultRewardWith(asClient, { ...cambios, illustration: "croissant" as never });
+
+    expect(healChain.update).toHaveBeenCalledWith({ es_default: false });
+    expect(healChain.eq).toHaveBeenCalledWith("es_default", true);
+    expect(healChain.neq).toHaveBeenCalledWith("id", "rew-new");
   });
 
   it("VERSIONA cuando cambia la ilustración: inserta nueva default y degrada la vieja", async () => {
