@@ -2,18 +2,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock supabase before importing services
 const mockRpc = vi.fn();
-const mockSelect = vi.fn();
 const mockSingle = vi.fn();
-const mockInsert = vi.fn();
-const mockUpdate = vi.fn();
-const mockEq = vi.fn();
-const mockIs = vi.fn();
-const mockLimit = vi.fn();
-const mockOrder = vi.fn();
-const mockFrom = vi.fn();
 
-function chainMock() {
-  const chain: any = {
+type MockChain = Record<string, ReturnType<typeof vi.fn>>;
+
+function chainMock(): MockChain {
+  const chain: MockChain = {
     select: vi.fn().mockReturnThis(),
     single: mockSingle,
     maybeSingle: vi.fn(),

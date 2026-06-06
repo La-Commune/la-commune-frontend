@@ -3,6 +3,7 @@
 import { motion, AnimatePresence, type PanInfo } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ReactCanvasConfetti from "react-canvas-confetti";
+import type { TCanvasConfettiInstance } from "react-canvas-confetti/dist/types";
 import { QRCodeCanvas } from "qrcode.react";
 import { useTheme } from "next-themes";
 import { StampCardFront } from "./StampCardFront";
@@ -12,7 +13,7 @@ import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
 import { Card, TarjetaRow, mapTarjetaToCard } from "@/models/card.model";
 import { Reward, RecompensaRow, mapRecompensaToReward } from "@/models/reward.model";
 
-type ConfettiInstance = (opts: any) => void;
+type ConfettiInstance = TCanvasConfettiInstance;
 
 function useIsDesktop(breakpoint = 1024) {
   const [isDesktop, setIsDesktop] = useState(false);
@@ -204,7 +205,7 @@ function DesktopCinematicView({
   // Card + reward data (same realtime logic as StampCardFront)
   const [card, setCard] = useState<Card | undefined>(undefined);
   const [reward, setReward] = useState<Reward | undefined>(undefined);
-  const [lastDrink, setLastDrink] = useState<string | null>(null);
+  const [, setLastDrink] = useState<string | null>(null);
   const hasCompletedRef = useRef(false);
   const prevStampsRef = useRef<number | undefined>(undefined);
   const [isNewStamp, setIsNewStamp] = useState(false);
@@ -292,7 +293,6 @@ function DesktopCinematicView({
   }, [stamps, isComplete, onStampAdded, onComplete]);
 
   // Progress message
-  const drinkLabel = lastDrink ? `Tu ${lastDrink} sumo` : null;
   const progressMessage = card
     ? isComplete ? `${rewardName} lista` : stamps === maxStamps - 1
       ? "Solo falta uno" : stamps === Math.floor(maxStamps / 2)

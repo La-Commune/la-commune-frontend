@@ -55,10 +55,11 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ ok: true, id: data?.[0]?.id });
-  } catch (err: any) {
-    logger.error("push/subscribe", "Error interno", err?.message || err);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "desconocido";
+    logger.error("push/subscribe", "Error interno", message);
     return NextResponse.json(
-      { error: `Error interno: ${err?.message || "desconocido"}` },
+      { error: `Error interno: ${message}` },
       { status: 500 }
     );
   }

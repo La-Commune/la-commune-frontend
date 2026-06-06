@@ -1,11 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+type MockResult = { data: unknown; error: unknown };
+
+interface MockChain {
+  _resolveWith: MockResult;
+  select: ReturnType<typeof vi.fn>;
+  single: ReturnType<typeof vi.fn>;
+  eq: ReturnType<typeof vi.fn>;
+  is: ReturnType<typeof vi.fn>;
+  order: ReturnType<typeof vi.fn>;
+  insert: ReturnType<typeof vi.fn>;
+  update: ReturnType<typeof vi.fn>;
+  delete: ReturnType<typeof vi.fn>;
+  not: ReturnType<typeof vi.fn>;
+  then: (resolve: (v: unknown) => unknown, reject?: (e: unknown) => unknown) => Promise<unknown>;
+  resolvesWith: (val: MockResult) => MockChain;
+}
+
 // Helper to create chainable mock
-function chainMock(resolvedValue?: { data: any; error: any }) {
-  const defaultVal = resolvedValue || { data: [], error: null };
+function chainMock(resolvedValue?: MockResult): MockChain {
+  const defaultVal: MockResult = resolvedValue || { data: [], error: null };
   // Create a thenable chain: every method returns the chain,
   // and the chain itself is a thenable that resolves to _resolveWith
-  const chain: any = { _resolveWith: defaultVal };
+  const chain = { _resolveWith: defaultVal } as MockChain;
   const makeSelf = () => chain;
   chain.select = vi.fn(makeSelf);
   chain.single = vi.fn(() => Promise.resolve(chain._resolveWith));
@@ -17,9 +34,10 @@ function chainMock(resolvedValue?: { data: any; error: any }) {
   chain.delete = vi.fn(makeSelf);
   chain.not = vi.fn(makeSelf);
   // Make chain awaitable (thenable)
-  chain.then = (resolve: any, reject?: any) => Promise.resolve(chain._resolveWith).then(resolve, reject);
+  chain.then = (resolve: (v: unknown) => unknown, reject?: (e: unknown) => unknown) =>
+    Promise.resolve(chain._resolveWith).then(resolve, reject);
   // Helper: set the data the chain will resolve with
-  chain.resolvesWith = (val: { data: any; error: any }) => { chain._resolveWith = val; return chain; };
+  chain.resolvesWith = (val: MockResult) => { chain._resolveWith = val; return chain; };
   return chain;
 }
 
@@ -34,11 +52,8 @@ vi.mock("@/lib/supabase", () => ({
 
 import {
   getFullMenu,
-  updateMenuItem,
-  addMenuItem,
   deleteMenuItem,
   addMenuSection,
-  updateMenuSection,
   deleteMenuSection,
 } from "../menu.service";
 
@@ -98,7 +113,6 @@ describe("menu.service", () => {
         error: null,
       });
 
-      let fromCallCount = 0;
       mockSupabase.from.mockImplementation((table: string) => {
         if (table === "categorias_menu") return catChain;
         if (table === "productos") return prodChain;
@@ -199,7 +213,7 @@ describe("menu.service", () => {
       chain.eq.mockReturnValue(chain);
       chain.eq.mockResolvedValue({ error: null });
       // Need to handle the chain: update().eq().eq()
-      const updateChain: any = {
+      const updateChain: { eq: ReturnType<typeof vi.fn> } = {
         eq: vi.fn().mockReturnThis(),
       };
       updateChain.eq.mockReturnValue(updateChain);
@@ -213,7 +227,7 @@ describe("menu.service", () => {
         return updateChain;
       });
 
-      const baseChain: any = {
+      const baseChain: { update: ReturnType<typeof vi.fn> } = {
         update: vi.fn().mockReturnValue(updateChain),
       };
 
@@ -230,7 +244,7 @@ describe("menu.service", () => {
 
   describe("addMenuSection", () => {
     it("inserta categoria correctamente", async () => {
-      const chain: any = {
+      const chain: Record<string, ReturnType<typeof vi.fn>> = {
         insert: vi.fn().mockReturnThis(),
         select: vi.fn().mockReturnThis(),
         single: vi.fn().mockResolvedValue({
@@ -256,11 +270,11 @@ describe("menu.service", () => {
 
   describe("deleteMenuSection", () => {
     it("hace soft delete de categoria y sus productos", async () => {
-      let updateCalls: Array<{ table: string; data: any }> = [];
+      const updateCalls: Array<{ table: string; data: unknown }> = [];
 
       const makeUpdateChain = (table: string) => {
-        const chain: any = {
-          update: vi.fn().mockImplementation((data: any) => {
+        const chain: Record<string, ReturnType<typeof vi.fn>> = {
+          update: vi.fn().mockImplementation((data: unknown) => {
             updateCalls.push({ table, data });
             return chain;
           }),
@@ -284,7 +298,7 @@ describe("menu.service", () => {
       await deleteMenuSection("cat-1");
 
       // Debe llamar from("productos") y from("categorias_menu")
-      const fromCalls = mockSupabase.from.mock.calls.map((c: any) => c[0]);
+      const fromCalls = mockSupabase.from.mock.calls.map((c: unknown[]) => c[0]);
       expect(fromCalls).toContain("productos");
       expect(fromCalls).toContain("categorias_menu");
     });

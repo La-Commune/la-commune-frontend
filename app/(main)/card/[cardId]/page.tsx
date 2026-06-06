@@ -413,7 +413,7 @@ export default function CardEntry() {
     }
 
     resolveSession();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [cardIdParam, router]);
 
 if (gone) {

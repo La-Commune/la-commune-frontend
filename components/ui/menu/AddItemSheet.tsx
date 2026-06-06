@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";

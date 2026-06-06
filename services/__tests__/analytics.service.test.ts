@@ -27,8 +27,12 @@ function eventRow(i: number, overrides: Record<string, unknown> = {}) {
   };
 }
 
-function chainWith(resolution: Record<string, unknown>) {
-  const chain: any = {};
+type MockChain = {
+  [key: string]: ReturnType<typeof vi.fn> | ((...args: unknown[]) => unknown);
+};
+
+function chainWith(resolution: Record<string, unknown>): MockChain {
+  const chain: MockChain = {};
   for (const m of ["select", "eq", "order", "range", "gte"]) {
     chain[m] = vi.fn().mockReturnValue(chain);
   }

@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createHmac } from "crypto";
+import { describe, it, expect } from "vitest";
+import { createHmac, timingSafeEqual } from "crypto";
 
 // We need to test the helper functions that don't depend on Next.js server APIs
 // The main verifyAdminPin function uses headers() and cookies() which are server-only
@@ -38,7 +38,6 @@ describe("verifyAdminPin - session token logic", () => {
       const expectedBuf = Buffer.from(expectedSig, "base64url");
       if (sigBuf.length !== expectedBuf.length) return null;
 
-      const { timingSafeEqual } = require("crypto");
       if (!timingSafeEqual(sigBuf, expectedBuf)) return null;
     } catch {
       return null;
