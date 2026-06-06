@@ -19,7 +19,9 @@ export type IllustrationId =
   | "rol-canela"
   | "v60-goteo"
   | "dos-tazas-brindis"
-  | "corazon-latte-art";
+  | "corazon-latte-art"
+  | "concha"
+  | "prensa-francesa";
 
 export interface IllustrationProps {
   stamps: number;
@@ -61,6 +63,8 @@ export const ILLUSTRATION_CATALOG: {
   { id: "v60-goteo", name: "V60 Pour Over", category: "Ritual", emoji: "🫖" },
   { id: "dos-tazas-brindis", name: "Brindis de Barrio", category: "Comunidad", emoji: "🥂" },
   { id: "corazon-latte-art", name: "Lo que se da, vuelve", category: "Comunidad", emoji: "🤍" },
+  { id: "concha", name: "Concha", category: "Pan dulce", emoji: "🐚" },
+  { id: "prensa-francesa", name: "Prensa Francesa", category: "Ritual", emoji: "☕" },
 ];
 
 // ─── Helper colors ───
@@ -859,6 +863,204 @@ function CorazonLatteArt(p: IllustrationProps) {
   );
 }
 
+// ═══════════════════════════════════════════
+// F5: CONCHA — la costra se cuartea línea a línea
+// ═══════════════════════════════════════════
+function Concha(p: IllustrationProps) {
+  const c = colors(p.isDark);
+  const u = p.uid ?? "";
+  const pct = p.displayedStamps / p.maxStamps;
+
+  // El domo de la concha
+  const DOME = "M40 120 Q40 58 90 56 Q140 58 140 120 Z";
+  // Masa (pan) que sube con el progreso
+  const breadTop = 120 - pct * 64; // 120 (vacío) → 56 (lleno)
+  const crust = p.isDark ? "#c79a5a" : "#e8c98f";
+  const crustLine = p.isDark ? "#7a5a2c" : "#b8915a";
+
+  // Líneas del enrejado clásico — se revelan una por sello
+  const lines = [
+    "M62 60 L52 118", "M78 57 L72 120", "M90 56 L90 120",
+    "M102 57 L108 120", "M118 60 L128 118",
+    "M48 78 Q90 70 132 78", "M46 96 Q90 88 134 96", "M50 112 Q90 106 130 112",
+  ];
+  const linesToShow = Math.round(pct * lines.length);
+
+  return (
+    <svg viewBox="0 0 180 180" className="w-[170px] h-[170px]">
+      <defs>
+        <linearGradient id={`${u}bread-co`} x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0%" stopColor={p.isDark ? "#3a2c1c" : "#d9b884"} />
+          <stop offset="60%" stopColor={p.isDark ? "#5a3f20" : "#e7cfa0"} />
+          <stop offset="100%" stopColor={crust} />
+        </linearGradient>
+        <clipPath id={`${u}domeClip-co`}><path d={DOME} /></clipPath>
+        <filter id={`${u}glow-co`}><feGaussianBlur stdDeviation="2.5" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+      </defs>
+
+      {/* Charola */}
+      <ellipse cx="90" cy="126" rx="58" ry="8" fill="none" stroke={c.plateStroke} strokeWidth="1.5" />
+      {/* Contorno del domo */}
+      <path d={DOME} fill={c.emptyFill} stroke={c.cupStroke} strokeWidth="2.5"
+        filter={p.isComplete ? `url(#${u}glow-co)` : undefined} />
+
+      {/* Pan que sube */}
+      <motion.rect x="38" width="104" height="68" fill={`url(#${u}bread-co)`}
+        clipPath={`url(#${u}domeClip-co)`}
+        initial={{ y: 120 }} animate={{ y: breadTop }}
+        transition={{ duration: p.isNewStamp ? 0.8 : 0.5, ease: [0.16, 1, 0.3, 1] }} />
+
+      {/* Enrejado: cada línea es un sello dibujándose */}
+      <g clipPath={`url(#${u}domeClip-co)`}>
+        {lines.map((d, i) => (
+          <motion.path key={i} d={d} fill="none" stroke={crustLine}
+            strokeWidth="2.2" strokeLinecap="round"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={i < linesToShow ? { pathLength: 1, opacity: 0.7 } : { pathLength: 0, opacity: 0 }}
+            transition={{ duration: p.isNewStamp ? 0.7 : 0.45, ease: [0.16, 1, 0.3, 1], delay: i < linesToShow ? (i % 3) * 0.05 : 0 }} />
+        ))}
+      </g>
+
+      {/* Ripple al sumar */}
+      <AnimatePresence>
+        {p.isNewStamp && (
+          <motion.circle cx={90} cy={95} fill="none" stroke={c.accent} strokeWidth={1.5}
+            clipPath={`url(#${u}domeClip-co)`}
+            initial={{ r: 18, opacity: 0.8 }} animate={{ r: 58, opacity: 0 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }} />
+        )}
+      </AnimatePresence>
+
+      {/* Completa: la costra brilla + pizca de azúcar */}
+      {p.isComplete && (
+        <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.3 }}>
+          <motion.path d={DOME} fill="none" stroke={c.latteArt} strokeWidth="1"
+            opacity="0.5" clipPath={`url(#${u}domeClip-co)`}
+            initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
+            transition={{ duration: 1, delay: 0.4 }} />
+          {[[66, 72], [96, 68], [114, 84], [78, 100], [108, 104], [90, 84]].map(([x, y], i) => (
+            <motion.circle key={i} cx={x} cy={y} r="1.5" fill={c.latteArt}
+              initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 0.8 }}
+              style={{ transformBox: "fill-box", transformOrigin: "center" }}
+              transition={{ delay: 0.6 + i * 0.06, ease: [0.16, 1, 0.3, 1] }} />
+          ))}
+        </motion.g>
+      )}
+
+      {!p.isComplete && <CentralCount {...p} cx={90} cy={92} svgFont="30px" />}
+      {p.isComplete && <CompleteMark cx={90} cy={92} isDark={p.isDark} />}
+    </svg>
+  );
+}
+
+// ═══════════════════════════════════════════
+// F6: PRENSA FRANCESA — el émbolo baja y el café prensado crece ARRIBA del filtro
+// ═══════════════════════════════════════════
+function PrensaFrancesa(p: IllustrationProps) {
+  const c = colors(p.isDark);
+  const u = p.uid ?? "";
+  const pct = p.displayedStamps / p.maxStamps;
+
+  // Recorrido del émbolo: arriba (y=64) → fondo (y=126). Baja con el progreso.
+  const plungerTop = 64;
+  const plungerBottom = 126;
+  const plungerY = plungerTop + pct * (plungerBottom - plungerTop);
+
+  // Café PRENSADO: crece ARRIBA del filtro conforme el émbolo baja
+  // (física real: lo claro/molido queda abajo del filtro, lo bebible arriba)
+  const GLASS_TOP = 58;
+  const brewH = Math.max(0, plungerY - 6 - GLASS_TOP);
+
+  return (
+    <svg viewBox="0 0 180 200" className="w-[155px] h-[175px]">
+      <defs>
+        <linearGradient id={`${u}brew-fp`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={p.isDark ? "#5a3f20" : "#8b6b3d"} />
+          <stop offset="60%" stopColor={p.isDark ? "#3d2810" : "#5a3f20"} />
+          <stop offset="100%" stopColor={p.isDark ? "#1a0f05" : "#3d2810"} />
+        </linearGradient>
+        <linearGradient id={`${u}metal-fp`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor={p.isDark ? "#5a524c" : "#d8d0c8"} />
+          <stop offset="45%" stopColor={p.isDark ? "#9a9088" : "#f5f0ea"} />
+          <stop offset="55%" stopColor={p.isDark ? "#9a9088" : "#f5f0ea"} />
+          <stop offset="100%" stopColor={p.isDark ? "#4a4240" : "#c7b7a3"} />
+        </linearGradient>
+        <clipPath id={`${u}glassClip-fp`}>
+          <path d="M52 56 L52 128 Q52 134 60 134 L120 134 Q128 134 128 128 L128 56Z" />
+        </clipPath>
+      </defs>
+
+      {/* Mesa */}
+      <ellipse cx="90" cy="172" rx="58" ry="8" fill="none" stroke={c.plateStroke} strokeWidth="1.5" />
+
+      {/* Cuerpo de vidrio */}
+      <path d="M52 56 L52 128 Q52 134 60 134 L120 134 Q128 134 128 128 L128 56Z"
+        fill={p.isDark ? "#1a1412" : "#faf7f4"} stroke={c.cupStroke} strokeWidth="2" opacity="0.92" />
+
+      {/* Café prensado (arriba del filtro, crece al bajar el émbolo) */}
+      <motion.rect x="52" y={GLASS_TOP} width="76"
+        fill={`url(#${u}brew-fp)`} clipPath={`url(#${u}glassClip-fp)`} opacity="0.9"
+        initial={{ height: 0 }} animate={{ height: brewH }}
+        transition={{ duration: p.isNewStamp ? 0.8 : 0.5, ease: [0.16, 1, 0.3, 1] }} />
+
+      {/* Cama de molido al fondo (se compacta, sutil) */}
+      <rect x="54" y="124" width="72" height="9" rx="2"
+        fill={p.isDark ? "#2a1c0e" : "#5a3f20"} opacity={0.35 + pct * 0.3}
+        clipPath={`url(#${u}glassClip-fp)`} />
+
+      {/* Banda metálica superior + pico + asa */}
+      <rect x="50" y="44" width="80" height="14" rx="3" fill={`url(#${u}metal-fp)`} stroke={c.cupStroke} strokeWidth="1" />
+      <path d="M128 50 Q140 48 142 56" fill="none" stroke={c.cupStroke} strokeWidth="2" strokeLinecap="round" />
+      <path d="M128 66 Q150 68 150 92 Q150 116 128 118" fill="none" stroke={c.handleStroke} strokeWidth="2.5" strokeLinecap="round" />
+
+      {/* Vástago del émbolo */}
+      <motion.line x1="90" x2="90" y1="14"
+        stroke={`url(#${u}metal-fp)`} strokeWidth="4" strokeLinecap="round"
+        initial={{ y2: plungerTop }} animate={{ y2: plungerY }}
+        transition={{ duration: p.isNewStamp ? 0.8 : 0.5, ease: [0.16, 1, 0.3, 1] }} />
+      {/* Perilla (baja con el vástago, proporcional) */}
+      <motion.g
+        initial={{ y: 0 }} animate={{ y: (plungerY - plungerTop) * 0.35 }}
+        transition={{ duration: p.isNewStamp ? 0.8 : 0.5, ease: [0.16, 1, 0.3, 1] }}>
+        <ellipse cx="90" cy="14" rx="14" ry="6" fill={`url(#${u}metal-fp)`} stroke={c.cupStroke} strokeWidth="1" />
+      </motion.g>
+      {/* Disco del filtro */}
+      <motion.g initial={{ y: plungerTop }} animate={{ y: plungerY }}
+        transition={{ duration: p.isNewStamp ? 0.8 : 0.5, ease: [0.16, 1, 0.3, 1] }}>
+        <ellipse cx="90" cy="0" rx="36" ry="6" fill={`url(#${u}metal-fp)`} stroke={c.cupStroke} strokeWidth="1.2" />
+        {[-22, -11, 0, 11, 22].map((dx, i) => (
+          <circle key={i} cx={90 + dx} cy="0" r="1.1" fill={p.isDark ? "#2a2722" : "#b8a89a"} opacity="0.7" />
+        ))}
+      </motion.g>
+
+      {/* Ripple al sumar: anillo en la línea del filtro */}
+      <AnimatePresence>
+        {p.isNewStamp && brewH > 4 && (
+          <motion.circle cx={90} cy={plungerY - 6} fill="none" stroke={c.accent} strokeWidth={1.5}
+            clipPath={`url(#${u}glassClip-fp)`}
+            initial={{ r: 8, opacity: 0.8 }} animate={{ r: 40, opacity: 0 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }} />
+        )}
+      </AnimatePresence>
+
+      {/* Completa: vapor del café recién prensado */}
+      {p.isComplete && (
+        <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 0.3 }}>
+          <motion.path d="M76 50 Q72 38 76 28" fill="none" stroke={c.latteArt} strokeWidth="1.2" strokeLinecap="round"
+            animate={{ opacity: [0.15, 0.45, 0.15] }} transition={{ duration: 2.4, repeat: Infinity }} />
+          <motion.path d="M90 48 Q86 35 90 24" fill="none" stroke={c.latteArt} strokeWidth="1.2" strokeLinecap="round"
+            animate={{ opacity: [0.2, 0.5, 0.2] }} transition={{ duration: 2.8, repeat: Infinity }} />
+          <motion.path d="M104 50 Q108 38 104 28" fill="none" stroke={c.latteArt} strokeWidth="1.2" strokeLinecap="round"
+            animate={{ opacity: [0.15, 0.45, 0.15] }} transition={{ duration: 2.6, repeat: Infinity }} />
+        </motion.g>
+      )}
+
+      {!p.isComplete && <CentralCount {...p} cx={90} cy={92} svgFont="24px" textFill={pct > 0.55 ? "#f5f0ea" : undefined} />}
+      {p.isComplete && <CompleteMark cx={90} cy={92} isDark={p.isDark} size={24} />}
+    </svg>
+  );
+}
+
 // ─── Shared sub-components ───
 
 function CentralCount({ animatedStamps, maxStamps, displayedStamps, isDark, cx, cy, svgFont = "34px", textFill, realStamps, realMaxStamps }: IllustrationProps & { cx: number; cy: number; svgFont?: string; textFill?: string }) {
@@ -901,6 +1103,8 @@ const ILLUSTRATION_MAP: Record<IllustrationId, React.FC<IllustrationProps>> = {
   "v60-goteo": V60Goteo,
   "dos-tazas-brindis": DosTazasBrindis,
   "corazon-latte-art": CorazonLatteArt,
+  "concha": Concha,
+  "prensa-francesa": PrensaFrancesa,
 };
 
 export function StampIllustration({ id, ...props }: IllustrationProps & { id: IllustrationId }) {
