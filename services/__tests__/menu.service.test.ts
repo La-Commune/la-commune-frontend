@@ -1,11 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+// Resultado típico de una query de Supabase
+type SupabaseResult = { data: unknown; error: unknown };
+
+// Chain mock: métodos encadenables (vi.fn) + terminal `single`/`then` + helpers internos
+type ChainMock = Record<string, ReturnType<typeof vi.fn>> & {
+  _resolveWith: SupabaseResult;
+  then: (resolve: (v: unknown) => unknown, reject?: (e: unknown) => unknown) => Promise<unknown>;
+  resolvesWith: (val: SupabaseResult) => ChainMock;
+};
+
 // Helper to create chainable mock
-function chainMock(resolvedValue?: { data: any; error: any }) {
+function chainMock(resolvedValue?: SupabaseResult): ChainMock {
   const defaultVal = resolvedValue || { data: [], error: null };
   // Create a thenable chain: every method returns the chain,
   // and the chain itself is a thenable that resolves to _resolveWith
-  const chain: any = { _resolveWith: defaultVal };
+  const chain = { _resolveWith: defaultVal } as ChainMock;
   const makeSelf = () => chain;
   chain.select = vi.fn(makeSelf);
   chain.single = vi.fn(() => Promise.resolve(chain._resolveWith));
@@ -17,9 +27,10 @@ function chainMock(resolvedValue?: { data: any; error: any }) {
   chain.delete = vi.fn(makeSelf);
   chain.not = vi.fn(makeSelf);
   // Make chain awaitable (thenable)
-  chain.then = (resolve: any, reject?: any) => Promise.resolve(chain._resolveWith).then(resolve, reject);
+  chain.then = (resolve: (v: unknown) => unknown, reject?: (e: unknown) => unknown) =>
+    Promise.resolve(chain._resolveWith).then(resolve, reject);
   // Helper: set the data the chain will resolve with
-  chain.resolvesWith = (val: { data: any; error: any }) => { chain._resolveWith = val; return chain; };
+  chain.resolvesWith = (val: SupabaseResult) => { chain._resolveWith = val; return chain; };
   return chain;
 }
 
@@ -196,10 +207,10 @@ describe("menu.service", () => {
   describe("addMenuItem — matemática de precios con tamaños", () => {
     // Helper: mock para addMenuItem. Captura los inserts de cada tabla.
     function setupAddItemMock() {
-      const inserts: Array<{ table: string; rows: any }> = [];
+      const inserts: Array<{ table: string; rows: Array<Record<string, unknown>> }> = [];
 
-      const prodChain: any = {
-        insert: vi.fn((rows: any) => {
+      const prodChain: Record<string, ReturnType<typeof vi.fn>> = {
+        insert: vi.fn((rows: Array<Record<string, unknown>>) => {
           inserts.push({ table: "productos", rows });
           return prodChain;
         }),
@@ -207,8 +218,8 @@ describe("menu.service", () => {
         single: vi.fn(() => Promise.resolve({ data: { id: "new-prod-id" }, error: null })),
       };
 
-      const sizeChain: any = {
-        insert: vi.fn((rows: any) => {
+      const sizeChain: Record<string, ReturnType<typeof vi.fn>> = {
+        insert: vi.fn((rows: Array<Record<string, unknown>>) => {
           inserts.push({ table: "opciones_tamano", rows });
           return Promise.resolve({ data: null, error: null });
         }),
@@ -339,7 +350,7 @@ describe("menu.service", () => {
 
       const sizeInsert = inserts.find((i) => i.table === "opciones_tamano")!;
       // OJO: comportamiento actual, ver reporte (clamp Math.max(0, ...) en menu.service.ts:242)
-      expect(sizeInsert.rows.map((r: any) => r.precio_adicional)).toEqual([0, 0, 0]);
+      expect(sizeInsert.rows.map((r) => r.precio_adicional)).toEqual([0, 0, 0]);
     });
   });
 
@@ -347,13 +358,13 @@ describe("menu.service", () => {
     // Helper: mock para updateMenuItem. Captura update de productos + delete/insert de tamaños.
     function setupUpdateItemMock(existingPrecioBase?: number) {
       const captured: {
-        productUpdate?: any;
-        sizeInserts?: any;
+        productUpdate?: Record<string, unknown>;
+        sizeInserts?: Array<Record<string, unknown>>;
         deletedSizes: boolean;
       } = { deletedSizes: false };
 
-      const prodChain: any = {
-        update: vi.fn((data: any) => {
+      const prodChain: Record<string, ReturnType<typeof vi.fn>> = {
+        update: vi.fn((data: Record<string, unknown>) => {
           captured.productUpdate = data;
           return prodChain;
         }),
@@ -371,10 +382,10 @@ describe("menu.service", () => {
         return prodChain;
       });
 
-      const sizeChain: any = {
+      const sizeChain: Record<string, ReturnType<typeof vi.fn>> = {
         delete: vi.fn(() => sizeChain),
         eq: vi.fn(() => Promise.resolve({ error: null })),
-        insert: vi.fn((rows: any) => {
+        insert: vi.fn((rows: Array<Record<string, unknown>>) => {
           captured.sizeInserts = rows;
           return Promise.resolve({ error: null });
         }),
@@ -542,7 +553,7 @@ describe("menu.service", () => {
 
     it("precio_adicional null se trata como 0 → precio mostrado = base", async () => {
       // rawSizesByProduct usa (s.precio_adicional ?? 0)
-      setupReadMenuMock(50, [{ nombre: "Único", precio_adicional: null as any, orden: 0 }]);
+      setupReadMenuMock(50, [{ nombre: "Único", precio_adicional: null as unknown as number, orden: 0 }]);
 
       const menu = await getFullMenu();
       expect(menu[0].items[0].sizes).toEqual([{ label: "Único", price: 50 }]);
@@ -552,7 +563,7 @@ describe("menu.service", () => {
   describe("addMenuItem / updateMenuItem — sizes vacío", () => {
     it("addMenuItem con sizes=[] NO inserta en opciones_tamano (comportamiento actual)", async () => {
       const inserts: Array<{ table: string }> = [];
-      const prodChain: any = {
+      const prodChain: Record<string, ReturnType<typeof vi.fn>> = {
         insert: vi.fn(() => {
           inserts.push({ table: "productos" });
           return prodChain;
@@ -560,7 +571,7 @@ describe("menu.service", () => {
         select: vi.fn(() => prodChain),
         single: vi.fn(() => Promise.resolve({ data: { id: "new-prod-id" }, error: null })),
       };
-      const sizeChain: any = {
+      const sizeChain: Record<string, ReturnType<typeof vi.fn>> = {
         insert: vi.fn(() => {
           inserts.push({ table: "opciones_tamano" });
           return Promise.resolve({ error: null });
@@ -598,7 +609,7 @@ describe("menu.service", () => {
     it("updateMenuItem con sizes=[] borra los tamaños existentes pero NO inserta nuevos", async () => {
       const captured: { deleted: boolean; inserted: boolean } = { deleted: false, inserted: false };
 
-      const prodChain: any = {
+      const prodChain: Record<string, ReturnType<typeof vi.fn>> = {
         update: vi.fn(() => prodChain),
         eq: vi.fn(() => prodChain),
       };
@@ -609,7 +620,7 @@ describe("menu.service", () => {
         return prodChain;
       });
 
-      const sizeChain: any = {
+      const sizeChain: Record<string, ReturnType<typeof vi.fn>> = {
         delete: vi.fn(() => sizeChain),
         eq: vi.fn(() => {
           captured.deleted = true;
@@ -642,7 +653,7 @@ describe("menu.service", () => {
       chain.eq.mockReturnValue(chain);
       chain.eq.mockResolvedValue({ error: null });
       // Need to handle the chain: update().eq().eq()
-      const updateChain: any = {
+      const updateChain: Record<string, ReturnType<typeof vi.fn>> = {
         eq: vi.fn().mockReturnThis(),
       };
       updateChain.eq.mockReturnValue(updateChain);
@@ -656,7 +667,7 @@ describe("menu.service", () => {
         return updateChain;
       });
 
-      const baseChain: any = {
+      const baseChain: Record<string, ReturnType<typeof vi.fn>> = {
         update: vi.fn().mockReturnValue(updateChain),
       };
 
@@ -673,7 +684,7 @@ describe("menu.service", () => {
 
   describe("addMenuSection", () => {
     it("inserta categoria correctamente", async () => {
-      const chain: any = {
+      const chain: Record<string, ReturnType<typeof vi.fn>> = {
         insert: vi.fn().mockReturnThis(),
         select: vi.fn().mockReturnThis(),
         single: vi.fn().mockResolvedValue({
@@ -699,11 +710,11 @@ describe("menu.service", () => {
 
   describe("deleteMenuSection", () => {
     it("hace soft delete de categoria y sus productos", async () => {
-      let updateCalls: Array<{ table: string; data: any }> = [];
+      const updateCalls: Array<{ table: string; data: Record<string, unknown> }> = [];
 
       const makeUpdateChain = (table: string) => {
-        const chain: any = {
-          update: vi.fn().mockImplementation((data: any) => {
+        const chain: Record<string, ReturnType<typeof vi.fn>> = {
+          update: vi.fn().mockImplementation((data: Record<string, unknown>) => {
             updateCalls.push({ table, data });
             return chain;
           }),
@@ -727,7 +738,7 @@ describe("menu.service", () => {
       await deleteMenuSection("cat-1");
 
       // Debe llamar from("productos") y from("categorias_menu")
-      const fromCalls = mockSupabase.from.mock.calls.map((c: any) => c[0]);
+      const fromCalls = mockSupabase.from.mock.calls.map((c: unknown[]) => c[0]);
       expect(fromCalls).toContain("productos");
       expect(fromCalls).toContain("categorias_menu");
     });
