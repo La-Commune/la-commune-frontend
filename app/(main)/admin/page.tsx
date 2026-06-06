@@ -23,6 +23,7 @@ import { fireCelebration } from "@/lib/confetti";
 import { toast } from "@/components/ui/use-toast";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
+import { resolveCardId } from "@/lib/card-id";
 import {
   enqueue,
   removeFromQueue,
@@ -401,9 +402,6 @@ function StampView() {
     setLastEventId(null);
     setUndoSecondsLeft(null);
   }, []);
-
-  const resolveCardId = (raw: string) =>
-    raw.trim().replace(/^.*\/card\//, "").split("?")[0].split("#")[0];
 
   const loadCard = useCallback(async (rawId: string) => {
     const id = resolveCardId(rawId);

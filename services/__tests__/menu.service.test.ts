@@ -109,7 +109,6 @@ describe("menu.service", () => {
         error: null,
       });
 
-      let fromCallCount = 0;
       mockSupabase.from.mockImplementation((table: string) => {
         if (table === "categorias_menu") return catChain;
         if (table === "productos") return prodChain;
