@@ -188,6 +188,22 @@ siendo modificado en `fix-tarjeta-diseno` → hacer tras el merge.
 
 ---
 
+## Refactors de profundización ✅ IMPLEMENTADOS (testability deepening)
+
+Más allá de los 6 candidatos del censo, durante la fase de profundización se extrajeron
+funciones puras enterradas en componentes shallow (untesteables inline) a `lib/`,
+ganando cobertura sin cambiar comportamiento — el patrón "deepening" de interfaces.md:
+
+| Refactor | Branch · commit | Fricción eliminada |
+|----------|-----------------|--------------------|
+| `resolveCardId` (parser de QR del admin) → `lib/card-id.ts` | `arquitectura-mejoras` `aa4b4ba` | Frontera crítica escáner→sellado, antes inline y sin tests. +13 tests |
+| `lib/utils` (timeAgo, formatDate, cn) testeados | `arquitectura-mejoras` `9c96eeb` | Funciones puras usadas en todo el repo, sin cobertura. +13 tests |
+| `getMilestoneType` (gamificación) → `lib/milestones.ts` | `fix-tarjeta-diseno` `a30f98a` | Lógica de hitos con fronteras de redondeo, inline. +12 tests. Destapó que los hitos 25%/75% no disparan en tarjetas de 5 sellos (correcto por anti-colisión — ver RESUMEN) |
+
+- [x] Implementados (bajo riesgo: extracciones puras byte-idénticas + archivos de test nuevos)
+
+---
+
 ## No-acción deliberada (anti-objetivos)
 
 - **Mover los 42 `.from()` de páginas a services indiscriminadamente:** queries one-off
