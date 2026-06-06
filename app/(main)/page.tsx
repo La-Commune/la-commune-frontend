@@ -94,9 +94,12 @@ const PremiumSection: React.FC<SectionProps> = ({
   const [videoFailed, setVideoFailed] = useState(false);
   const stalledTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // El poster del hero ES el LCP — precargarlo con prioridad alta
-  // (react-dom preload es idempotente, seguro en render)
-  if (!lazy && videoPoster && typeof window !== "undefined") {
+  // El poster del hero ES el LCP — precargarlo con prioridad alta.
+  // SIN guard de window: react-dom preload está diseñado para correr también
+  // durante el render de SSR y emitir <link rel="preload" fetchpriority="high">
+  // en el <head> del HTML — ahí está el beneficio real (el navegador lo
+  // descubre antes de parsear el <video poster>). Client-side es idempotente.
+  if (!lazy && videoPoster) {
     preload(videoPoster, { as: "image", fetchPriority: "high" });
   }
   const loopOverlayRef = useRef<HTMLDivElement>(null);
