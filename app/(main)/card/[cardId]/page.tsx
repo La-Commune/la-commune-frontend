@@ -153,9 +153,13 @@ export default function CardEntry() {
     }
 
     // Fetch inicial
+    // Select explicito: pin_hmac y notas NUNCA viajan al cliente
+    // (la UI no los usa; el cardId de la URL no debe dar acceso a ellos)
     supabase
       .from("clientes")
-      .select("*")
+      .select(
+        "nombre, telefono, email, activo, total_visitas, total_sellos, creado_en, ultima_visita, consentimiento_whatsapp, consentimiento_email, id_referidor, bono_referido_entregado"
+      )
       .eq("id", resolvedCustomerId)
       .eq("negocio_id", NEGOCIO_ID)
       .single()
