@@ -195,6 +195,26 @@ Sin XSS (Satori escapa), pero un name enorme fuerza renders costosos.
 datos. **Fix recomendado (REQUIERE-DAVID):** onboarding vía server action con validación
 + `CHECK` constraints en BD. → checkbox abajo.
 
+### 🔴 C10 — Barrido sistemático de `select("*")`/realtime: 2 leaks MÁS de `pin_hmac` (mismo patrón que C2)
+
+Tras el hallazgo de C2 (realtime de clientes), barrido completo de TODAS las vías por las
+que una columna sensible puede llegar al navegador: `grep` de `select("*")` (20 sitios) +
+suscripciones realtime (4 tablas). Cruzado con columnas sensibles (`pin_hmac`, `notas`):
+
+| Vía | Tabla | Veredicto |
+|-----|-------|-----------|
+| `getCustomerByPhone` (onboarding, **público**) | clientes `select("*")` | 🔴 **leak real** — quien escriba un teléfono conocido recibía el `pin_hmac` de ese cliente en su navegador (onboarding solo usa `.id`) |
+| `getAllCustomers` (CustomerDirectory/Analytics, admin) | clientes `select("*")` | 🔴 traía `pin_hmac` al navegador del admin (nunca lo necesita; el directorio sí usa `notas`) |
+| card page / redeem / admin / stamp-card | tarjetas, recompensas `select("*")` | 🟢 sin columnas sensibles |
+| realtime: tarjetas (×4), recompensas (×2), eventos_sello (×3) | — | 🟢 sin columnas sensibles |
+
+**✅ FIX APLICADO:** `getCustomerByPhone` → `select("id, nombre, telefono, activo,
+id_referidor")`; `getAllCustomers` → select explícito CON `notas` pero SIN `pin_hmac`, y
+se quitó `pinHmac` del modelo mapeado. +3 tests de regresión que fallan si algún lookup
+de `clientes` vuelve a pedir `*` o `pin_hmac`. **El cierre de fondo sigue siendo el mismo
+DDL R3-bis** (`REVOKE SELECT (pin_hmac) ON clientes FROM anon`) — ahora ya NINGÚN código
+del frontend lo lee, así que el REVOKE no rompería nada (solo falta confirmar el POS).
+
 ### Lo que está BIEN (verificado, sin acción)
 - 0 secretos hardcodeados; service role/VAPID/HMAC solo server-side; `.env*` ignorados.
 - `timingSafeEqual` en TODAS las verificaciones (cookies + PINs) con length-check.
