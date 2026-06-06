@@ -46,6 +46,8 @@ function ProfileToast({
 
   return (
     <motion.div
+      role="status"
+      aria-live="polite"
       initial={{ opacity: 0, y: -12, filter: "blur(4px)" }}
       animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       exit={{ opacity: 0, y: -12, filter: "blur(4px)" }}
@@ -141,6 +143,7 @@ function PhoneEditForm({
         <input
           ref={inputRef}
           type="tel"
+          autoComplete="tel"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           className="w-full px-4 py-2 bg-stone-100 dark:bg-neutral-800 border border-stone-300 dark:border-stone-700 rounded-lg text-sm focus:outline-none focus:border-amber-500"
@@ -154,6 +157,7 @@ function PhoneEditForm({
         </label>
         <input
           type="password"
+          autoComplete="one-time-code"
           value={pin}
           onChange={(e) => setPin(e.target.value)}
           className="w-full px-4 py-2 bg-stone-100 dark:bg-neutral-800 border border-stone-300 dark:border-stone-700 rounded-lg text-sm focus:outline-none focus:border-amber-500"
@@ -235,6 +239,7 @@ function EmailEditForm({
         <input
           ref={inputRef}
           type="email"
+          autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="w-full px-4 py-2 bg-stone-100 dark:bg-neutral-800 border border-stone-300 dark:border-stone-700 rounded-lg text-sm focus:outline-none focus:border-amber-500"
@@ -312,6 +317,7 @@ function NameEditForm({
         <input
           ref={inputRef}
           type="text"
+          autoComplete="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="w-full px-4 py-2 bg-stone-100 dark:bg-neutral-800 border border-stone-300 dark:border-stone-700 rounded-lg text-sm focus:outline-none focus:border-amber-500"
@@ -859,6 +865,8 @@ export default function ProfilePage() {
                 <button
                   onClick={push.isSubscribed ? push.unsubscribe : push.subscribe}
                   disabled={push.loading}
+                  role="switch"
+                  aria-checked={push.isSubscribed}
                   className={`relative w-11 h-6 rounded-full transition-colors ${
                     push.isSubscribed
                       ? "bg-amber-500 dark:bg-amber-600"
@@ -901,6 +909,8 @@ export default function ProfilePage() {
                     setConsentWhatsApp(!consentWhatsApp); // Revert
                   }
                 }}
+                role="switch"
+                aria-checked={consentWhatsApp}
                 className={`relative w-11 h-6 rounded-full transition-colors ${
                   consentWhatsApp
                     ? "bg-amber-500 dark:bg-amber-600"
@@ -943,6 +953,8 @@ export default function ProfilePage() {
                       setConsentEmail(!consentEmail); // Revert
                     }
                   }}
+                  role="switch"
+                  aria-checked={consentEmail}
                   className={`relative w-11 h-6 rounded-full transition-colors ${
                     consentEmail
                       ? "bg-amber-500 dark:bg-amber-600"

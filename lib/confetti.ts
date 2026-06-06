@@ -2,6 +2,7 @@ import confetti from "canvas-confetti";
 
 /** Lanzar confetti dorado al completar tarjeta o desbloquear logro */
 export function fireCelebration() {
+  if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const defaults = {
     spread: 70,
     ticks: 100,
@@ -30,6 +31,7 @@ export function fireCelebration() {
 
 /** Mini confetti sutil para logros individuales */
 export function fireAchievement() {
+  if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   confetti({
     particleCount: 25,
     spread: 55,

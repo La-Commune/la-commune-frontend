@@ -770,7 +770,7 @@ function Card({
                 <p className="text-sm font-medium text-stone-800 dark:text-stone-200">
                   Invita a un amigo
                 </p>
-                <p className="text-[11px] text-stone-400 dark:text-stone-500 leading-snug">
+                <p className="text-[11px] text-stone-500 dark:text-stone-500 leading-snug">
                   Ambos reciben un sello extra
                 </p>
               </div>

@@ -423,7 +423,7 @@ export default function CafeMenu() {
                       className={`text-xs ${
                         isFood
                           ? "text-amber-600/60 dark:text-amber-500/50 print:text-amber-600/70"
-                          : "text-stone-400 dark:text-stone-500 print:text-neutral-400"
+                          : "text-stone-500 dark:text-stone-500 print:text-neutral-400"
                       }`}
                     >
                       {section.description}
@@ -534,7 +534,7 @@ export default function CafeMenu() {
                             </div>
                           )}
 
-                          <p className="text-xs text-stone-400 dark:text-stone-500 print:text-neutral-400 leading-snug">
+                          <p className="text-xs text-stone-500 dark:text-stone-500 print:text-neutral-400 leading-snug">
                             {item.ingredients.join(" · ")}
                           </p>
 
