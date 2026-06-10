@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock supabase before importing services
-const mockRpc = vi.fn();
 const mockSingle = vi.fn();
 
 type MockChain = Record<string, ReturnType<typeof vi.fn>>;
@@ -19,7 +18,6 @@ function chainMock(): MockChain {
     update: vi.fn().mockReturnThis(),
     delete: vi.fn().mockReturnThis(),
   };
-  // Make chainable methods return the chain
   chain.select.mockReturnValue(chain);
   chain.eq.mockReturnValue(chain);
   chain.is.mockReturnValue(chain);
@@ -33,7 +31,6 @@ function chainMock(): MockChain {
 
 const mockSupabase = {
   from: vi.fn(),
-  rpc: mockRpc,
 };
 
 vi.mock("@/lib/supabase", () => ({
@@ -50,22 +47,39 @@ import {
   createCard,
 } from "../card.service";
 
+// Helper to mock global fetch
+function mockFetchOk(body: unknown) {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(body),
+    }),
+  );
+}
+
+function mockFetchError(status: number, body: unknown) {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({
+      ok: false,
+      status,
+      json: () => Promise.resolve(body),
+    }),
+  );
+}
+
 describe("card.service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
   });
 
+  // ── addStamp ────────────────────────────────────────────────────────────────
+
   describe("addStamp", () => {
-    it("llama a RPC agregar_sello_a_tarjeta con los parametros correctos", async () => {
-      mockRpc.mockResolvedValue({
-        data: {
-          sellos: 3,
-          sellos_maximos: 5,
-          estado: "activa",
-          evento_id: "evt-123",
-        },
-        error: null,
-      });
+    it("POST /api/stamp/add con los parámetros correctos y retorna resultado", async () => {
+      mockFetchOk({ stamps: 3, maxStamps: 5, status: "activa", eventId: "evt-123" });
 
       const result = await addStamp("card-1", {
         customerId: "cust-1",
@@ -74,13 +88,19 @@ describe("card.service", () => {
         size: "12oz",
       });
 
-      expect(mockRpc).toHaveBeenCalledWith("agregar_sello_a_tarjeta", {
-        p_tarjeta_id: "card-1",
-        p_cliente_id: "cust-1",
-        p_agregado_por: "barista-1",
-        p_tipo_bebida: "Americano",
-        p_tamano: "12oz",
-        p_notas: null,
+      const fetchMock = vi.mocked(fetch);
+      expect(fetchMock).toHaveBeenCalledOnce();
+      const [url, opts] = fetchMock.mock.calls[0];
+      expect(url).toBe("/api/stamp/add");
+      expect(opts?.method).toBe("POST");
+
+      const sentBody = JSON.parse(opts?.body as string);
+      expect(sentBody).toMatchObject({
+        cardId: "card-1",
+        customerId: "cust-1",
+        addedBy: "barista-1",
+        drinkType: "Americano",
+        size: "12oz",
       });
 
       expect(result).toEqual({
@@ -92,67 +112,51 @@ describe("card.service", () => {
     });
 
     it("usa defaults cuando no se pasan opciones", async () => {
-      mockRpc.mockResolvedValue({
-        data: {
-          sellos: 1,
-          sellos_maximos: 5,
-          estado: "activa",
-          evento_id: "evt-456",
-        },
-        error: null,
-      });
+      mockFetchOk({ stamps: 1, maxStamps: 5, status: "activa", eventId: "evt-456" });
 
       await addStamp("card-2");
 
-      expect(mockRpc).toHaveBeenCalledWith("agregar_sello_a_tarjeta", {
-        p_tarjeta_id: "card-2",
-        p_cliente_id: null,
-        p_agregado_por: "system",
-        p_tipo_bebida: null,
-        p_tamano: null,
-        p_notas: null,
-      });
+      const sentBody = JSON.parse(vi.mocked(fetch).mock.calls[0][1]?.body as string);
+      expect(sentBody.cardId).toBe("card-2");
+      expect(sentBody.customerId).toBeUndefined();
+      expect(sentBody.addedBy).toBeUndefined();
     });
 
-    it("lanza error si RPC falla", async () => {
-      mockRpc.mockResolvedValue({
-        data: null,
-        error: { message: "Card not found" },
-      });
+    it("lanza error si la API devuelve error", async () => {
+      mockFetchError(500, { error: "Error al agregar sello" });
 
-      await expect(addStamp("bad-card")).rejects.toEqual({
-        message: "Card not found",
-      });
+      await expect(addStamp("bad-card")).rejects.toThrow("Error al agregar sello");
     });
   });
 
+  // ── undoStamp ───────────────────────────────────────────────────────────────
+
   describe("undoStamp", () => {
-    it("llama a RPC deshacer_sello", async () => {
-      mockRpc.mockResolvedValue({ data: null, error: null });
+    it("POST /api/stamp/undo con cardId y eventId", async () => {
+      mockFetchOk({ ok: true });
 
       await undoStamp("card-1", "evt-123");
 
-      expect(mockRpc).toHaveBeenCalledWith("deshacer_sello", {
-        p_tarjeta_id: "card-1",
-        p_evento_id: "evt-123",
-      });
+      const [url, opts] = vi.mocked(fetch).mock.calls[0];
+      expect(url).toBe("/api/stamp/undo");
+      expect(opts?.method).toBe("POST");
+
+      const sentBody = JSON.parse(opts?.body as string);
+      expect(sentBody).toEqual({ cardId: "card-1", eventId: "evt-123" });
     });
 
-    it("lanza error si RPC falla", async () => {
-      mockRpc.mockResolvedValue({
-        data: null,
-        error: { message: "Event not found" },
-      });
+    it("lanza error si la API falla", async () => {
+      mockFetchError(500, { error: "Error al deshacer sello" });
 
-      await expect(undoStamp("card-1", "bad-evt")).rejects.toEqual({
-        message: "Event not found",
-      });
+      await expect(undoStamp("card-1", "bad-evt")).rejects.toThrow("Error al deshacer sello");
     });
   });
 
+  // ── redeemCard ──────────────────────────────────────────────────────────────
+
   describe("redeemCard", () => {
-    it("llama a RPC canjear_tarjeta", async () => {
-      mockRpc.mockResolvedValue({ data: "new-card-id", error: null });
+    it("POST /api/stamp/redeem y retorna nuevo cardId", async () => {
+      mockFetchOk({ newCardId: "new-card-id" });
 
       const result = await redeemCard({
         oldCardId: "old-card",
@@ -160,20 +164,34 @@ describe("card.service", () => {
         rewardRef: "reward-1",
       });
 
-      expect(mockRpc).toHaveBeenCalledWith("canjear_tarjeta", {
-        p_tarjeta_id: "old-card",
-        p_cliente_id: "cust-1",
-        p_recompensa_id: "reward-1",
+      const [url, opts] = vi.mocked(fetch).mock.calls[0];
+      expect(url).toBe("/api/stamp/redeem");
+      expect(opts?.method).toBe("POST");
+
+      const sentBody = JSON.parse(opts?.body as string);
+      expect(sentBody).toEqual({
+        oldCardId: "old-card",
+        customerId: "cust-1",
+        rewardRef: "reward-1",
       });
+
       expect(result).toBe("new-card-id");
     });
+
+    it("lanza error si la API falla", async () => {
+      mockFetchError(500, { error: "Error al canjear tarjeta" });
+
+      await expect(
+        redeemCard({ oldCardId: "old", customerId: "c", rewardRef: "r" }),
+      ).rejects.toThrow("Error al canjear tarjeta");
+    });
   });
+
+  // ── getStampEventsByCard ────────────────────────────────────────────────────
 
   describe("getStampEventsByCard", () => {
     it("retorna eventos mapeados al modelo", async () => {
       const chain = chainMock();
-      chain.single.mockResolvedValue({ data: null, error: null });
-      // For order which is the last in the chain before resolution
       chain.order.mockResolvedValue({
         data: [
           {
@@ -207,6 +225,8 @@ describe("card.service", () => {
     });
   });
 
+  // ── getCardByCustomer ───────────────────────────────────────────────────────
+
   describe("getCardByCustomer", () => {
     it("retorna tarjeta activa del cliente", async () => {
       const chain = chainMock();
@@ -234,16 +254,16 @@ describe("card.service", () => {
     });
   });
 
+  // ── createCard ──────────────────────────────────────────────────────────────
+
   describe("createCard", () => {
     it("crea tarjeta con sellos_maximos del reward", async () => {
-      // Mock recompensas query (default reward path uses maybeSingle)
       const rewardChain = chainMock();
       rewardChain.maybeSingle.mockResolvedValue({
         data: { id: "default-reward-id", sellos_requeridos: 8 },
         error: null,
       });
 
-      // Mock tarjetas insert
       const cardChain = chainMock();
       cardChain.single.mockResolvedValue({
         data: { id: "new-card", sellos: 0, sellos_maximos: 8 },
@@ -256,9 +276,7 @@ describe("card.service", () => {
         return chainMock();
       });
 
-      const card = await createCard({
-        customerRef: "cust-1",
-      });
+      const card = await createCard({ customerRef: "cust-1" });
 
       expect(card).toMatchObject({ id: "new-card", sellos: 0 });
     });

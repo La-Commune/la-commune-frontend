@@ -169,7 +169,7 @@ export async function verifyAdminPin(pin: string): Promise<VerifyResult> {
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
     maxAge: COOKIE_MAX_AGE,
-    path: "/admin",
+    path: "/",
   });
 
   return { ok: true, nombre: result.nombre, rol: result.rol };
