@@ -55,7 +55,7 @@ Ambos proyectos usan la misma instancia de Supabase. Las tablas principales:
 | `productos` | Menú completo (precio_base, disponible, visible_menu, ingredientes, etiquetas) |
 | `categorias_menu` | Categorías del menú (nombre, descripcion, tipo, activo) |
 | `opciones_tamano` | Tamaños por producto (nombre, precio_adicional, orden) |
-| `promociones` | Cupones/promos temporales (titulo, tipo, fechas, dias_semana, activo) |
+| `promociones` | Cupones/promos temporales (nombre, tipo, valor_descuento, es_porcentaje, aplica_a, fechas, dias_semana, activo) |
 
 ### Funciones PostgreSQL (RPCs):
 - `agregar_sello_a_tarjeta()` — transacción atómica para agregar sello
@@ -66,7 +66,7 @@ Ambos proyectos usan la misma instancia de Supabase. Las tablas principales:
 ## Servicios
 
 - `services/customer.service.ts` — `createCustomer`, `getCustomerByPhone`, `getCardByCustomer`
-- `services/card.service.ts` — `createCard`, `addStamp` (RPC), `undoStamp`, `redeemCard`, `getStampEventsByCard`
+- `services/card.service.ts` — `createCard`, `addStamp`, `undoStamp`, `redeemCard`, `getStampEventsByCard` (addStamp/undoStamp/redeemCard/awardReferralBonusIfNeeded delegan a API routes con auth)
 - `services/reward.service.ts` — `getReward` (config de recompensas)
 - `services/menu.service.ts` — `getFullMenu`, `updateMenuItem`, `addMenuItem`, `deleteMenuItem`, `addMenuSection`, `updateMenuSection`, `deleteMenuSection`
   - `getFullMenu()` sin args → menú público (solo visible + disponible)
@@ -241,8 +241,21 @@ Ver `.env.example`. Variables requeridas:
 | `diseno-pulido` | 2ª ola de ilustraciones (Concha + Prensa Francesa → 18 en catálogo), fix stamp-card diseño, micro-bounce en nuevos sellos |
 | `nocturno-2026-06-03` | npm audit/update, +8 tests referidos (mergeado en sesión anterior) |
 
-**Tests tras merge**: 83/83 ✅  
+**Tests tras merge**: 213/213 ✅  
 **Build**: limpio ✅
+
+## API Routes — Stamp (autenticadas, service_role)
+
+| Ruta | Método | Descripción |
+|------|--------|-------------|
+| `app/api/stamp/add/route.ts` | POST | Agrega sello via `agregar_sello_a_tarjeta` RPC |
+| `app/api/stamp/undo/route.ts` | POST | Deshace sello via `deshacer_sello` RPC |
+| `app/api/stamp/redeem/route.ts` | POST | Canjea tarjeta via `canjear_tarjeta` RPC |
+| `app/api/stamp/referral-bonus/route.ts` | POST | Otorga bono de referido al referidor |
+
+Todas requieren cookie `barista-session` (verificada con `checkBaristaSession()`). Usan `getSupabaseServer()` (service_role). **Ninguna RPC de lealtad es llamable directamente con anon key** — REVOKE aplicado en prod y dev (9-Jun-2026).
+
+Cookie `barista-session` ahora tiene `path: "/"` (antes `"/admin"`) para que llegue a las rutas `/api/stamp/*`.
 
 ## Pendiente
 
