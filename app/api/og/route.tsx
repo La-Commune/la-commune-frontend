@@ -5,7 +5,8 @@ export const runtime = "edge";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const name = searchParams.get("name") ?? "";
+  // Cap de longitud: un name enorme fuerza renders costosos de ImageResponse
+  const name = (searchParams.get("name") ?? "").slice(0, 40);
 
   return new ImageResponse(
     (

@@ -40,7 +40,7 @@ export function ConfirmSheet({
         <div className="w-10 h-1 bg-stone-300 dark:bg-stone-700 rounded-full mx-auto mb-2 sm:hidden" />
         <div className="space-y-1 text-center">
           <p className="text-stone-600 dark:text-stone-300 text-sm leading-snug">
-            ¿Eliminar <strong className="text-stone-900 dark:text-white font-normal">"{target.name}"</strong>?
+            ¿Eliminar <strong className="text-stone-900 dark:text-white font-normal">&quot;{target.name}&quot;</strong>?
           </p>
           {target.type === "section" && (
             <p className="text-[11px] text-stone-400 dark:text-stone-600">

@@ -140,10 +140,12 @@ highlight → destacado, seasonal → estacional, sizes → (opciones_tamano)
 - `services/__tests__/customer.service.test.ts` — referidos: getReferralCount, createCustomer con/sin id_referidor (8 tests)
 - `services/__tests__/customer-stats.test.ts` — getCustomerStats: rachas, frecuencia, bebida favorita, weeklyActivity (13 tests)
 - `services/__tests__/promotion.service.test.ts` — vigencia (rango, end-of-day, días semana), CRUD con scope (11 tests)
-- `services/__tests__/reward.service.test.ts` — getDefault, upsert update/insert, updateStamps (9 tests)
+- `services/__tests__/reward.service.test.ts` — getDefault (orden por creado_en), getRewardById, versionado por diseño DAV-67, updateStamps (15 tests)
 - `lib/__tests__/offlineQueue.test.ts` — cola dual IDB+localStorage, fallback iOS Safari (8 tests)
+- `components/ui/__tests__/stamp-illustrations.test.ts` — smoke render de TODO el catálogo (18 ilustraciones × 4 estados) + integridad del catálogo (20 tests)
+- `app/actions/__tests__/rewardConfig.test.ts` — gate de sesión admin, validación de input, errores genéricos (10 tests)
 - `services/__tests__/analytics.service.test.ts` — paginación por lotes, counts, top drinks (9 tests)
-- Total: 83 tests, todos pasando
+- Total: 122 tests, todos pasando
 
 ## Sesión de cliente
 
@@ -224,6 +226,23 @@ Ver `.env.example`. Variables requeridas:
 - **Tests**: +8 unit para referidos (`customer.service.test.ts`)
 - **npm update**: supabase-js 2.98→2.107, playwright 1.58→1.60, react 19.2.4→19.2.7, react-hook-form, recharts, autoprefixer (solo lock, tsc y tests limpios)
 - Detalle completo en `../REPORTE-NOCTURNO.md`
+
+## Integración de branches (5-9 Jun 2026) — mergeado a `main` vía `integracion-dry-run`
+
+40 commits, 77 archivos, +8868/-1060 líneas. Branches integrados:
+
+| Branch | Contenido |
+|--------|-----------|
+| `lint-fix` | ESLint 9 flat config, `next lint` roto en Next 16 → corregido, 0 errores |
+| `seguridad-fixes` | Barrido de `select(*)` — 2 leaks de `pin_hmac` cerrados, mapClienteToCustomer sin campos sensibles |
+| `a11y-fixes` | Auditoría WCAG — aria-labels, focus-visible, contraste |
+| `perf-fixes` | Preload del poster SSR, versionado auto-sanador en PwaRegister |
+| `arquitectura-mejoras` | 5 helpers extraídos a libs testeables (+55 tests), informe de arquitectura, `fix(pwa): pausar polling de red en background` |
+| `diseno-pulido` | 2ª ola de ilustraciones (Concha + Prensa Francesa → 18 en catálogo), fix stamp-card diseño, micro-bounce en nuevos sellos |
+| `nocturno-2026-06-03` | npm audit/update, +8 tests referidos (mergeado en sesión anterior) |
+
+**Tests tras merge**: 83/83 ✅  
+**Build**: limpio ✅
 
 ## Pendiente
 

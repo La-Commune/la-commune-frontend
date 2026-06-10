@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Customer } from "@/models/customer.model";
-import { getAllCustomers, updateCustomerNotes, updateCustomerEmail, deleteCustomer } from "@/services/customer.service";
+import { getAllCustomers, updateCustomerNotes, deleteCustomer } from "@/services/customer.service";
 import { getCustomerTopDrinks } from "@/services/analytics.service";
 import { formatDate } from "@/lib/utils";
 import { toast } from "@/components/ui/use-toast";

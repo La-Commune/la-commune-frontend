@@ -87,7 +87,7 @@ export default function Nosotros() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 0.9 }}
-          className="mt-10 text-sm text-stone-400 dark:text-stone-600 font-light tracking-wide max-w-xs leading-relaxed"
+          className="mt-10 text-sm text-stone-500 dark:text-stone-600 font-light tracking-wide max-w-xs leading-relaxed"
         >
           Una cafetería de especialidad en Mineral de la Reforma construida sobre trabajo colectivo, técnica y respeto al origen.
         </motion.p>
@@ -115,7 +115,7 @@ export default function Nosotros() {
         </Reveal>
 
         <Reveal delay={0.3} className="mt-8">
-          <p className="text-base text-stone-400 dark:text-stone-600 font-light leading-relaxed">
+          <p className="text-base text-stone-500 dark:text-stone-600 font-light leading-relaxed">
             El nombre no es casualidad. <em>Commune</em> — comunidad, lo que se tiene en común, lo que se construye entre varios. Aquí, eso se traduce en cadenas cortas de suministro, relación directa con tostadores mexicanos y un espacio donde cada visita alimenta algo más grande que la cafeína.
           </p>
         </Reveal>
@@ -156,7 +156,7 @@ export default function Nosotros() {
             <p className="font-display text-[clamp(1.8rem,5vw,3.5rem)] font-light italic text-stone-400 dark:text-stone-600 leading-[1.2] tracking-wide">
               &ldquo;El café es el pretexto.<br />La comunidad, el punto.&rdquo;
             </p>
-            <footer className="mt-6 text-[10px] uppercase tracking-[0.4em] text-stone-300 dark:text-stone-700">
+            <footer className="mt-6 text-[10px] uppercase tracking-[0.4em] text-stone-500 dark:text-stone-700">
               — La Commune, Mineral de la Reforma
             </footer>
           </blockquote>
@@ -165,27 +165,27 @@ export default function Nosotros() {
 
       {/* FOOTER */}
       <footer className="px-8 sm:px-16 py-12 border-t border-stone-100 dark:border-stone-900 max-w-6xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-        <p className="text-[10px] tracking-[0.3em] uppercase text-stone-300 dark:text-stone-700">
+        <p className="text-[10px] tracking-[0.3em] uppercase text-stone-500 dark:text-stone-700">
           © {new Date().getFullYear()} · La Commune
         </p>
         <div className="flex items-center gap-8">
           <Link
             href="/menu"
-            className="text-[10px] tracking-[0.3em] uppercase text-stone-400 dark:text-stone-600 hover:text-stone-700 dark:hover:text-stone-300 transition-colors duration-300"
+            className="text-[10px] tracking-[0.3em] uppercase text-stone-500 dark:text-stone-600 hover:text-stone-700 dark:hover:text-stone-300 transition-colors duration-300"
           >
             Menú
           </Link>
           <span className="w-px h-3 bg-stone-200 dark:bg-stone-800" />
           <Link
             href="/onboarding"
-            className="text-[10px] tracking-[0.3em] uppercase text-stone-400 dark:text-stone-600 hover:text-stone-700 dark:hover:text-stone-300 transition-colors duration-300"
+            className="text-[10px] tracking-[0.3em] uppercase text-stone-500 dark:text-stone-600 hover:text-stone-700 dark:hover:text-stone-300 transition-colors duration-300"
           >
             Mi tarjeta
           </Link>
           <span className="w-px h-3 bg-stone-200 dark:bg-stone-800" />
           <Link
             href="/"
-            className="text-[10px] tracking-[0.3em] uppercase text-stone-400 dark:text-stone-600 hover:text-stone-700 dark:hover:text-stone-300 transition-colors duration-300"
+            className="text-[10px] tracking-[0.3em] uppercase text-stone-500 dark:text-stone-600 hover:text-stone-700 dark:hover:text-stone-300 transition-colors duration-300"
           >
             Inicio
           </Link>

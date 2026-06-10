@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MenuSection } from "@/models/menu.model";
 import { getFullMenu } from "@/services/menu.service";
 import { getActivePromotions } from "@/services/promotion.service";
+import { promoApplies } from "@/lib/promo-match";
 import { Promotion } from "@/models/promotion.model";
 import { PromoBannerSticky } from "@/components/ui/promos/PromoBanner";
 import { checkBaristaSession } from "@/app/actions/verifyAdminPin";
@@ -22,7 +23,7 @@ function MenuItemImage({ src, alt }: { src: string; alt: string }) {
 
   return (
     <div
-      className="rounded-xl overflow-hidden print:hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+      className="rounded-xl overflow-hidden print:hidden transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]"
       style={{
         maxHeight: errored ? 0 : "12rem",
         opacity: errored ? 0 : 1,
@@ -188,7 +189,7 @@ export default function CafeMenu() {
               className="font-mono text-xs tracking-[0.12em] uppercase text-stone-400 dark:text-stone-500 hover:text-amber-700 dark:hover:text-amber-500 transition-colors duration-300 relative group"
             >
               Fidelidad
-              <span className="absolute bottom-[-2px] left-0 w-0 h-px bg-amber-700 dark:bg-amber-500 group-hover:w-full transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]" />
+              <span className="absolute bottom-[-2px] left-0 w-0 h-px bg-amber-700 dark:bg-amber-500 group-hover:w-full transition-all [transition-duration:400ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]" />
             </Link>
           </div>
           <ThemeToggle />
@@ -258,7 +259,7 @@ export default function CafeMenu() {
               <select
                 value={activeTag ?? ""}
                 onChange={(e) => setActiveTag(e.target.value || null)}
-                className="appearance-none text-xs uppercase tracking-[0.3em] pl-4 pr-8 py-2 rounded-full border border-stone-200 dark:border-stone-700 bg-transparent text-stone-500 dark:text-stone-400 cursor-pointer focus:outline-none focus:border-stone-400 dark:focus:border-stone-500 transition-colors"
+                className="appearance-none text-xs uppercase tracking-[0.3em] pl-4 pr-8 py-2 rounded-full border border-stone-200 dark:border-stone-700 bg-transparent text-stone-500 dark:text-stone-400 cursor-pointer focus:outline-none focus:border-stone-600 dark:focus:border-stone-400 transition-colors"
                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center" }}
               >
                 <option value="">Filtrar por tipo</option>
@@ -423,7 +424,7 @@ export default function CafeMenu() {
                       className={`text-xs ${
                         isFood
                           ? "text-amber-600/60 dark:text-amber-500/50 print:text-amber-600/70"
-                          : "text-stone-400 dark:text-stone-500 print:text-neutral-400"
+                          : "text-stone-500 dark:text-stone-500 print:text-neutral-400"
                       }`}
                     >
                       {section.description}
@@ -464,10 +465,7 @@ export default function CafeMenu() {
                                   </span>
                                 )}
                                 {isAvailable && activePromos.map((promo) => {
-                                  const appliesToLower = (promo.appliesTo || "").toLowerCase();
-                                  const itemNameLower = item.name.toLowerCase();
-                                  const sectionTitleLower = section.title.toLowerCase();
-                                  const matches = !promo.appliesTo || appliesToLower.includes(itemNameLower) || appliesToLower.includes(sectionTitleLower);
+                                  const matches = promoApplies(promo.appliesTo, item.name, section.title);
                                   if (!matches) return null;
 
                                   if (promo.type === "2x1") {
@@ -534,7 +532,7 @@ export default function CafeMenu() {
                             </div>
                           )}
 
-                          <p className="text-xs text-stone-400 dark:text-stone-500 print:text-neutral-400 leading-snug">
+                          <p className="text-xs text-stone-500 dark:text-stone-500 print:text-neutral-400 leading-snug">
                             {item.ingredients.join(" · ")}
                           </p>
 

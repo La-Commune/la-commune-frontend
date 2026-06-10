@@ -14,6 +14,18 @@ const COOKIE_SECRET =
   process.env.COOKIE_SECRET ??
   randomBytes(32).toString("hex");
 
+// El fallback aleatorio solo es aceptable en dev: en producción cada
+// instancia/reinicio invalidaría todas las sesiones en silencio. Avisar fuerte.
+if (
+  process.env.NODE_ENV === "production" &&
+  !process.env.ADMIN_HMAC_KEY &&
+  !process.env.COOKIE_SECRET
+) {
+  console.error(
+    "[verifyAdminPin] ADMIN_HMAC_KEY/COOKIE_SECRET no configuradas — las sesiones de barista no sobrevivirán reinicios ni multi-instancia"
+  );
+}
+
 const attemptMap = new Map<string, { count: number; resetAt: number }>();
 
 // ── Types ──────────────────────────────────────────────

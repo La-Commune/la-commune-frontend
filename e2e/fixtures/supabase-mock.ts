@@ -193,7 +193,7 @@ export async function setupSupabaseMocks(page: Page) {
 /**
  * Simula una sesión de barista inyectando la cookie directamente.
  */
-export async function mockBaristaSession(page: Page, context: any) {
+export async function mockBaristaSession(page: Page) {
   // La cookie barista-session se usa para auth del admin panel.
   // En tests, la interceptamos a nivel de server action.
   await page.route("**/admin", async (route, request) => {

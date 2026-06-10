@@ -3,32 +3,48 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Card } from "@/models/card.model";
-import { Customer } from "@/models/customer.model";
-import { QrScanner } from "@/components/ui/QrScanner";
+import dynamic from "next/dynamic";
 import { MenuAdmin } from "@/components/ui/MenuAdmin";
 import { PromosAdmin } from "@/components/ui/promos/PromosAdmin";
 import { CustomerDirectory } from "@/components/ui/CustomerDirectory";
-import { AnalyticsDashboard } from "@/components/ui/AnalyticsDashboard";
+
+// Dynamic imports: recharts (~215 kB gz) y @zxing solo se bajan al usarlos
+// (tab Analytics / abrir la cámara), no en el First Load del admin
+const AnalyticsDashboard = dynamic(
+  () => import("@/components/ui/AnalyticsDashboard").then((m) => m.AnalyticsDashboard),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="py-20 text-center text-xs uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600">
+        Cargando analíticas…
+      </div>
+    ),
+  }
+);
+const QrScanner = dynamic(
+  () => import("@/components/ui/QrScanner").then((m) => m.QrScanner),
+  { ssr: false }
+);
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { verifyAdminPin, checkBaristaSession, logoutBarista, type SessionResult } from "@/app/actions/verifyAdminPin";
+import { verifyAdminPin, checkBaristaSession, logoutBarista } from "@/app/actions/verifyAdminPin";
 import { addStamp, redeemCard, undoStamp } from "@/services/card.service";
-import { getDefaultReward, upsertDefaultReward } from "@/services/reward.service";
+import { getDefaultReward } from "@/services/reward.service";
+import { saveRewardConfig } from "@/app/actions/rewardConfig";
 import { Reward } from "@/models/reward.model";
 import { ILLUSTRATION_CATALOG, StampIllustration, type IllustrationId } from "@/components/ui/stamp-illustrations";
 import { getFullMenu } from "@/services/menu.service";
 import { timeAgo } from "@/lib/utils";
-import { hapticMedium, hapticSuccess, hapticCelebration, hapticError } from "@/lib/haptics";
+import { hapticSuccess, hapticCelebration, hapticError } from "@/lib/haptics";
 import { fireCelebration } from "@/lib/confetti";
 import { toast } from "@/components/ui/use-toast";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
+import { resolveCardId } from "@/lib/card-id";
 import {
   enqueue,
   removeFromQueue,
   markFailed,
   getQueue,
-  getQueueSync,
   resetFailed,
   hasPending,
   requestBackgroundSync,
@@ -402,9 +418,6 @@ function StampView() {
     setUndoSecondsLeft(null);
   }, []);
 
-  const resolveCardId = (raw: string) =>
-    raw.trim().replace(/^.*\/card\//, "").split("?")[0].split("#")[0];
-
   const loadCard = useCallback(async (rawId: string) => {
     const id = resolveCardId(rawId);
     if (!id) return;
@@ -565,14 +578,18 @@ function StampView() {
     setError("");
     try {
       if (!card.customerId) throw new Error("Cliente no encontrado");
-      // Obtener la recompensa default para crear la nueva tarjeta
+      // Obtener la recompensa default para crear la nueva tarjeta.
+      // order + maybeSingle: si el versionado de diseño dejara dos defaults
+      // por un instante, gana la más nueva en vez de tronar .single()
       const { data: defaultReward } = await getSupabase()
         .from("recompensas")
         .select("id")
         .eq("negocio_id", NEGOCIO_ID)
         .eq("es_default", true)
         .eq("activa", true)
-        .single();
+        .order("creado_en", { ascending: false })
+        .limit(1)
+        .maybeSingle();
       if (!defaultReward) throw new Error("No hay recompensa default configurada");
 
       await redeemCard({
@@ -705,7 +722,7 @@ function StampView() {
         {!scanning && (
           <div className="flex items-center gap-3">
             <div aria-hidden="true" className="flex-1 h-px bg-stone-200 dark:bg-stone-800" />
-            <span className="text-[10px] uppercase tracking-widest text-stone-300 dark:text-stone-700">o</span>
+            <span className="text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-700">o</span>
             <div aria-hidden="true" className="flex-1 h-px bg-stone-200 dark:bg-stone-800" />
           </div>
         )}
@@ -734,6 +751,7 @@ function StampView() {
         <AnimatePresence>
           {error && (
             <motion.p
+              role="alert"
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
@@ -786,7 +804,7 @@ function StampView() {
                 />
               </div>
               {isComplete && (
-                <p className="text-[10px] uppercase tracking-widest text-amber-500">
+                <p className="text-[10px] uppercase tracking-widest text-amber-700 dark:text-amber-500">
                   ✓ Tarjeta completada — cortesía lista
                 </p>
               )}
@@ -953,7 +971,7 @@ function StampView() {
               <button
                 onClick={handleUndo}
                 disabled={loading}
-                className="mt-1 text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400 transition-colors disabled:opacity-40"
+                className="mt-1 min-h-[44px] px-4 text-[10px] uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 hover:text-stone-600 dark:hover:text-stone-400 transition-colors disabled:opacity-40"
               >
                 Deshacer ({undoSecondsLeft}s)
               </button>
@@ -1001,7 +1019,7 @@ function StampView() {
       {/* Historial de sellos de sesión */}
       {stampHistory.length > 0 && (
         <div className="w-full space-y-2">
-          <p className="text-[10px] uppercase tracking-widest text-stone-300 dark:text-stone-700 text-center">
+          <p className="text-[10px] uppercase tracking-widest text-stone-500 dark:text-stone-700 text-center">
             Sellos de esta sesion
           </p>
           <div className="space-y-1.5">
@@ -1016,7 +1034,7 @@ function StampView() {
                 <span className="text-[10px] tracking-widest">
                   {entry.stamps}/{entry.maxStamps}
                 </span>
-                <span className="text-[10px] text-stone-300 dark:text-stone-700">
+                <span className="text-[10px] text-stone-500 dark:text-stone-700">
                   {timeAgo(entry.time)}
                 </span>
               </div>
@@ -1030,7 +1048,7 @@ function StampView() {
 
 /* -- Config del reward ---------------------------------------- */
 function RewardConfig() {
-  const [reward, setReward] = useState<(Reward & { id: string }) | null>(null);
+  const [, setReward] = useState<(Reward & { id: string }) | null>(null);
   const [loadingReward, setLoadingReward] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -1078,7 +1096,10 @@ function RewardConfig() {
     setSaving(true);
     setSaved(false);
     try {
-      await upsertDefaultReward({
+      // Server action con service role: anon no puede escribir en recompensas
+      // (el guardado client-side anterior fallaba en silencio). Además
+      // versiona la recompensa cuando cambia el diseño (DAV-67).
+      const result = await saveRewardConfig({
         name: rewardName || "Bebida gratis",
         description: rewardDesc || "Completa tu tarjeta y recibe una bebida gratis",
         requiredStamps: stamps,
@@ -1086,8 +1107,12 @@ function RewardConfig() {
         active: true,
         illustration,
       });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+      if (!result.ok) {
+        toast({ title: "Error al guardar", description: result.error, variant: "destructive" });
+      } else {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2500);
+      }
     } catch {
       toast({ title: "Error al guardar", description: "No se pudieron guardar los cambios. Intenta de nuevo.", variant: "destructive" });
     }
@@ -1180,6 +1205,8 @@ function RewardConfig() {
                       key={ilu.id}
                       type="button"
                       onClick={() => setIllustration(ilu.id)}
+                      aria-label={`Ilustración ${ilu.name}`}
+                      aria-pressed={isSelected}
                       className={`relative flex flex-col items-center gap-1.5 p-2 rounded-xl border transition-all duration-200 ${
                         isSelected
                           ? "border-stone-700 dark:border-stone-300 bg-stone-200/60 dark:bg-neutral-800 ring-1 ring-stone-700/30 dark:ring-stone-300/30"
