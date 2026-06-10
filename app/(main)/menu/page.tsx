@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MenuSection } from "@/models/menu.model";
 import { getFullMenu } from "@/services/menu.service";
 import { getActivePromotions } from "@/services/promotion.service";
+import { promoApplies } from "@/lib/promo-match";
 import { Promotion } from "@/models/promotion.model";
 import { PromoBannerSticky } from "@/components/ui/promos/PromoBanner";
 import { checkBaristaSession } from "@/app/actions/verifyAdminPin";
@@ -464,10 +465,7 @@ export default function CafeMenu() {
                                   </span>
                                 )}
                                 {isAvailable && activePromos.map((promo) => {
-                                  const appliesToLower = (promo.appliesTo || "").toLowerCase();
-                                  const itemNameLower = item.name.toLowerCase();
-                                  const sectionTitleLower = section.title.toLowerCase();
-                                  const matches = !promo.appliesTo || appliesToLower.includes(itemNameLower) || appliesToLower.includes(sectionTitleLower);
+                                  const matches = promoApplies(promo.appliesTo, item.name, section.title);
                                   if (!matches) return null;
 
                                   if (promo.type === "2x1") {

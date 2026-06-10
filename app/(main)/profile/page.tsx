@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
+import { maskPhone, getTierLevel, formatMonthYear } from "@/lib/profile-format";
 import { Customer } from "@/models/customer.model";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { logger } from "@/lib/logger";
@@ -58,38 +59,6 @@ function ProfileToast({
       <span className="text-xs tracking-wide whitespace-nowrap">{message}</span>
     </motion.div>
   );
-}
-
-function maskPhone(phone: string): string {
-  if (phone.length < 4) return phone;
-  return `****${phone.slice(-4)}`;
-}
-
-function getTierLevel(visits: number): { name: string; color: string } {
-  if (visits < 5) return { name: "Nuevo", color: "blue" };
-  if (visits < 15) return { name: "Regular", color: "amber" };
-  if (visits < 30) return { name: "Frecuente", color: "emerald" };
-  return { name: "VIP", color: "purple" };
-}
-
-function formatDate(date: Date | string | undefined): string {
-  if (!date) return "";
-  const d = new Date(date);
-  const months = [
-    "enero",
-    "febrero",
-    "marzo",
-    "abril",
-    "mayo",
-    "junio",
-    "julio",
-    "agosto",
-    "septiembre",
-    "octubre",
-    "noviembre",
-    "diciembre",
-  ];
-  return `${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 // Inline edit form para teléfono
@@ -673,7 +642,7 @@ export default function ProfilePage() {
                     {customer.name || "Mi perfil"}
                   </h1>
                   <p className="text-sm text-stone-500 dark:text-stone-400">
-                    Cliente desde {formatDate(customer.createdAt)}
+                    Cliente desde {formatMonthYear(customer.createdAt)}
                   </p>
                 </div>
                 <motion.div

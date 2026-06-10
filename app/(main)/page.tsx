@@ -15,6 +15,7 @@ import { SplashScreen } from "@/components/ui/SplashScreen";
 import { HowItWorksAnimation } from "@/components/ui/HowItWorksAnimation";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { getDefaultReward } from "@/services/reward.service";
+import { getOpenStatus } from "@/lib/cafe-hours";
 import type { IllustrationId } from "@/components/ui/stamp-illustrations";
 
 /* ===============================
@@ -416,28 +417,6 @@ const PremiumSection: React.FC<SectionProps> = ({
 /* ===============================
    Helpers
 ================================= */
-function getOpenStatus(): { open: boolean; label: string } {
-  const now = new Date();
-  const parts = new Intl.DateTimeFormat("es-MX", {
-    timeZone: "America/Mexico_City",
-    hour: "numeric",
-    minute: "numeric",
-    hour12: false,
-  }).formatToParts(now);
-  const h = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0");
-  const m = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0");
-  const total = h * 60 + m;
-  const open = total >= 600 && total < 1200;
-  return {
-    open,
-    label: open
-      ? "Abierto · cierra a las 20:00"
-      : total < 600
-      ? "Cerrado · abre a las 10:00"
-      : "Cerrado · abre mañana a las 10:00",
-  };
-}
-
 /* ===============================
    Loyalty Section (usuario nuevo)
    — Componente separado para evitar bug de hidratacion
