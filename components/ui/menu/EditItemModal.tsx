@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
@@ -47,6 +47,22 @@ export function EditItemModal({
     item.sizes?.map((s) => ({ label: s.label, price: s.price.toString() })) ??
       [{ label: "", price: "" }]
   );
+
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Enfocar el panel al montar (no hay autoFocus en el primer input)
+  useEffect(() => {
+    panelRef.current?.focus();
+  }, []);
+
+  // Cerrar con Escape
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
 
   const addSize = () => setSizes((prev) => [...prev, { label: "", price: "" }]);
   const removeSize = (i: number) => setSizes((prev) => prev.filter((_, idx) => idx !== i));
@@ -123,11 +139,16 @@ export function EditItemModal({
       onClick={onClose}
     >
       <motion.div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Editar item"
+        tabIndex={-1}
         initial={{ y: 40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 40, opacity: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className="w-full max-w-md bg-white dark:bg-neutral-900 border-t sm:border border-stone-200 dark:border-stone-800 rounded-t-3xl sm:rounded-3xl flex flex-col max-h-[90vh]"
+        className="w-full max-w-md bg-white dark:bg-neutral-900 border-t sm:border border-stone-200 dark:border-stone-800 rounded-t-3xl sm:rounded-3xl flex flex-col max-h-[90vh] focus:outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Handle + header — fixed */}

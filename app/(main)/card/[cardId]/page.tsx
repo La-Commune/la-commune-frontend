@@ -7,11 +7,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { StampCardView } from "@/components/ui/stamp-card";
 import { DownloadCardButton } from "@/components/ui/DownloadCardButton";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { Customer } from "@/models/customer.model";
-import type { Card } from "@/models/card.model";
-import { Reward, RecompensaRow, mapRecompensaToReward } from "@/models/reward.model";
+import { Customer, ClienteRow, mapClienteToCustomer } from "@/models/customer.model";
+import { type Card, type TarjetaRow, mapTarjetaToCard } from "@/models/card.model";
+import { Reward } from "@/models/reward.model";
 import { getCardByCustomer } from "@/services/card.service";
-import { getDefaultReward } from "@/services/reward.service";
+import { getDefaultReward, getRewardById } from "@/services/reward.service";
 import { logger } from "@/lib/logger";
 import { PromoBannerInline, useActivePromos } from "@/components/ui/promos/PromoBanner";
 import {
@@ -132,30 +132,15 @@ export default function CardEntry() {
 
     const supabase = getSupabase();
 
-    function mapClienteRow(row: Record<string, unknown>): Customer {
-      return {
-        name: row.nombre as string,
-        phone: row.telefono as string,
-        email: row.email as string | undefined,
-        active: row.activo as boolean,
-        totalVisits: row.total_visitas as number,
-        totalStamps: row.total_sellos as number,
-        createdAt: new Date(row.creado_en as string),
-        lastVisitAt: row.ultima_visita ? new Date(row.ultima_visita as string) : undefined,
-        consentWhatsApp: row.consentimiento_whatsapp as boolean | undefined,
-        consentEmail: row.consentimiento_email as boolean | undefined,
-        pinHmac: row.pin_hmac as string | undefined,
-        notes: row.notas as string | undefined,
-        referrerCustomerId: row.id_referidor as string | undefined,
-        referralBonusGiven: row.bono_referido_entregado as boolean | undefined,
-        schemaVersion: 1,
-      };
-    }
-
-    // Fetch inicial
+    // Fetch inicial — select explícito sin pin_hmac/notas (el cardId de la
+    // URL no debe dar acceso a ellos). El mapper del modelo
+    // (mapClienteToCustomer) tampoco los mapea — clave porque el canal
+    // realtime entrega la fila COMPLETA en cada UPDATE (cada sello).
     supabase
       .from("clientes")
-      .select("*")
+      .select(
+        "nombre, telefono, email, activo, total_visitas, total_sellos, creado_en, ultima_visita, consentimiento_whatsapp, consentimiento_email, id_referidor, bono_referido_entregado"
+      )
       .eq("id", resolvedCustomerId)
       .eq("negocio_id", NEGOCIO_ID)
       .single()
@@ -164,7 +149,7 @@ export default function CardEntry() {
           setGone(true);
           return;
         }
-        setCustomer(mapClienteRow(data as Record<string, unknown>));
+        setCustomer(mapClienteToCustomer(data as ClienteRow));
       });
 
     // Suscripción realtime para cambios futuros
@@ -188,7 +173,7 @@ export default function CardEntry() {
             setGone(true);
             return;
           }
-          setCustomer(mapClienteRow(row));
+          setCustomer(mapClienteToCustomer(row as unknown as ClienteRow));
         }
       )
       .subscribe();
@@ -215,14 +200,7 @@ export default function CardEntry() {
           setGone(true);
           return;
         }
-        setCardDoc({
-          id: row.id as string,
-          rewardId: row.recompensa_id as string,
-          stamps: row.sellos as number,
-          maxStamps: row.sellos_maximos as number,
-          status: row.estado as Card["status"],
-          createdAt: new Date(row.creado_en as string),
-        });
+        setCardDoc(mapTarjetaToCard(row as TarjetaRow));
       });
 
     const channel = supabase
@@ -240,15 +218,7 @@ export default function CardEntry() {
             setGone(true);
             return;
           }
-          const row = payload.new as Record<string, unknown>;
-          setCardDoc({
-            id: row.id as string,
-            rewardId: row.recompensa_id as string,
-            stamps: row.sellos as number,
-            maxStamps: row.sellos_maximos as number,
-            status: row.estado as Card["status"],
-            createdAt: new Date(row.creado_en as string),
-          });
+          setCardDoc(mapTarjetaToCard(payload.new as TarjetaRow));
         }
       )
       .subscribe();
@@ -323,14 +293,7 @@ export default function CardEntry() {
             setGone(true);
             return;
           }
-          setCardDoc({
-            id: row.id as string,
-            rewardId: row.recompensa_id as string,
-            stamps: row.sellos as number,
-            maxStamps: row.sellos_maximos as number,
-            status: row.estado as Card["status"],
-            createdAt: new Date(row.creado_en as string),
-          });
+          setCardDoc(mapTarjetaToCard(row as TarjetaRow));
         });
     };
 
@@ -413,7 +376,7 @@ export default function CardEntry() {
     }
 
     resolveSession();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [cardIdParam, router]);
 
 if (gone) {
@@ -470,19 +433,20 @@ function Card({
 
   useEffect(() => {
     if (rewardId) {
-      const supabase = getSupabase();
-      supabase
-        .from("recompensas")
-        .select("*")
-        .eq("id", rewardId)
-        .single()
-        .then(({ data }) => {
-          if (data) {
-            setRewardDoc(mapRecompensaToReward(data as RecompensaRow));
-          }
-        });
+      // La recompensa DE ESTA tarjeta — conserva su diseño original
+      // aunque el default haya cambiado (DAV-67)
+      getRewardById(rewardId).then((reward) => {
+        if (reward) {
+          setRewardDoc(reward);
+        } else {
+          // Reward borrada/desactivada — usar la default actual
+          getDefaultReward().then((fallback) => {
+            if (fallback) setRewardDoc(fallback);
+          });
+        }
+      });
     } else {
-      // Fallback si la tarjeta no tiene rewardId (no debería pasar)
+      // Fallback si la tarjeta no tiene rewardId (tarjetas legacy)
       getDefaultReward().then((reward) => {
         if (reward) setRewardDoc(reward);
       });
@@ -626,7 +590,7 @@ function Card({
               className="font-mono text-xs tracking-[0.12em] uppercase text-stone-400 dark:text-stone-500 hover:text-amber-700 dark:hover:text-amber-500 transition-colors duration-300 relative group"
             >
               Menu
-              <span className="absolute bottom-[-2px] left-0 w-0 h-px bg-amber-700 dark:bg-amber-500 group-hover:w-full transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]" />
+              <span className="absolute bottom-[-2px] left-0 w-0 h-px bg-amber-700 dark:bg-amber-500 group-hover:w-full transition-all [transition-duration:400ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]" />
             </Link>
           </div>
           <ThemeToggle />
@@ -770,7 +734,7 @@ function Card({
                 <p className="text-sm font-medium text-stone-800 dark:text-stone-200">
                   Invita a un amigo
                 </p>
-                <p className="text-[11px] text-stone-400 dark:text-stone-500 leading-snug">
+                <p className="text-[11px] text-stone-500 dark:text-stone-500 leading-snug">
                   Ambos reciben un sello extra
                 </p>
               </div>

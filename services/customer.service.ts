@@ -44,9 +44,14 @@ export async function createCustomer(
 export async function getCustomerByPhone(phone: string) {
   const supabase = getSupabase();
 
+  // SEGURIDAD: este lookup corre en el navegador del cliente (onboarding,
+  // público, con anon key). Select EXPLÍCITO sin pin_hmac/notas — un
+  // `select("*")` entregaría el HMAC del PIN a cualquiera que escriba un
+  // teléfono conocido. (Misma clase que el leak de realtime en `clientes`.)
+  // El onboarding solo usa `.id`; el resto son identidad sin secretos.
   const { data, error } = await supabase
     .from("clientes")
-    .select("*")
+    .select("id, nombre, telefono, activo, id_referidor")
     .eq("negocio_id", NEGOCIO_ID)
     .eq("telefono", phone)
     .eq("activo", true)
@@ -61,9 +66,14 @@ export async function getCustomerByPhone(phone: string) {
 export async function getAllCustomers(): Promise<(Customer & { id: string })[]> {
   const supabase = getSupabase();
 
+  // SEGURIDAD: el directorio admin muestra `notas` (editable) pero NUNCA el
+  // `pin_hmac` — se excluye del select para que el HMAC del PIN no viaje ni
+  // siquiera al navegador del admin autenticado.
   const { data, error } = await supabase
     .from("clientes")
-    .select("*")
+    .select(
+      "id, nombre, telefono, email, activo, total_visitas, total_sellos, creado_en, ultima_visita, consentimiento_whatsapp, consentimiento_email, notas, id_referidor, bono_referido_entregado",
+    )
     .eq("negocio_id", NEGOCIO_ID)
     .eq("activo", true)
     .order("creado_en", { ascending: false });
@@ -83,7 +93,6 @@ export async function getAllCustomers(): Promise<(Customer & { id: string })[]> 
     lastVisitAt: row.ultima_visita ? new Date(row.ultima_visita) : undefined,
     consentWhatsApp: row.consentimiento_whatsapp,
     consentEmail: row.consentimiento_email,
-    pinHmac: row.pin_hmac,
     notes: row.notas,
     referrerCustomerId: row.id_referidor,
     referralBonusGiven: row.bono_referido_entregado,

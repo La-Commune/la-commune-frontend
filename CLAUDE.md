@@ -55,7 +55,7 @@ Ambos proyectos usan la misma instancia de Supabase. Las tablas principales:
 | `productos` | Menú completo (precio_base, disponible, visible_menu, ingredientes, etiquetas) |
 | `categorias_menu` | Categorías del menú (nombre, descripcion, tipo, activo) |
 | `opciones_tamano` | Tamaños por producto (nombre, precio_adicional, orden) |
-| `promociones` | Cupones/promos temporales (titulo, tipo, fechas, dias_semana, activo) |
+| `promociones` | Cupones/promos temporales (nombre, tipo, valor_descuento, es_porcentaje, aplica_a, fechas, dias_semana, activo) |
 
 ### Funciones PostgreSQL (RPCs):
 - `agregar_sello_a_tarjeta()` — transacción atómica para agregar sello
@@ -66,7 +66,7 @@ Ambos proyectos usan la misma instancia de Supabase. Las tablas principales:
 ## Servicios
 
 - `services/customer.service.ts` — `createCustomer`, `getCustomerByPhone`, `getCardByCustomer`
-- `services/card.service.ts` — `createCard`, `addStamp` (RPC), `undoStamp`, `redeemCard`, `getStampEventsByCard`
+- `services/card.service.ts` — `createCard`, `addStamp`, `undoStamp`, `redeemCard`, `getStampEventsByCard` (addStamp/undoStamp/redeemCard/awardReferralBonusIfNeeded delegan a API routes con auth)
 - `services/reward.service.ts` — `getReward` (config de recompensas)
 - `services/menu.service.ts` — `getFullMenu`, `updateMenuItem`, `addMenuItem`, `deleteMenuItem`, `addMenuSection`, `updateMenuSection`, `deleteMenuSection`
   - `getFullMenu()` sin args → menú público (solo visible + disponible)
@@ -137,7 +137,15 @@ highlight → destacado, seasonal → estacional, sizes → (opciones_tamano)
 - `services/__tests__/card.service.test.ts` — addStamp, undoStamp, redeemCard, getStampEventsByCard, getCardByCustomer, createCard (10 tests)
 - `services/__tests__/menu.service.test.ts` — getFullMenu, deleteMenuItem, addMenuSection, deleteMenuSection (6 tests)
 - `app/actions/__tests__/verifyAdminPin.test.ts` — session tokens, rate limiting (8 tests)
-- Total: 25 tests, todos pasando
+- `services/__tests__/customer.service.test.ts` — referidos: getReferralCount, createCustomer con/sin id_referidor (8 tests)
+- `services/__tests__/customer-stats.test.ts` — getCustomerStats: rachas, frecuencia, bebida favorita, weeklyActivity (13 tests)
+- `services/__tests__/promotion.service.test.ts` — vigencia (rango, end-of-day, días semana), CRUD con scope (11 tests)
+- `services/__tests__/reward.service.test.ts` — getDefault (orden por creado_en), getRewardById, versionado por diseño DAV-67, updateStamps (15 tests)
+- `lib/__tests__/offlineQueue.test.ts` — cola dual IDB+localStorage, fallback iOS Safari (8 tests)
+- `components/ui/__tests__/stamp-illustrations.test.ts` — smoke render de TODO el catálogo (18 ilustraciones × 4 estados) + integridad del catálogo (20 tests)
+- `app/actions/__tests__/rewardConfig.test.ts` — gate de sesión admin, validación de input, errores genéricos (10 tests)
+- `services/__tests__/analytics.service.test.ts` — paginación por lotes, counts, top drinks (9 tests)
+- Total: 122 tests, todos pasando
 
 ## Sesión de cliente
 
@@ -212,7 +220,45 @@ Ver `.env.example`. Variables requeridas:
 ### Archivos nuevos de la auditoría:
 - `lib/logger.ts` — logger centralizado (dev vs producción)
 
+## Trabajo Nocturno (3-4 Jun 2026) — branch `nocturno-2026-06-03`
+
+- **Seguridad**: `npm audit fix` — 25 vulnerabilidades → 2 moderate (ws vía @supabase/realtime-js, sin fix)
+- **Tests**: +8 unit para referidos (`customer.service.test.ts`)
+- **npm update**: supabase-js 2.98→2.107, playwright 1.58→1.60, react 19.2.4→19.2.7, react-hook-form, recharts, autoprefixer (solo lock, tsc y tests limpios)
+- Detalle completo en `../REPORTE-NOCTURNO.md`
+
+## Integración de branches (5-9 Jun 2026) — mergeado a `main` vía `integracion-dry-run`
+
+40 commits, 77 archivos, +8868/-1060 líneas. Branches integrados:
+
+| Branch | Contenido |
+|--------|-----------|
+| `lint-fix` | ESLint 9 flat config, `next lint` roto en Next 16 → corregido, 0 errores |
+| `seguridad-fixes` | Barrido de `select(*)` — 2 leaks de `pin_hmac` cerrados, mapClienteToCustomer sin campos sensibles |
+| `a11y-fixes` | Auditoría WCAG — aria-labels, focus-visible, contraste |
+| `perf-fixes` | Preload del poster SSR, versionado auto-sanador en PwaRegister |
+| `arquitectura-mejoras` | 5 helpers extraídos a libs testeables (+55 tests), informe de arquitectura, `fix(pwa): pausar polling de red en background` |
+| `diseno-pulido` | 2ª ola de ilustraciones (Concha + Prensa Francesa → 18 en catálogo), fix stamp-card diseño, micro-bounce en nuevos sellos |
+| `nocturno-2026-06-03` | npm audit/update, +8 tests referidos (mergeado en sesión anterior) |
+
+**Tests tras merge**: 213/213 ✅  
+**Build**: limpio ✅
+
+## API Routes — Stamp (autenticadas, service_role)
+
+| Ruta | Método | Descripción |
+|------|--------|-------------|
+| `app/api/stamp/add/route.ts` | POST | Agrega sello via `agregar_sello_a_tarjeta` RPC |
+| `app/api/stamp/undo/route.ts` | POST | Deshace sello via `deshacer_sello` RPC |
+| `app/api/stamp/redeem/route.ts` | POST | Canjea tarjeta via `canjear_tarjeta` RPC |
+| `app/api/stamp/referral-bonus/route.ts` | POST | Otorga bono de referido al referidor |
+
+Todas requieren cookie `barista-session` (verificada con `checkBaristaSession()`). Usan `getSupabaseServer()` (service_role). **Ninguna RPC de lealtad es llamable directamente con anon key** — REVOKE aplicado en prod y dev (9-Jun-2026).
+
+Cookie `barista-session` ahora tiene `path: "/"` (antes `"/admin"`) para que llegue a las rutas `/api/stamp/*`.
+
 ## Pendiente
 
 1. Crear iconos PWA reales si se necesitan nuevos
 2. Tests E2E contra Supabase staging (auth real, flujo completo con persistencia)
+3. Upgrades major pendientes de decisión: zod 3→4, framer-motion 11→12, tailwind-merge 1→3 (unificar versiones con POS), tailwindcss 3→4 (delicado, design system usa CSS vars)

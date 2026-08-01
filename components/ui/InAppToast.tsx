@@ -37,7 +37,7 @@ export function InAppToastContainer({
   onDismiss: (id: number) => void;
 }) {
   return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex flex-col items-center gap-2 pointer-events-none w-full max-w-sm px-4">
+    <div role="status" aria-live="polite" className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] flex flex-col items-center gap-2 pointer-events-none w-full max-w-sm px-4">
       <AnimatePresence>
         {toasts.map((toast) => (
           <motion.div

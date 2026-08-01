@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useKeyboardOffset } from "@/hooks/useKeyboardOffset";
 import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
@@ -59,6 +59,14 @@ export function AddPromoSheet({
   const [appliesTo, setAppliesTo] = useState("");
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onCancel]);
+
   const toggleDay = (day: number) => {
     setDaysOfWeek((prev) =>
       prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort()
@@ -96,6 +104,9 @@ export function AddPromoSheet({
     >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px]" />
       <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Nueva promo"
         initial={{ y: "100%" }}
         animate={{ y: 0 }}
         exit={{ y: "100%" }}

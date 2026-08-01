@@ -214,7 +214,7 @@ function OnboardingForm() {
               className="font-mono text-xs tracking-[0.12em] uppercase text-stone-400 dark:text-stone-500 hover:text-amber-700 dark:hover:text-amber-500 transition-colors duration-300 relative group"
             >
               Menu
-              <span className="absolute bottom-[-2px] left-0 w-0 h-px bg-amber-700 dark:bg-amber-500 group-hover:w-full transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]" />
+              <span className="absolute bottom-[-2px] left-0 w-0 h-px bg-amber-700 dark:bg-amber-500 group-hover:w-full transition-all [transition-duration:400ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]" />
             </Link>
             <Link
               href="/onboarding"
@@ -336,6 +336,7 @@ function OnboardingForm() {
                   id="phone"
                   required
                   type="tel"
+                  autoComplete="tel"
                   inputMode="numeric"
                   pattern="[0-9]*"
                   placeholder="10 dígitos"
@@ -349,7 +350,7 @@ function OnboardingForm() {
                 />
                 <div className="flex justify-between items-center min-h-[18px]">
                   {phoneErrorMsg ? (
-                    <p className="text-xs text-red-500 dark:text-red-400">{phoneErrorMsg}</p>
+                    <p role="alert" className="text-xs text-red-500 dark:text-red-400">{phoneErrorMsg}</p>
                   ) : (
                     <span />
                   )}
@@ -372,6 +373,7 @@ function OnboardingForm() {
                   id="pin"
                   required
                   type="password"
+                  autoComplete="one-time-code"
                   inputMode="numeric"
                   pattern="[0-9]*"
                   maxLength={4}
@@ -384,7 +386,7 @@ function OnboardingForm() {
                 />
                 <div className="flex items-center justify-between min-h-[18px]">
                   {pinErrorMsg ? (
-                    <p className="text-xs text-red-500 dark:text-red-400">{pinErrorMsg}</p>
+                    <p role="alert" className="text-xs text-red-500 dark:text-red-400">{pinErrorMsg}</p>
                   ) : (
                     <p className="text-xs text-stone-400 dark:text-stone-600 text-left">
                       Para recuperar tu tarjeta si cambias de celular.
@@ -416,11 +418,12 @@ function OnboardingForm() {
 
               {/* Nombre */}
               <div className="space-y-1.5">
-                <label htmlFor="name" className="block text-xs uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 text-left">
+                <label htmlFor="name" className="block text-xs uppercase tracking-[0.3em] text-stone-500 dark:text-stone-600 text-left">
                   Nombre
                 </label>
                 <Input
                   id="name"
+                  autoComplete="name"
                   placeholder="Tu nombre"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -430,12 +433,13 @@ function OnboardingForm() {
 
               {/* Email */}
               <div className="space-y-1.5">
-                <label htmlFor="email" className="block text-xs uppercase tracking-[0.3em] text-stone-400 dark:text-stone-600 text-left">
+                <label htmlFor="email" className="block text-xs uppercase tracking-[0.3em] text-stone-500 dark:text-stone-600 text-left">
                   Email
                 </label>
                 <Input
                   id="email"
                   type="email"
+                  autoComplete="email"
                   inputMode="email"
                   placeholder="tu@email.com"
                   value={email}
@@ -446,7 +450,7 @@ function OnboardingForm() {
                   }`}
                 />
                 {emailErrorMsg && (
-                  <p className="text-xs text-red-500 dark:text-red-400">{emailErrorMsg}</p>
+                  <p role="alert" className="text-xs text-red-500 dark:text-red-400">{emailErrorMsg}</p>
                 )}
               </div>
 
@@ -483,7 +487,7 @@ function OnboardingForm() {
 
             {/* Error */}
             {error && (
-              <p className="text-xs text-red-500 dark:text-red-400 tracking-wide">{error}</p>
+              <p role="alert" className="text-xs text-red-500 dark:text-red-400 tracking-wide">{error}</p>
             )}
 
             {/* CTA */}

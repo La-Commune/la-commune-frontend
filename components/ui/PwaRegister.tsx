@@ -3,6 +3,12 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+// El evento beforeinstallprompt no está en los tipos estándar del DOM
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+}
+
 const DISMISS_DURATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 días
 
 function isDismissed(key: string): boolean {
@@ -17,7 +23,7 @@ export function PwaRegister() {
   const [showIosHint, setShowIosHint] = useState(false);
   const [showAndroidBanner, setShowAndroidBanner] = useState(false);
   const [showUpdateBanner, setShowUpdateBanner] = useState(false);
-  const deferredPrompt = useRef<any>(null);
+  const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null);
 
   const handleFlushStamps = useCallback((event: MessageEvent) => {
     if (event.data?.type === "FLUSH_OFFLINE_STAMPS") {
@@ -99,7 +105,7 @@ export function PwaRegister() {
     if (!isStandalone && !isDismissed("pwa-install-dismissed")) {
       const handler = (e: Event) => {
         e.preventDefault();
-        deferredPrompt.current = e;
+        deferredPrompt.current = e as BeforeInstallPromptEvent;
         setShowAndroidBanner(true);
       };
       window.addEventListener("beforeinstallprompt", handler);

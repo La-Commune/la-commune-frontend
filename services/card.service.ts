@@ -28,6 +28,7 @@ export async function createCard(params: {
   }
 
   // Si no tenemos un rewardId válido, buscar la recompensa default
+  // (la más nueva: el versionado de diseño puede dejar defaults viejos degradados)
   if (!rewardId) {
     const { data: defaultReward, error: defaultError } = await supabase
       .from("recompensas")
@@ -35,6 +36,7 @@ export async function createCard(params: {
       .eq("negocio_id", NEGOCIO_ID)
       .eq("es_default", true)
       .eq("activa", true)
+      .order("creado_en", { ascending: false })
       .limit(1)
       .maybeSingle();
 
@@ -86,94 +88,58 @@ export async function addStamp(
     size?: string;
   },
 ): Promise<AddStampResult> {
-  const supabase = getSupabase();
-
-  // Call the PostgreSQL function
-  const { data, error } = await supabase.rpc("agregar_sello_a_tarjeta", {
-    p_tarjeta_id: cardId,
-    p_cliente_id: options?.customerId || null,
-    p_agregado_por: options?.addedBy || "system",
-    p_tipo_bebida: options?.drinkType || null,
-    p_tamano: options?.size || null,
-    p_notas: null,
+  const res = await fetch("/api/stamp/add", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      cardId,
+      customerId: options?.customerId,
+      addedBy: options?.addedBy,
+      drinkType: options?.drinkType,
+      size: options?.size,
+    }),
   });
 
-  if (error) throw error;
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: "Error desconocido" }));
+    throw new Error(err.error ?? "Error al agregar sello");
+  }
 
-  return {
-    stamps: data.sellos,
-    maxStamps: data.sellos_maximos,
-    status: data.estado,
-    eventId: data.evento_id,
-  };
+  return res.json();
 }
 
 /**
  * Otorga un sello de bono al referidor cuando el cliente referido recibe su primer sello.
+ * Delega a /api/stamp/referral-bonus para que use service_role (no anon key).
  */
 export async function awardReferralBonusIfNeeded(
   referredCustomerId: string,
 ): Promise<void> {
-  const supabase = getSupabase();
-
-  // Get customer data
-  const { data: customer, error: customerError } = await supabase
-    .from("clientes")
-    .select("id_referidor, bono_referido_entregado")
-    .eq("id", referredCustomerId)
-    .eq("negocio_id", NEGOCIO_ID)
-    .single();
-
-  if (customerError || !customer) return;
-  if (!customer.id_referidor || customer.bono_referido_entregado) return;
-
-  // Get active card for referrer
-  const { data: referrerCard, error: cardError } = await supabase
-    .from("tarjetas")
-    .select("id, sellos, sellos_maximos, estado")
-    .eq("negocio_id", NEGOCIO_ID)
-    .eq("cliente_id", customer.id_referidor)
-    .eq("estado", "activa")
-    .limit(1)
-    .single();
-
-  if (cardError || !referrerCard) return;
-  if (referrerCard.sellos >= referrerCard.sellos_maximos) return;
-
-  // Award bonus via RPC
-  const { error: bonusError } = await supabase.rpc("agregar_sello_a_tarjeta", {
-    p_tarjeta_id: referrerCard.id,
-    p_cliente_id: customer.id_referidor,
-    p_agregado_por: "system",
-    p_tipo_bebida: null,
-    p_tamano: null,
-    p_notas: "Bono por referido",
-  });
-
-  if (bonusError) return; // Don't block main flow
-
-  // Mark bonus as delivered
-  const { error: updateError } = await supabase
-    .from("clientes")
-    .update({ bono_referido_entregado: true })
-    .eq("id", referredCustomerId)
-    .eq("negocio_id", NEGOCIO_ID);
-
-  if (updateError) return;
+  try {
+    await fetch("/api/stamp/referral-bonus", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ referredCustomerId }),
+    });
+  } catch {
+    // No block main flow
+  }
 }
 
 export async function undoStamp(
   cardId: string,
   eventId: string,
 ): Promise<void> {
-  const supabase = getSupabase();
-
-  const { error } = await supabase.rpc("deshacer_sello", {
-    p_tarjeta_id: cardId,
-    p_evento_id: eventId,
+  const res = await fetch("/api/stamp/undo", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ cardId, eventId }),
   });
 
-  if (error) throw error;
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: "Error desconocido" }));
+    throw new Error(err.error ?? "Error al deshacer sello");
+  }
 }
 
 export async function redeemCard(params: {
@@ -181,17 +147,23 @@ export async function redeemCard(params: {
   customerId: string;
   rewardRef: string;
 }) {
-  const supabase = getSupabase();
-
-  // Call the RPC function to redeem and create new card
-  const { data, error } = await supabase.rpc("canjear_tarjeta", {
-    p_tarjeta_id: params.oldCardId,
-    p_cliente_id: params.customerId,
-    p_recompensa_id: params.rewardRef,
+  const res = await fetch("/api/stamp/redeem", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      oldCardId: params.oldCardId,
+      customerId: params.customerId,
+      rewardRef: params.rewardRef,
+    }),
   });
 
-  if (error) throw error;
-  return data; // Returns new card ID
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: "Error desconocido" }));
+    throw new Error(err.error ?? "Error al canjear tarjeta");
+  }
+
+  const json = await res.json();
+  return json.newCardId; // Returns new card ID (same contract as before)
 }
 
 export async function getStampEventsByCard(

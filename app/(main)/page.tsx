@@ -10,10 +10,12 @@ import {
   useSpring,
 } from "framer-motion";
 import React, { useRef, useState, useEffect } from "react";
+import { preload } from "react-dom";
 import { SplashScreen } from "@/components/ui/SplashScreen";
 import { HowItWorksAnimation } from "@/components/ui/HowItWorksAnimation";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { getDefaultReward } from "@/services/reward.service";
+import { getOpenStatus } from "@/lib/cafe-hours";
 import type { IllustrationId } from "@/components/ui/stamp-illustrations";
 
 /* ===============================
@@ -92,14 +94,27 @@ const PremiumSection: React.FC<SectionProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoFailed, setVideoFailed] = useState(false);
   const stalledTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // El poster del hero ES el LCP — precargarlo con prioridad alta.
+  // SIN guard de window: react-dom preload está diseñado para correr también
+  // durante el render de SSR y emitir <link rel="preload" fetchpriority="high">
+  // en el <head> del HTML — ahí está el beneficio real (el navegador lo
+  // descubre antes de parsear el <video poster>). Client-side es idempotente.
+  if (!lazy && videoPoster) {
+    preload(videoPoster, { as: "image", fetchPriority: "high" });
+  }
   const loopOverlayRef = useRef<HTMLDivElement>(null);
   const loopFadingOut = useRef(false);
   const rafRef = useRef<number | null>(null);
   const FADE_SECS = 1.8;
   const prefersReduced = useReducedMotion();
 
-  // rAF a 60 fps — lee currentTime cada frame para opacidad perfectamente continua
+  // rAF a 60 fps — lee currentTime cada frame para opacidad perfectamente continua.
+  // Solo corre MIENTRAS el video reproduce y la pestaña es visible: antes corría
+  // desde el montaje, por sección, para siempre (CPU/batería en móvil).
   useEffect(() => {
+    let running = false;
+
     const tick = () => {
       const video = videoRef.current;
       const overlay = loopOverlayRef.current;
@@ -109,10 +124,43 @@ const PremiumSection: React.FC<SectionProps> = ({
           overlay.style.opacity = String(Math.min(1, 1 - timeLeft / FADE_SECS));
         }
       }
+      if (running) rafRef.current = requestAnimationFrame(tick);
+    };
+
+    const start = () => {
+      if (running) return;
+      running = true;
       rafRef.current = requestAnimationFrame(tick);
     };
-    rafRef.current = requestAnimationFrame(tick);
-    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+    const stop = () => {
+      running = false;
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+
+    const video = videoRef.current;
+    video?.addEventListener("playing", start);
+    video?.addEventListener("pause", stop);
+    video?.addEventListener("ended", stop);
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        stop();
+      } else if (videoRef.current && !videoRef.current.paused) {
+        start();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    // Si el video ya está reproduciendo al montar el efecto
+    if (video && !video.paused && !video.ended) start();
+
+    return () => {
+      stop();
+      video?.removeEventListener("playing", start);
+      video?.removeEventListener("pause", stop);
+      video?.removeEventListener("ended", stop);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -190,7 +238,9 @@ const PremiumSection: React.FC<SectionProps> = ({
           autoPlay={!lazy && !prefersReduced}
           muted
           playsInline
-          preload={lazy ? "none" : "auto"}
+          // metadata: el poster pinta el LCP de inmediato y el MP4 (5.9 MB)
+          // se streamea al reproducir, en vez de bufferearse completo upfront
+          preload={lazy ? "none" : "metadata"}
           poster={videoPoster}
           onError={() => setVideoFailed(true)}
           onStalled={() => {
@@ -260,7 +310,6 @@ const PremiumSection: React.FC<SectionProps> = ({
         className={`relative z-10 px-8 sm:px-16 max-w-3xl text-white ${
           align === "left" ? "text-left" : "text-center mx-auto"
         }`}
-        aria-live="polite"
       >
         {eyebrow && (
           <motion.p
@@ -368,28 +417,6 @@ const PremiumSection: React.FC<SectionProps> = ({
 /* ===============================
    Helpers
 ================================= */
-function getOpenStatus(): { open: boolean; label: string } {
-  const now = new Date();
-  const parts = new Intl.DateTimeFormat("es-MX", {
-    timeZone: "America/Mexico_City",
-    hour: "numeric",
-    minute: "numeric",
-    hour12: false,
-  }).formatToParts(now);
-  const h = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0");
-  const m = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0");
-  const total = h * 60 + m;
-  const open = total >= 600 && total < 1200;
-  return {
-    open,
-    label: open
-      ? "Abierto · cierra a las 20:00"
-      : total < 600
-      ? "Cerrado · abre a las 10:00"
-      : "Cerrado · abre mañana a las 10:00",
-  };
-}
-
 /* ===============================
    Loyalty Section (usuario nuevo)
    — Componente separado para evitar bug de hidratacion
@@ -600,7 +627,7 @@ export default function Home() {
               className="font-mono text-xs tracking-[0.12em] uppercase text-[#a89f90] hover:text-[#c8956c] transition-colors duration-300 relative group"
             >
               {item.label}
-              <span className="absolute bottom-[-2px] left-0 w-0 h-px bg-[#c8956c] group-hover:w-full transition-all duration-[400ms] ease-[cubic-bezier(0.16,1,0.3,1)]" />
+              <span className="absolute bottom-[-2px] left-0 w-0 h-px bg-[#c8956c] group-hover:w-full transition-all [transition-duration:400ms] [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]" />
             </Link>
           ))}
         </div>
@@ -708,19 +735,19 @@ export default function Home() {
             <div className="mt-10 flex flex-col items-center gap-4 desktop-footer-links">
               <Link
                 href="/menu"
-                className="text-xs uppercase tracking-[0.25em] text-[#a89f90] hover:text-[#c8956c] transition-colors duration-300"
+                className="text-xs uppercase tracking-[0.25em] text-[#a89f90] hover:text-[#c8956c] transition-colors duration-300 py-2.5 px-3 -my-1"
               >
                 Menú
               </Link>
               <Link
                 href={loyaltyCta.link}
-                className="text-xs uppercase tracking-[0.25em] text-[#a89f90] hover:text-[#c8956c] transition-colors duration-300"
+                className="text-xs uppercase tracking-[0.25em] text-[#a89f90] hover:text-[#c8956c] transition-colors duration-300 py-2.5 px-3 -my-1"
               >
                 Fidelidad
               </Link>
               <Link
                 href="/admin"
-                className="text-xs uppercase tracking-[0.25em] text-[#8a7f72] hover:text-[#a89f90] transition-colors duration-300"
+                className="text-xs uppercase tracking-[0.25em] text-[#8a7f72] hover:text-[#a89f90] transition-colors duration-300 py-2.5 px-3 -my-1"
               >
                 Personal
               </Link>

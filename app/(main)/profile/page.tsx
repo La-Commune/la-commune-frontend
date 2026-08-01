@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { getSupabase, NEGOCIO_ID } from "@/lib/supabase";
+import { maskPhone, getTierLevel, formatMonthYear } from "@/lib/profile-format";
 import { Customer } from "@/models/customer.model";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { logger } from "@/lib/logger";
@@ -46,6 +47,8 @@ function ProfileToast({
 
   return (
     <motion.div
+      role="status"
+      aria-live="polite"
       initial={{ opacity: 0, y: -12, filter: "blur(4px)" }}
       animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
       exit={{ opacity: 0, y: -12, filter: "blur(4px)" }}
@@ -56,38 +59,6 @@ function ProfileToast({
       <span className="text-xs tracking-wide whitespace-nowrap">{message}</span>
     </motion.div>
   );
-}
-
-function maskPhone(phone: string): string {
-  if (phone.length < 4) return phone;
-  return `****${phone.slice(-4)}`;
-}
-
-function getTierLevel(visits: number): { name: string; color: string } {
-  if (visits < 5) return { name: "Nuevo", color: "blue" };
-  if (visits < 15) return { name: "Regular", color: "amber" };
-  if (visits < 30) return { name: "Frecuente", color: "emerald" };
-  return { name: "VIP", color: "purple" };
-}
-
-function formatDate(date: Date | string | undefined): string {
-  if (!date) return "";
-  const d = new Date(date);
-  const months = [
-    "enero",
-    "febrero",
-    "marzo",
-    "abril",
-    "mayo",
-    "junio",
-    "julio",
-    "agosto",
-    "septiembre",
-    "octubre",
-    "noviembre",
-    "diciembre",
-  ];
-  return `${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 // Inline edit form para teléfono
@@ -141,6 +112,7 @@ function PhoneEditForm({
         <input
           ref={inputRef}
           type="tel"
+          autoComplete="tel"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           className="w-full px-4 py-2 bg-stone-100 dark:bg-neutral-800 border border-stone-300 dark:border-stone-700 rounded-lg text-sm focus:outline-none focus:border-amber-500"
@@ -154,6 +126,7 @@ function PhoneEditForm({
         </label>
         <input
           type="password"
+          autoComplete="one-time-code"
           value={pin}
           onChange={(e) => setPin(e.target.value)}
           className="w-full px-4 py-2 bg-stone-100 dark:bg-neutral-800 border border-stone-300 dark:border-stone-700 rounded-lg text-sm focus:outline-none focus:border-amber-500"
@@ -235,6 +208,7 @@ function EmailEditForm({
         <input
           ref={inputRef}
           type="email"
+          autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="w-full px-4 py-2 bg-stone-100 dark:bg-neutral-800 border border-stone-300 dark:border-stone-700 rounded-lg text-sm focus:outline-none focus:border-amber-500"
@@ -312,6 +286,7 @@ function NameEditForm({
         <input
           ref={inputRef}
           type="text"
+          autoComplete="name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           className="w-full px-4 py-2 bg-stone-100 dark:bg-neutral-800 border border-stone-300 dark:border-stone-700 rounded-lg text-sm focus:outline-none focus:border-amber-500"
@@ -403,10 +378,13 @@ export default function ProfilePage() {
       try {
         const supabase = getSupabase();
 
-        // Fetch customer
+        // Fetch customer — select explícito: pin_hmac y notas NUNCA viajan
+        // al cliente (la UI no los usa)
         const { data: clienteRow, error: clienteError } = await supabase
           .from("clientes")
-          .select("*")
+          .select(
+            "nombre, telefono, email, activo, total_visitas, total_sellos, creado_en, ultima_visita, consentimiento_whatsapp, consentimiento_email, id_referidor, bono_referido_entregado"
+          )
           .eq("id", customerId)
           .eq("negocio_id", NEGOCIO_ID)
           .single();
@@ -427,8 +405,6 @@ export default function ProfilePage() {
           lastVisitAt: clienteRow.ultima_visita ? new Date(clienteRow.ultima_visita) : undefined,
           consentWhatsApp: clienteRow.consentimiento_whatsapp,
           consentEmail: clienteRow.consentimiento_email,
-          pinHmac: clienteRow.pin_hmac,
-          notes: clienteRow.notas,
           referrerCustomerId: clienteRow.id_referidor,
           referralBonusGiven: clienteRow.bono_referido_entregado,
           schemaVersion: 1,
@@ -666,7 +642,7 @@ export default function ProfilePage() {
                     {customer.name || "Mi perfil"}
                   </h1>
                   <p className="text-sm text-stone-500 dark:text-stone-400">
-                    Cliente desde {formatDate(customer.createdAt)}
+                    Cliente desde {formatMonthYear(customer.createdAt)}
                   </p>
                 </div>
                 <motion.div
@@ -859,6 +835,8 @@ export default function ProfilePage() {
                 <button
                   onClick={push.isSubscribed ? push.unsubscribe : push.subscribe}
                   disabled={push.loading}
+                  role="switch"
+                  aria-checked={push.isSubscribed}
                   className={`relative w-11 h-6 rounded-full transition-colors ${
                     push.isSubscribed
                       ? "bg-amber-500 dark:bg-amber-600"
@@ -901,6 +879,8 @@ export default function ProfilePage() {
                     setConsentWhatsApp(!consentWhatsApp); // Revert
                   }
                 }}
+                role="switch"
+                aria-checked={consentWhatsApp}
                 className={`relative w-11 h-6 rounded-full transition-colors ${
                   consentWhatsApp
                     ? "bg-amber-500 dark:bg-amber-600"
@@ -943,6 +923,8 @@ export default function ProfilePage() {
                       setConsentEmail(!consentEmail); // Revert
                     }
                   }}
+                  role="switch"
+                  aria-checked={consentEmail}
                   className={`relative w-11 h-6 rounded-full transition-colors ${
                     consentEmail
                       ? "bg-amber-500 dark:bg-amber-600"
